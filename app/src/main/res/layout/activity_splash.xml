@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#8E42FF"
+    android:gravity="center"
+    >
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Naivety"
+            android:fontFamily="@font/sonder"
+            android:textColor="#FFFFFF"
+            android:textSize="232px"
+            android:shadowColor="@color/material_dynamic_neutral20"
+            android:shadowDx="0"
+            android:shadowDy="3"
+            android:shadowRadius="11"
+            />
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Books, the way you love them."
+            android:fontFamily="@font/eubergine"
+            android:textColor="#FFFFFF"
+            android:textSize="70px"
+            android:gravity="center"
+            android:shadowColor="@color/material_dynamic_neutral20"
+            android:shadowDx="0"
+            android:shadowDy="3"
+            android:shadowRadius="11"
+            />
+    </LinearLayout>
+</FrameLayout>
