@@ -20,6 +20,6 @@ class SplashActivity : AppCompatActivity() {
         window.decorView.postDelayed({
             startActivity(Intent(this, MainActivity::class.java))
             finish()
-        }, 2000)
+        }, 1000)
     }
 }
