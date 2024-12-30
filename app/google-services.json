@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "400890375502",
+    "project_id": "naivety-7",
+    "storage_bucket": "naivety-7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:400890375502:android:c9f8ab13473f04604a821f",
+        "android_client_info": {
+          "package_name": "com.example.naivety"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1n_mG5RHKsFInCUiaW4IqD5RdOmugEkY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
