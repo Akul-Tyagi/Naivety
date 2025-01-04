@@ -1,0 +1,36 @@
+package com.example.naivety.ui.theme
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.graphics.Color
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+
+@Composable
+fun TransparentSystemBars() {
+    val systemUiController = rememberSystemUiController()
+
+    DisposableEffect(systemUiController) {
+        systemUiController.setSystemBarsColor(
+            color = Color.Transparent,
+            darkIcons = false,
+            isNavigationBarContrastEnforced = false
+        )
+
+        onDispose {}
+    }
+}
+
+@Composable
+fun SplashSystemBars() {
+    val systemUiController = rememberSystemUiController()
+    val splashColor = Color(0xFF8E42FF) // Your splash screen purple color
+
+    DisposableEffect(systemUiController) {
+        systemUiController.setSystemBarsColor(
+            color = splashColor,
+            darkIcons = false
+        )
+
+        onDispose {}
+    }
+}

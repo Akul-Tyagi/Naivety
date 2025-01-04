@@ -2,8 +2,11 @@ package com.example.naivety
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.naivety.ui.theme.NaivetyTheme
+import com.example.naivety.ui.theme.SplashSystemBars
 
 class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

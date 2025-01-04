@@ -71,7 +71,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0") // Retrofit
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Retrofit Gson Converter
     implementation("io.coil-kt:coil-compose:2.2.2") // Image loading with Coil
-    implementation("com.github.barteksc:android-pdf-viewer:3.2.0-beta.1")
+    implementation ("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

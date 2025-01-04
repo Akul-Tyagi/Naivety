@@ -18,6 +18,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.ui.graphics.Color
+import com.example.naivety.ui.theme.TransparentSystemBars
 
 class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             NaivetyTheme {
-                SetSystemBarsColor()
+                TransparentSystemBars()
                 var showWalkthrough by remember { mutableStateOf(true) }
 
                 if (showWalkthrough) {
