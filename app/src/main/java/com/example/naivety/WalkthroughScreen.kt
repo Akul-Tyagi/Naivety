@@ -1,6 +1,7 @@
 package com.example.naivety
 
-import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -8,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -15,13 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -33,20 +28,44 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
     )
 
     val subHeadings = listOf(
-        "Let’s make reading feel as smooth as turning a page.",
-        "Keep your favorite novels, romances, and adventures at your fingertips, always waiting right where you left them.",
-        "No clutter, no distractions—just you and the words that matter. Ready to dive in?"
+        "Lets Make Reading Feel As Smooth As Turning A Page.",
+        "Keep Your Favorite Novels, Romances, And Adventures At Your Fingertips, Always Waiting Right Where You Left Them.",
+        "No Clutter, No Distractions—Just You And The Words That Matter. Ready To Dive In?"
     )
 
     var currentSlide by remember { mutableIntStateOf(0) }
+    var shouldShowSubheading by remember { mutableStateOf(false) }
+
+    // Animation states
+    val mainHeadingProgress = remember { Animatable(initialValue = 0f) }
+    val typewriterProgress = remember { Animatable(initialValue = 0f) }
+
+    LaunchedEffect(currentSlide) {
+        // Reset states
+        shouldShowSubheading = false
+        mainHeadingProgress.snapTo(0f)
+        typewriterProgress.snapTo(0f)
+
+        // Animate main heading sliding in
+        mainHeadingProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(1200, easing = EaseOutQuart)
+        )
+
+        // Start subheading animation after main heading
+        shouldShowSubheading = true
+
+        // Animate typewriter effect
+        typewriterProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(2025, delayMillis = 142)
+        )
+    }
 
     val mainFontFamily = FontFamily(Font(R.font.carmila, FontWeight.Bold))
-    val secondaryFontFamily = FontFamily(Font(R.font.sonder, FontWeight.Normal)) // Ensure this font file exists
+    val secondaryFontFamily = FontFamily(Font(R.font.fsultralit, FontWeight.Normal))
 
-    Box(
-        modifier = Modifier
-            .background(Color.Black)
-    ) {
+    Box(modifier = Modifier.background(Color.Black)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -55,38 +74,60 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-                AnimatedContent(
-                    targetState = currentSlide,
-                    transitionSpec = {
-                        (slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(820)) + fadeIn(animationSpec = tween(340))) togetherWith
-                                (slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(820)) + fadeOut(animationSpec = tween(340)))
-                    }
-                ) { targetSlide ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = mainHeadings[targetSlide],
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontSize = 69.sp,
-                                color = Color(0xFF8E42FF),
-                                fontFamily = mainFontFamily,
-                                lineHeight = 52.sp,
-                                textAlign = TextAlign.Start
-                            ),
+            // Main Heading with slide and fade animation
+            Box(
+                modifier = Modifier
+                    .offset(
+                        x = (-(1f - mainHeadingProgress.value) * 200).dp,
+                        y = 0.dp
+                    )
+                    .alpha(mainHeadingProgress.value)
+            ) {
+                Text(
+                    text = mainHeadings[currentSlide],
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontSize = 69.sp,
+                        color = Color(0xFF8E42FF),
+                        fontFamily = mainFontFamily,
+                        lineHeight = 52.sp,
+                        textAlign = TextAlign.Start
+                    ),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Subheading with typewriter effect
+            if (shouldShowSubheading) {
+                Box(
+                    modifier = Modifier
+                        .offset(
+                            x = ((1f - typewriterProgress.value) * 200).dp,
+                            y = 0.dp
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = subHeadings[targetSlide],
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 43.sp,
-                                lineHeight = 32.sp,
-                                textAlign = TextAlign.End,
-                                color = Color.White,
-                                fontFamily = secondaryFontFamily,
-                            ),
+                        .alpha(typewriterProgress.value)
+                ) {
+                    val visibleText = remember(subHeadings[currentSlide], typewriterProgress.value) {
+                        subHeadings[currentSlide].take(
+                            (subHeadings[currentSlide].length * typewriterProgress.value).toInt()
                         )
                     }
+
+                    Text(
+                        text = visibleText,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 43.sp,
+                            lineHeight = 35.sp,
+                            textAlign = TextAlign.End,
+                            color = Color.White,
+                            fontFamily = secondaryFontFamily,
+                        ),
+                    )
                 }
             }
+        }
+
+        // Next/Finish button with fade animation
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -103,8 +144,12 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                 },
                 modifier = Modifier
                     .padding(16.dp)
-                    .border(1.dp, Color(0xFF8E42FF), MaterialTheme.shapes.extraLarge),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF111111), contentColor = Color.White),
+                    .border(1.dp, Color(0xFF8E42FF), MaterialTheme.shapes.extraLarge)
+                    .alpha(mainHeadingProgress.value),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF111111),
+                    contentColor = Color.White
+                ),
                 shape = MaterialTheme.shapes.extraLarge
             ) {
                 Text(text = if (currentSlide < mainHeadings.size - 1) "→" else "Finish")
@@ -112,3 +157,6 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
         }
     }
 }
+
+// Custom easing curve for smooth animation
+private val EaseOutQuart = CubicBezierEasing(0.25f, 1f, 0.5f, 1f)
