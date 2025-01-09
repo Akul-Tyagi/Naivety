@@ -2,10 +2,12 @@ package com.example.naivety
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.net.Uri
 import android.os.Bundle
 import android.view.Window
 import android.view.WindowManager
-import android.widget.Toast
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -37,17 +39,24 @@ import com.example.naivety.ui.components.pdf.*
 import com.example.naivety.ui.components.pdf.modals.*
 import com.example.naivety.ui.pdf.*
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.draw.shadow
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.example.naivety.viewmodels.PdfViewerViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.scaleMatrix
 import com.github.barteksc.pdfviewer.PDFView
 import com.github.barteksc.pdfviewer.util.FitPolicy
+
+
 
 class PdfViewerActivity : ComponentActivity() {
     private val viewModel: PdfViewerViewModel by viewModels()
     private var bookId: String? = null
     private lateinit var pdfView: PDFView
+    private val LocalViewModel = compositionLocalOf<PdfViewerViewModel> {
+        error("No ViewModel provided")
+    }
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,292 +92,332 @@ class PdfViewerActivity : ComponentActivity() {
         onFinish: () -> Unit,
         onSaveProgress: (Int) -> Unit
     ) {
-        val showSettings = remember { mutableStateOf(false) }
-        val showReadingMode = remember { mutableStateOf(false) }
-        val showRotation = remember { mutableStateOf(false) }
-        val showBrightness = remember { mutableStateOf(false) }
-        val showQuickNav = remember { mutableStateOf(false) }
+        CompositionLocalProvider(LocalViewModel provides viewModel) {
+            val showSettings = remember { mutableStateOf(false) }
+            val showReadingMode = remember { mutableStateOf(false) }
+            val showRotation = remember { mutableStateOf(false) }
+            val showBrightness = remember { mutableStateOf(false) }
+            val context = LocalContext.current
 
-        val viewerState = viewModel.viewerState.collectAsState()
-        val isBookmarked = remember { mutableStateOf(false) }
-        val context = LocalContext.current
+            val viewerState = viewModel.viewerState.collectAsState()
+            val isBookmarked = remember { mutableStateOf(false) }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(viewerState.value.settings.backgroundColor))
-        ) {
-            // PDF View
-            // PDF View
-            AndroidView(
-                factory = { context ->
-                    PDFView(context, null).apply {
-                        fromUri(intent.data!!)
-                            .defaultPage(lastPage)
-                            .onPageChange { page, pageCount ->
-                                viewModel.updatePageCount(page, pageCount)
-                                onSaveProgress(page)
-                            }
-                            .onLoad { viewModel.updateLoadingState(false) }
-                            .enableSwipe(true)
-                            .swipeHorizontal(viewerState.value.readingMode.isHorizontalMode())
-                            .spacing(10)
-                            .pageSnap(true)
-                            .pageFling(true)
-                            .nightMode(viewerState.value.settings.backgroundColor == 0xFF000000)
-                            .autoSpacing(true)
-                            .pageFitPolicy(FitPolicy.WIDTH)
-                            .pageSnap(viewerState.value.settings.animatePageTransition)
-                            .enableDoubletap(false)  // Disable double tap
-                            .onTap { e ->           // Add custom tap handler
-                                viewModel.toggleControls()
-                                true
-                            }
-                            .onError { t ->
-                                t.printStackTrace()
-                                Toast.makeText(context, "Error loading PDF: ${t.message}", Toast.LENGTH_LONG).show()
-                            }
-                            .load()
-                    }.also { pdfView = it }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-
-            // Loading Indicator
-            if (viewerState.value.isLoading) {
-                PdfLoadingAnimation(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            // Page Number Indicator
-            AnimatedVisibility(
-                visible = viewerState.value.settings.showPageNumber && !viewerState.value.isControlsVisible,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it },
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 8.dp)
+                    .fillMaxSize()
+                    .background(Color(viewerState.value.settings.backgroundColor))
             ) {
-                Text(
-                    text = "${viewerState.value.currentPage + 1}/${viewerState.value.totalPages}",
-                    color = Color.White,
-                    fontSize = 12.sp,
+
+                var currentReadingMode by remember {
+                    mutableStateOf(ReadingMode.VERTICAL_PAGED) // Set default mode
+                }
+
+                // PDF View with improved settings
+                AndroidView(
+                    factory = { context ->
+                        PDFView(context, null).apply {
+                            configurePdfView(
+                                uri = intent.data!!,
+                                lastPage = lastPage,
+                                readingMode = viewerState.value.readingMode,
+                                viewModel = viewModel,
+                                onPageChange = { page, pageCount ->
+                                    viewModel.updatePageCount(page, pageCount)
+                                    onSaveProgress(page)
+                                }
+                            )
+                        }.also { pdfView = it }
+                    },
+                    update = { view ->
+                        // Only update when reading mode changes its core behavior
+                        val newReadingMode = viewerState.value.readingMode
+                        val oldReadingMode = when {
+                            view.isSwipeHorizontal -> {
+                                if (view.pageSnap) ReadingMode.LEFT_TO_RIGHT
+                                else ReadingMode.CONTINUOUS_HORIZONTAL
+                            }
+
+                            else -> {
+                                if (view.pageSnap) ReadingMode.VERTICAL_PAGED
+                                else ReadingMode.CONTINUOUS_VERTICAL
+                            }
+                        }
+
+                        if (newReadingMode::class != oldReadingMode::class) {
+                            val currentPage = view.currentPage
+                            view.configurePdfView(
+                                uri = intent.data!!,
+                                lastPage = currentPage,
+                                readingMode = newReadingMode,
+                                viewModel = viewModel,
+                                onPageChange = { page, pageCount ->
+                                    viewModel.updatePageCount(page, pageCount)
+                                    onSaveProgress(page)
+                                }
+                            )
+                        }
+                    },
                     modifier = Modifier
-                        .background(
-                            Color.Black.copy(alpha = 0.5f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .fillMaxSize()
+                        .background(Color.Black)
+                        .pointerInput(Unit) {
+                            detectTapGestures { _ ->
+                                viewModel.toggleControls()
+                            }
+                        }
                 )
-            }
 
-            // In your Box composable, replace the TopAppBar section with this bottom navigation implementation:
+                // Loading Indicator
+                if (viewerState.value.isLoading) {
+                    PdfLoadingAnimation(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
 
-// Controls
-            AnimatedVisibility(
-                visible = viewerState.value.isControlsVisible,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it }),
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                Surface(
+                // Page Number Indicator with improved visibility
+                AnimatedVisibility(
+                    visible = viewerState.value.settings.showPageNumber && !viewerState.value.isControlsVisible,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.7f))
-                        .padding(vertical = 8.dp),
-                    color = Color.Black.copy(alpha = 0.7f)
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(20.dp)
                     ) {
-                        // Reading Mode
-                        IconButton(onClick = { showReadingMode.value = true }) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                        Text(
+                            text = "${viewerState.value.currentPage + 1}/${viewerState.value.totalPages}",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+
+                // Custom Navigation Bar
+                // Modify the AnimatedVisibility block for the navigation bar
+                AnimatedVisibility(
+                    visible = viewerState.value.isControlsVisible,
+                    enter = slideInVertically(initialOffsetY = { it }),
+                    exit = slideOutVertically(targetOffsetY = { it }),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp) // Add bottom padding for floating effect
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth(0.91f) // Make the bar 85% of screen width
+                            .padding(horizontal = 16.dp), // Add horizontal padding
+                        color = Color.Black.copy(alpha = 0.90f), // Slightly transparent
+                        shape = RoundedCornerShape(28.dp), // Round all corners
+                        shadowElevation = 8.dp // Add elevation for floating effect
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(vertical = 12.dp, horizontal = 8.dp), // Adjust internal padding
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Reading Mode Button
+                            IconButton(
+                                onClick = { showReadingMode.value = true },
+                                modifier = Modifier.size(40.dp) // Consistent icon size
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Book,
                                     contentDescription = "Reading Mode",
-                                    tint = Color.White
-                                )
-                                Text(
-                                    "Reading",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall
+                                    tint = Color(0xFF8E42FF)
                                 )
                             }
-                        }
 
-                        // Brightness
-                        IconButton(onClick = { showBrightness.value = true }) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            // Brightness Button
+                            IconButton(
+                                onClick = { showBrightness.value = true },
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.BrightnessHigh,
                                     contentDescription = "Brightness",
-                                    tint = Color.White
-                                )
-                                Text(
-                                    "Brightness",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall
+                                    tint = Color(0xFF8E42FF)
                                 )
                             }
-                        }
 
-                        // Bookmark
-                        IconButton(
-                            onClick = {
-                                val newValue = !isBookmarked.value
-                                isBookmarked.value = newValue
-                                if (newValue) {
-                                    viewModel.addBookmark(viewerState.value.currentPage)
-                                } else {
-                                    viewModel.removeBookmark(viewerState.value.currentPage)
-                                }
-                            }
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            // Bookmark Button
+                            IconButton(
+                                onClick = {
+                                    isBookmarked.value = !isBookmarked.value
+                                    if (isBookmarked.value) {
+                                        viewModel.addBookmark(viewerState.value.currentPage)
+                                    } else {
+                                        viewModel.removeBookmark(viewerState.value.currentPage)
+                                    }
+                                },
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
-                                    imageVector = if (isBookmarked.value) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                    imageVector = if (isBookmarked.value)
+                                        Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                     contentDescription = "Bookmark",
-                                    tint = Color.White
-                                )
-                                Text(
-                                    "Bookmark",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall
+                                    tint = Color(0xFF8E42FF)
                                 )
                             }
-                        }
 
-                        // Quick Navigation
-                        IconButton(onClick = { showQuickNav.value = true }) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            // Orientation Button
+                            IconButton(
+                                onClick = { showRotation.value = true },
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.ListAlt,
-                                    contentDescription = "Navigation",
-                                    tint = Color.White
-                                )
-                                Text(
-                                    "Navigate",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall
+                                    imageVector = Icons.Default.ScreenRotation,
+                                    contentDescription = "Screen Rotation",
+                                    tint = Color(0xFF8E42FF)
                                 )
                             }
-                        }
 
-                        // Settings
-                        IconButton(onClick = { showSettings.value = true }) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            // Settings Button
+                            IconButton(
+                                onClick = { showSettings.value = true },
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,
                                     contentDescription = "Settings",
-                                    tint = Color.White
-                                )
-                                Text(
-                                    "Settings",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall
+                                    tint = Color(0xFF8E42FF)
                                 )
                             }
                         }
                     }
                 }
-            }
 
-            // Modal Sheets
-            if (showSettings.value) {
-                MainSettingsSheet(
-                    settings = viewerState.value.settings,
-                    onSettingsChange = { settings ->
-                        viewModel.updateSettings(settings)
-                        if (settings.keepScreenOn) {
-                            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                        } else {
-                            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                // Modal Sheets
+                if (showSettings.value) {
+                    MainSettingsSheet(
+                        settings = viewerState.value.settings,
+                        onSettingsChange = { settings ->
+                            viewModel.updateSettings(settings)
+                            window.attributes = window.attributes.apply {
+                                if (settings.keepScreenOn) {
+                                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                                } else {
+                                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                                }
+                            }
+                        },
+                        onDismiss = { showSettings.value = false }
+                    )
+                }
+
+                if (showReadingMode.value) {
+                    ReadingModeSheet(
+                        currentMode = viewerState.value.readingMode,
+                        onModeSelect = { mode ->
+                            viewModel.updateReadingMode(mode)
+                            pdfView.configurePdfView(
+                                uri = intent.data!!,
+                                lastPage = viewerState.value.currentPage,
+                                readingMode = mode,
+                                viewModel = viewModel,
+                                onPageChange = { page, pageCount ->
+                                    viewModel.updatePageCount(page, pageCount)
+                                    onSaveProgress(page)
+                                }
+                            )
+                            showReadingMode.value = false
+                            // Ensure controls are hidden after mode change
+                            viewModel.toggleControls()
+                        },
+                        onDismiss = {
+                            showReadingMode.value = false
+                            viewModel.toggleControls()
                         }
-                    },
-                    onDismiss = { showSettings.value = false }
-                )
-            }
+                    )
+                }
 
-            if (showReadingMode.value) {
-                ReadingModeSheet(
-                    currentMode = viewerState.value.readingMode,
-                    onModeSelect = { mode ->
-                        viewModel.updateReadingMode(mode)
-                        pdfView.fromUri(intent.data!!)
-                            .defaultPage(viewerState.value.currentPage)
-                            .swipeHorizontal(mode.isHorizontalMode())
-                            .load()
-                        showReadingMode.value = false
-                    },
-                    onDismiss = { showReadingMode.value = false }
-                )
-            }
-
-            if (showRotation.value) {
-                RotationSheet(
-                    currentMode = viewerState.value.rotation,
-                    onModeSelect = { mode ->
-                        viewModel.updateRotation(mode)
-                        requestedOrientation = when (mode) {
-                            RotationMode.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                            RotationMode.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                            RotationMode.LOCKED_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                            RotationMode.LOCKED_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                            RotationMode.REVERSE_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-                            RotationMode.FREE -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                if (showRotation.value) {
+                    RotationSheet(
+                        currentMode = viewerState.value.rotation,
+                        onModeSelect = { mode ->
+                            viewModel.updateRotation(mode)
+                            requestedOrientation = when (mode) {
+                                RotationMode.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                RotationMode.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                                RotationMode.LOCKED_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                RotationMode.LOCKED_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                                RotationMode.REVERSE_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                                RotationMode.FREE -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+                            }
+                            // Hide controls after changing orientation
+                            viewModel.toggleControls()
+                            showRotation.value = false
+                        },
+                        onDismiss = {
+                            showRotation.value = false
+                            viewModel.toggleControls()
                         }
-                        showRotation.value = false
-                    },
-                    onDismiss = { showRotation.value = false }
-                )
-            }
+                    )
+                }
 
-            if (showBrightness.value) {
-                BrightnessSheet(
-                    settings = viewerState.value.brightness,
-                    onSettingsChange = { brightnessSettings ->
-                        viewModel.updateBrightness(brightnessSettings)
-                        window.attributes = window.attributes.apply {
-                            screenBrightness = brightnessSettings.customBrightness
-                        }
-                        val isDark = brightnessSettings.colorFilter.run {
-                            (red + green + blue) / 3 < 0.5f
-                        }
-                        pdfView.fromUri(intent.data!!)
-                            .defaultPage(pdfView.currentPage)
-                            .nightMode(isDark)
-                            .load()
-                    },
-                    onDismiss = { showBrightness.value = false }
-                )
-            }
+                if (showBrightness.value) {
+                    BrightnessSheet(
+                        settings = viewerState.value.brightness,
+                        onSettingsChange = { brightnessSettings ->
+                            viewModel.updateBrightness(brightnessSettings)
 
-            if (showQuickNav.value) {
-                QuickNavigation(
-                    currentPage = viewerState.value.currentPage,
-                    totalPages = viewerState.value.totalPages,
-                    onPageSelect = { page ->
-                        pdfView.jumpTo(page)
-                        showQuickNav.value = false
-                    },
-                    onDismiss = { showQuickNav.value = false }
-                )
+                            // Handle screen brightness
+                            window.attributes = window.attributes.apply {
+                                screenBrightness = when {
+                                    brightnessSettings.useSystemBrightness -> -1.0f
+                                    else -> brightnessSettings.customBrightness
+                                }
+                            }
+
+                            // Store current state
+                            val currentPage = pdfView.currentPage
+                            val currentReadingMode = viewerState.value.readingMode
+
+                            // Configure PDF view with new settings
+                            pdfView.fromUri(intent.data!!)
+                                .defaultPage(currentPage)
+                                .spacing(when (currentReadingMode) {
+                                    ReadingMode.CONTINUOUS_HORIZONTAL, ReadingMode.CONTINUOUS_VERTICAL -> 8
+                                    else -> 0
+                                })
+                                .swipeHorizontal(currentReadingMode.isHorizontalMode())
+                                .enableSwipe(true)
+                                .enableDoubletap(false)
+                                .enableAnnotationRendering(true)
+                                .nightMode(brightnessSettings.nightMode) // Set night mode during configuration
+                                .onLoad {
+                                    // Complete loading without toggling controls
+                                    viewModel.updateLoadingState(false)
+                                }
+                                .onPageChange { page, pageCount ->
+                                    viewModel.updatePageCount(page, pageCount)
+                                    onSaveProgress(page)
+                                }
+                                .onTap { _ ->
+                                    viewModel.toggleControls()
+                                    true
+                                }
+                                .pageFitPolicy(FitPolicy.WIDTH)
+                                .pageSnap(when (currentReadingMode) {
+                                    ReadingMode.LEFT_TO_RIGHT, ReadingMode.VERTICAL_PAGED -> true
+                                    else -> false
+                                })
+                                .pageFling(when (currentReadingMode) {
+                                    ReadingMode.LEFT_TO_RIGHT, ReadingMode.VERTICAL_PAGED -> true
+                                    else -> false
+                                })
+                                .load()
+                        },
+                        onDismiss = {
+                            showBrightness.value = false
+                            viewModel.toggleControls()
+                        }
+                    )
+                }
             }
         }
     }
@@ -409,5 +458,93 @@ class PdfViewerActivity : ComponentActivity() {
 }
 
 private fun ReadingMode.isHorizontalMode(): Boolean {
-    return this == ReadingMode.LEFT_TO_RIGHT || this == ReadingMode.RIGHT_TO_LEFT
+    return this == ReadingMode.LEFT_TO_RIGHT || this == ReadingMode.CONTINUOUS_HORIZONTAL
 }
+
+private fun PDFView.configurePdfView(
+    uri: Uri,
+    lastPage: Int,
+    readingMode: ReadingMode,
+    viewModel: PdfViewerViewModel,
+    onPageChange: (Int, Int) -> Unit
+) {
+    setBackgroundColor(android.graphics.Color.BLACK)
+
+    fromUri(uri)
+        .defaultPage(lastPage)
+        .onPageChange { page, pageCount ->
+            onPageChange(page, pageCount)
+        }
+        .onLoad {
+            viewModel.updateLoadingState(false)
+        }
+        .enableSwipe(true)
+        .enableDoubletap(false)
+        .enableAnnotationRendering(true)
+        .nightMode(viewModel.viewerState.value.brightness.nightMode)  // Use current night mode setting
+        .onTap { e ->
+            viewModel.toggleControls()
+            true
+        }
+        .apply {
+            when (readingMode) {
+                ReadingMode.LEFT_TO_RIGHT -> {
+                    swipeHorizontal(true)
+                    spacing(0)
+                    autoSpacing(false)
+                    pageFitPolicy(FitPolicy.WIDTH)
+                    pageSnap(true)
+                    pageFling(true)
+                }
+                ReadingMode.CONTINUOUS_HORIZONTAL -> {
+                    swipeHorizontal(true)
+                    spacing(8)
+                    autoSpacing(true)
+                    pageFitPolicy(FitPolicy.WIDTH)
+                    pageSnap(false)
+                    pageFling(false)
+                }
+                ReadingMode.VERTICAL_PAGED -> {
+                    swipeHorizontal(false)
+                    spacing(0)
+                    autoSpacing(false)
+                    pageFitPolicy(FitPolicy.WIDTH)
+                    pageSnap(true)
+                    pageFling(true)
+                }
+                ReadingMode.CONTINUOUS_VERTICAL -> {
+                    swipeHorizontal(false)
+                    spacing(8)
+                    autoSpacing(true)
+                    pageFitPolicy(FitPolicy.WIDTH)
+                    pageSnap(false)
+                    pageFling(false)
+                }
+            }
+        }
+        .load()
+
+    // Additional settings after load
+    post {
+        setMinZoom(1.0f)
+        setMidZoom(1.75f)
+        setMaxZoom(3.0f)
+        zoomTo(1.0f)
+    }
+}
+
+// Add these helper methods to handle page counts and current page
+private fun PDFView.getCurrentPage(): Int {
+    return currentPage
+}
+
+private fun PDFView.getPageCount(): Int {
+    return pageCount
+}
+
+
+private val PDFView.pageSnap: Boolean
+    get() = true  // Default to true since we can't actually access this property
+
+private val PDFView.isSwipeHorizontal: Boolean
+    get() = true  // Default to true since we can't actually access this property

@@ -45,7 +45,7 @@ fun ReadingModeSheet(
             )
 
             ReadingModeOption(
-                mode = ReadingMode.RIGHT_TO_LEFT,
+                mode = ReadingMode.CONTINUOUS_HORIZONTAL,
                 currentMode = currentMode,
                 icon = Icons.Default.KeyboardArrowLeft,
                 title = "Right to Left",
@@ -53,7 +53,7 @@ fun ReadingModeSheet(
             )
 
             ReadingModeOption(
-                mode = ReadingMode.VERTICAL,
+                mode = ReadingMode.VERTICAL_PAGED,
                 currentMode = currentMode,
                 icon = Icons.Default.KeyboardArrowDown,
                 title = "Vertical",

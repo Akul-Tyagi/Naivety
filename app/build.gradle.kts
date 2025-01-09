@@ -80,7 +80,11 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0") // Retrofit
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Retrofit Gson Converter
     implementation("io.coil-kt:coil-compose:2.5.0") // Image loading with Coil
-    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3") // PDF Viewer
+    // Replace the existing PDF viewer dependency with this
+    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
+
+    // Add for better PDF handling
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0") // PDF Viewer
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")

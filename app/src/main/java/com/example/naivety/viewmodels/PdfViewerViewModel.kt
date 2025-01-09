@@ -43,9 +43,7 @@ class PdfViewerViewModel : ViewModel() {
 
     fun toggleControls() {
         _viewerState.update { currentState ->
-            currentState.copy(
-                isControlsVisible = !currentState.isControlsVisible
-            )
+            currentState.copy(isControlsVisible = !currentState.isControlsVisible)
         }
     }
 

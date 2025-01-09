@@ -7,7 +7,7 @@ data class PdfViewerState(
     val totalPages: Int = 0,
     val isLoading: Boolean = true,
     val settings: PdfSettings = PdfSettings(),
-    val readingMode: ReadingMode = ReadingMode.VERTICAL,
+    val readingMode: ReadingMode = ReadingMode.VERTICAL_PAGED,
     val rotation: RotationMode = RotationMode.PORTRAIT,
     val brightness: BrightnessSettings = BrightnessSettings()
 )
@@ -23,9 +23,14 @@ data class PdfSettings(
 )
 
 data class BrightnessSettings(
-    val customBrightness: Float = 1f,
-    val colorFilter: ColorFilter = ColorFilter(),
-    val isGreyscale: Boolean = false
+    val customBrightness: Float = 0.5f,
+    val useSystemBrightness: Boolean = true,
+    val nightMode: Boolean = false,
+    val isGreyscale: Boolean = false,
+    val contrast: Float = 1.0f,
+    val redLevel: Float = 1.0f,
+    val greenLevel: Float = 1.0f,
+    val blueLevel: Float = 1.0f
 )
 
 data class ColorFilter(
@@ -37,8 +42,8 @@ data class ColorFilter(
 
 enum class ReadingMode {
     LEFT_TO_RIGHT,
-    RIGHT_TO_LEFT,
-    VERTICAL,
+    CONTINUOUS_HORIZONTAL,
+    VERTICAL_PAGED,
     CONTINUOUS_VERTICAL
 }
 

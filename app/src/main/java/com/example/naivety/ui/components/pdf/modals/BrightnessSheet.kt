@@ -4,12 +4,15 @@ package com.example.naivety.ui.components.pdf.modals
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.naivety.ui.pdf.BrightnessSettings
-import com.example.naivety.ui.pdf.ColorFilter
-import com.example.naivety.ui.theme.NaivetyPurple
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.rememberCoroutineScope
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,6 +21,8 @@ fun BrightnessSheet(
     onSettingsChange: (BrightnessSettings) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val purple = Color(0xFF8E42FF)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.Black
@@ -28,107 +33,96 @@ fun BrightnessSheet(
                 .padding(16.dp)
         ) {
             Text(
-                "Brightness & Color",
+                text = "Display Settings",
                 style = MaterialTheme.typography.titleLarge,
-                color = NaivetyPurple
+                color = purple,
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                "Brightness",
-                color = Color.White,
-                style = MaterialTheme.typography.titleSmall
+            // System Brightness Switch
+            SwitchOption(
+                title = "Use System Brightness",
+                checked = settings.useSystemBrightness,
+                onCheckedChange = {
+                    onSettingsChange(settings.copy(useSystemBrightness = it))
+                }
             )
 
-            Slider(
-                value = settings.customBrightness,
-                onValueChange = {
-                    onSettingsChange(settings.copy(customBrightness = it))
-                },
-                colors = SliderDefaults.colors(
-                    thumbColor = NaivetyPurple,
-                    activeTrackColor = NaivetyPurple,
-                    inactiveTrackColor = Color.DarkGray
+            // Custom Brightness Slider
+            if (!settings.useSystemBrightness) {
+                SliderOption(
+                    title = "Brightness",
+                    value = settings.customBrightness,
+                    onValueChange = {
+                        onSettingsChange(settings.copy(customBrightness = it))
+                    }
                 )
-            )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ColorFilterControls(
-                colorFilter = settings.colorFilter,
-                onColorFilterChange = {
-                    onSettingsChange(settings.copy(colorFilter = it))
+            // Night Mode Switch
+            SwitchOption(
+                title = "Night Mode",
+                checked = settings.nightMode,
+                onCheckedChange = {
+                    onSettingsChange(settings.copy(nightMode = it))
                 }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Greyscale",
-                    color = Color.White
-                )
-                Switch(
-                    checked = settings.isGreyscale,
-                    onCheckedChange = {
-                        onSettingsChange(settings.copy(isGreyscale = it))
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = NaivetyPurple,
-                        checkedTrackColor = NaivetyPurple.copy(alpha = 0.5f)
-                    )
-                )
-            }
         }
     }
 }
 
 @Composable
-private fun ColorFilterControls(
-    colorFilter: ColorFilter,
-    onColorFilterChange: (ColorFilter) -> Unit
+private fun SwitchOption(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        ColorSlider("Red", colorFilter.red) {
-            onColorFilterChange(colorFilter.copy(red = it))
-        }
-        ColorSlider("Green", colorFilter.green) {
-            onColorFilterChange(colorFilter.copy(green = it))
-        }
-        ColorSlider("Blue", colorFilter.blue) {
-            onColorFilterChange(colorFilter.copy(blue = it))
-        }
-        ColorSlider("Alpha", colorFilter.alpha) {
-            onColorFilterChange(colorFilter.copy(alpha = it))
-        }
+        Text(
+            text = title,
+            color = Color.White
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color(0xFF8E42FF),
+                checkedTrackColor = Color(0xFF8E42FF).copy(alpha = 0.5f)
+            )
+        )
     }
 }
 
 @Composable
-private fun ColorSlider(
-    label: String,
+private fun SliderOption(
+    title: String,
     value: Float,
     onValueChange: (Float) -> Unit
 ) {
-    Text(
-        text = label,
-        color = Color.White,
-        style = MaterialTheme.typography.titleSmall
-    )
-    Slider(
-        value = value,
-        onValueChange = onValueChange,
-        colors = SliderDefaults.colors(
-            thumbColor = NaivetyPurple,
-            activeTrackColor = NaivetyPurple,
-            inactiveTrackColor = Color.DarkGray
+    Column(
+        modifier = Modifier.padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = title,
+            color = Color.White,
+            modifier = Modifier.padding(bottom = 4.dp)
         )
-    )
-    Spacer(modifier = Modifier.height(8.dp))
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFF8E42FF),
+                activeTrackColor = Color(0xFF8E42FF).copy(alpha = 0.7f),
+                inactiveTrackColor = Color(0xFF8E42FF).copy(alpha = 0.3f)
+            )
+        )
+    }
 }
