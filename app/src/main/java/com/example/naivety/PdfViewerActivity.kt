@@ -1,9 +1,11 @@
 package com.example.naivety
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.Window
 import android.view.WindowManager
@@ -13,6 +15,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -106,6 +110,11 @@ class PdfViewerActivity : ComponentActivity() {
             val currentBookmarks by viewModel.bookmarks.collectAsState()
             val systemUiController = rememberSystemUiController()
             val backgroundColor = Color(viewerState.value.settings.backgroundColor)
+            val pdfName = remember(intent.data) {
+                intent.data?.let { uri ->
+                    extractPdfName(uri, context)
+                } ?: "PDF"
+            }
 
             LaunchedEffect(bookId) {
                 bookId?.let { id ->
@@ -224,8 +233,8 @@ class PdfViewerActivity : ComponentActivity() {
                 // Page Number Indicator with improved visibility
                 AnimatedVisibility(
                     visible = viewerState.value.settings.showPageNumber && !viewerState.value.isControlsVisible,
-                    enter = slideInVertically { it },
-                    exit = slideOutVertically { it },
+                    enter = slideInVertically { it } + fadeIn(),
+                    exit = slideOutVertically { it } + fadeOut(),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp)
@@ -243,111 +252,144 @@ class PdfViewerActivity : ComponentActivity() {
                     }
                 }
 
-                // Custom Navigation Bar
-                // Modify the AnimatedVisibility block for the navigation bar
-                AnimatedVisibility(
-                    visible = viewerState.value.isControlsVisible,
-                    enter = slideInVertically(initialOffsetY = { it }),
-                    exit = slideOutVertically(targetOffsetY = { it }),
+                TopBar(
+                    pdfName = pdfName,
+                    isVisible = viewerState.value.isControlsVisible,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+
+                // Add QuickNavScroll
+                Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp) // Add bottom padding for floating effect
+                        .fillMaxWidth()
                 ) {
-                    Surface(
+                    // Quick Navigation
+                    QuickNavScroll(
+                        currentPage = viewerState.value.currentPage,
+                        totalPages = viewerState.value.totalPages,
+                        isVisible = viewerState.value.isControlsVisible,
+                        onPageSelect = { page ->
+                            pdfView.jumpTo(page)
+                        },
                         modifier = Modifier
-                            .fillMaxWidth(0.91f) // Make the bar 85% of screen width
-                            .padding(horizontal = 16.dp), // Add horizontal padding
-                        color = Color.Black.copy(alpha = 0.90f), // Slightly transparent
-                        shape = RoundedCornerShape(28.dp), // Round all corners
-                        shadowElevation = 8.dp // Add elevation for floating effect
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 83.dp) // Adjust this value to control space between nav bar
+                    )
+
+
+                    // Custom Navigation Bar
+                    // Modify the AnimatedVisibility block for the navigation bar
+                    AnimatedVisibility(
+                        visible = viewerState.value.isControlsVisible,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 16.dp) // Add bottom padding for floating effect
                     ) {
-                        Row(
+                        Surface(
                             modifier = Modifier
-                                .padding(vertical = 12.dp, horizontal = 8.dp), // Adjust internal padding
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
+                                .fillMaxWidth(0.91f) // Make the bar 85% of screen width
+                                .padding(horizontal = 16.dp), // Add horizontal padding
+                            color = Color.Black.copy(alpha = 0.90f), // Slightly transparent
+                            shape = RoundedCornerShape(28.dp), // Round all corners
+                            shadowElevation = 8.dp // Add elevation for floating effect
                         ) {
-                            // Reading Mode Button
-                            IconButton(
-                                onClick = { showReadingMode.value = true },
-                                modifier = Modifier.size(40.dp) // Consistent icon size
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Book,
-                                    contentDescription = "Reading Mode",
-                                    tint = Color(0xFF8E42FF)
-                                )
-                            }
-
-                            // Brightness Button
-                            IconButton(
-                                onClick = { showBrightness.value = true },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.BrightnessHigh,
-                                    contentDescription = "Brightness",
-                                    tint = Color(0xFF8E42FF)
-                                )
-                            }
-
-
-                            // Bookmark Button
-                            Box(
+                            Row(
                                 modifier = Modifier
-                                    .size(28.dp)
-                                    .pointerInput(Unit) {
-                                        detectTapGestures(
-                                            onTap = {
-                                                bookId?.let { id ->
-                                                    val currentPage = pdfView.currentPage
-                                                    if (isCurrentPageBookmarked) {
-                                                        viewModel.removeBookmark(id, currentPage)
-                                                    } else {
-                                                        viewModel.addBookmark(id, currentPage)
+                                    .padding(
+                                        vertical = 12.dp,
+                                        horizontal = 8.dp
+                                    ), // Adjust internal padding
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Reading Mode Button
+                                IconButton(
+                                    onClick = { showReadingMode.value = true },
+                                    modifier = Modifier.size(40.dp) // Consistent icon size
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Book,
+                                        contentDescription = "Reading Mode",
+                                        tint = Color(0xFF8E42FF)
+                                    )
+                                }
+
+                                // Brightness Button
+                                IconButton(
+                                    onClick = { showBrightness.value = true },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.BrightnessHigh,
+                                        contentDescription = "Brightness",
+                                        tint = Color(0xFF8E42FF)
+                                    )
+                                }
+
+
+                                // Bookmark Button
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onTap = {
+                                                    bookId?.let { id ->
+                                                        val currentPage = pdfView.currentPage
+                                                        if (isCurrentPageBookmarked) {
+                                                            viewModel.removeBookmark(
+                                                                id,
+                                                                currentPage
+                                                            )
+                                                        } else {
+                                                            viewModel.addBookmark(id, currentPage)
+                                                        }
                                                     }
+                                                },
+                                                onLongPress = {
+                                                    showBookmarksList.value = true
                                                 }
-                                            },
-                                            onLongPress = {
-                                                showBookmarksList.value = true
-                                            }
-                                        )
-                                    }
-                            ) {
-                                Icon(
-                                    modifier = Modifier.fillMaxSize(),
-                                    imageVector = if (isCurrentPageBookmarked) {
-                                        Icons.Default.Bookmark
-                                    } else {
-                                        Icons.Default.BookmarkBorder
-                                    },
-                                    contentDescription = "Bookmark",
-                                    tint = Color(0xFF8E42FF)
-                                )
-                            }
+                                            )
+                                        }
+                                ) {
+                                    Icon(
+                                        modifier = Modifier.fillMaxSize(),
+                                        imageVector = if (isCurrentPageBookmarked) {
+                                            Icons.Default.Bookmark
+                                        } else {
+                                            Icons.Default.BookmarkBorder
+                                        },
+                                        contentDescription = "Bookmark",
+                                        tint = Color(0xFF8E42FF)
+                                    )
+                                }
 
-                            // Orientation Button
-                            IconButton(
-                                onClick = { showRotation.value = true },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ScreenRotation,
-                                    contentDescription = "Screen Rotation",
-                                    tint = Color(0xFF8E42FF)
-                                )
-                            }
+                                // Orientation Button
+                                IconButton(
+                                    onClick = { showRotation.value = true },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ScreenRotation,
+                                        contentDescription = "Screen Rotation",
+                                        tint = Color(0xFF8E42FF)
+                                    )
+                                }
 
-                            // Settings Button
-                            IconButton(
-                                onClick = { showSettings.value = true },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Settings,
-                                    contentDescription = "Settings",
-                                    tint = Color(0xFF8E42FF)
-                                )
+                                // Settings Button
+                                IconButton(
+                                    onClick = { showSettings.value = true },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "Settings",
+                                        tint = Color(0xFF8E42FF)
+                                    )
+                                }
                             }
                         }
                     }
@@ -663,7 +705,7 @@ private fun PDFView.configurePdfView(
                     swipeHorizontal(false)
                     pageSnap(true)
                     pageFling(true)
-                    spacing(1)
+                    spacing(0)
                 }
                 ReadingMode.CONTINUOUS_VERTICAL -> {
                     swipeHorizontal(false)
@@ -683,6 +725,30 @@ private fun PDFView.post(action: () -> Unit) {
         post(action)
     } else {
         action()
+    }
+}
+
+private fun extractPdfName(uri: Uri, context: Context): String {
+    return try {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (displayNameIndex != -1) {
+                    cursor.getString(displayNameIndex)
+                        ?.removeSuffix(".pdf")
+                        ?.split(" ", "-", "_")[0] // Gets only the first word
+                        ?.takeIf { it.isNotBlank() }
+                        ?: "PDF"
+                } else {
+                    "PDF"
+                }
+            } else {
+                "PDF"
+            }
+        } ?: "PDF"
+    } catch (e: Exception) {
+        e.printStackTrace()
+        "PDF"
     }
 }
 
