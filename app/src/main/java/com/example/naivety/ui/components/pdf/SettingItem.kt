@@ -9,7 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.example.naivety.R
 import com.example.naivety.ui.theme.NaivetyPurple
 
 // app/src/main/java/com/example/naivety/ui/components/pdf/SettingItem.kt
@@ -18,6 +21,7 @@ import com.example.naivety.ui.theme.NaivetyPurple
 fun SettingItem(
     title: String,
     icon: ImageVector,
+    fontFamily: FontFamily = FontFamily(Font(R.font.fsb)),
     content: @Composable () -> Unit
 ) {
     Surface(
@@ -42,6 +46,7 @@ fun SettingItem(
                 Text(
                     text = title,
                     color = Color.White,
+                    fontFamily = fontFamily,
                     style = MaterialTheme.typography.titleSmall
                 )
             }

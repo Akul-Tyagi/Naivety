@@ -12,6 +12,9 @@ import com.example.naivety.ui.pdf.BrightnessSettings
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import com.example.naivety.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -19,7 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 fun BrightnessSheet(
     settings: BrightnessSettings,
     onSettingsChange: (BrightnessSettings) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val purple = Color(0xFF8E42FF)
 
@@ -35,6 +38,7 @@ fun BrightnessSheet(
             Text(
                 text = "Display Settings",
                 style = MaterialTheme.typography.titleLarge,
+                fontFamily = FontFamily(Font(R.font.fsb)),
                 color = purple,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
@@ -88,6 +92,7 @@ private fun SwitchOption(
     ) {
         Text(
             text = title,
+            fontFamily = FontFamily(Font(R.font.fsb)),
             color = Color.White
         )
         Switch(
@@ -112,6 +117,7 @@ private fun SliderOption(
     ) {
         Text(
             text = title,
+            fontFamily= FontFamily(Font(R.font.fsb)),
             color = Color.White,
             modifier = Modifier.padding(bottom = 4.dp)
         )

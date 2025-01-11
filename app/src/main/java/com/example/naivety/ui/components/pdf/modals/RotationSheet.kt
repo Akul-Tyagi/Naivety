@@ -8,7 +8,10 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.example.naivety.R
 import com.example.naivety.ui.pdf.RotationMode
 import com.example.naivety.ui.theme.NaivetyPurple
 
@@ -31,6 +34,7 @@ fun RotationSheet(
             Text(
                 "Rotation",
                 style = MaterialTheme.typography.titleLarge,
+                fontFamily = FontFamily(Font(R.font.alinsa)),
                 color = NaivetyPurple
             )
 
@@ -86,7 +90,10 @@ private fun RotationModeList(
                         contentDescription = title,
                         tint = NaivetyPurple
                     )
-                    Text(text = title, color = Color.White)
+                    Text(text = title,
+                        color = Color.White,
+                        fontFamily = FontFamily(Font(R.font.fsb)),
+                    )
                 }
             }
         }

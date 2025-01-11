@@ -4,7 +4,7 @@ package com.example.naivety.ui.pdf
 data class PdfViewerState(
     val isControlsVisible: Boolean = false,
     val currentPage: Int = 0,
-    val totalPages: Int = 0,
+    val totalPages: Int = 1,
     val isLoading: Boolean = true,
     val settings: PdfSettings = PdfSettings(),
     val readingMode: ReadingMode = ReadingMode.VERTICAL_PAGED,

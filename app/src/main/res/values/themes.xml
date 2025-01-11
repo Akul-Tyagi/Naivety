@@ -6,6 +6,8 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
     </style>
 
     <!-- Splash screen theme -->
@@ -14,6 +16,8 @@
         <item name="android:navigationBarColor">@color/purple_500</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
         <!-- Add splash screen specific attributes -->
         <item name="android:windowBackground">@color/purple_500</item>
     </style>

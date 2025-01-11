@@ -9,7 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.example.naivety.R
 import com.example.naivety.ui.pdf.ReadingMode
 import com.example.naivety.ui.theme.NaivetyPurple
 
@@ -18,7 +21,7 @@ import com.example.naivety.ui.theme.NaivetyPurple
 fun ReadingModeSheet(
     currentMode: ReadingMode,
     onModeSelect: (ReadingMode) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -31,6 +34,7 @@ fun ReadingModeSheet(
         ) {
             Text(
                 "Reading Mode",
+                fontFamily = FontFamily(Font(R.font.alinsa)),
                 style = MaterialTheme.typography.titleLarge,
                 color = NaivetyPurple
             )
@@ -47,8 +51,8 @@ fun ReadingModeSheet(
             ReadingModeOption(
                 mode = ReadingMode.CONTINUOUS_HORIZONTAL,
                 currentMode = currentMode,
-                icon = Icons.Default.KeyboardArrowLeft,
-                title = "Right to Left",
+                icon = Icons.Default.KeyboardDoubleArrowRight,
+                title = "Continuous Horizontal",
                 onSelect = onModeSelect
             )
 
@@ -99,6 +103,7 @@ private fun ReadingModeOption(
             )
             Text(
                 text = title,
+                fontFamily = FontFamily(Font(R.font.fsb)),
                 color = Color.White
             )
         }

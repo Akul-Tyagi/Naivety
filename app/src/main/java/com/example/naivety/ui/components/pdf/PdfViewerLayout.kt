@@ -23,7 +23,6 @@ fun PdfViewerLayout(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
     ) {
         // PDF Content
         Box(modifier = Modifier.fillMaxSize()) {
