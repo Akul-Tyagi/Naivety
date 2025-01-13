@@ -169,7 +169,7 @@ import com.example.naivety.viewmodels.BookViewModel
 
                 books.isEmpty() -> {
                     Text(
-                        text = "Search for books and add them to your list to start reading",
+                        text = "A library without books is just a room. Time to build your collection.",
                         color = Color.Gray,
                         textAlign = TextAlign.Center,
                         fontFamily = fsFont,
