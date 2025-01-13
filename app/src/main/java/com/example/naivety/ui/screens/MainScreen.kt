@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.example.naivety.R
 import com.example.naivety.models.Book
 import com.example.naivety.ui.components.BookGrid
+import com.example.naivety.ui.theme.NaivetyPurple
 import com.example.naivety.viewmodels.BookViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,25 +72,13 @@ import com.example.naivety.viewmodels.BookViewModel
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(
-                            onClick = { selectedSection = "Library" }
-                        ) {
-                            Text(
-                                text = "Library",
-                                fontFamily = alinsaFont,
-                                color = if (selectedSection == "Library")
-                                    Color(0xFF8E42FF) else Color.White
-                            )
-                        }
-                        IconButton(onClick = { /* Add new section functionality */ }) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Section",
-                                tint = Color.White
-                            )
-                        }
+                        Text(
+                            text = "Library",
+                            fontFamily = alinsaFont,
+                            color = NaivetyPurple,
+                            fontSize = 19.sp
+                        )
                     }
-
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { showSortMenu = true }) {
                             Icon(
@@ -115,16 +104,16 @@ import com.example.naivety.viewmodels.BookViewModel
                 containerColor = Color.Black
             ) {
                 NavigationBarItem(
+                    icon = { Icon(Icons.Default.Home, "Home") },
+                    label = { Text("Home", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
+                    selected = selectedSection == "Home",
+                    onClick = { selectedSection = "Home" }
+                )
+                NavigationBarItem(
                     icon = { Icon(Icons.Default.Coffee, "Lists") },
                     label = { Text("Lists", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
                     selected = selectedSection == "Lists",
                     onClick = { selectedSection = "Lists" }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.MenuBook, "Read") },
-                    label = { Text("Read", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
-                    selected = selectedSection == "Read",
-                    onClick = { selectedSection = "Read" }
                 )
                 NavigationBarItem(
                     icon = {
@@ -170,7 +159,7 @@ import com.example.naivety.viewmodels.BookViewModel
                 books.isEmpty() -> {
                     Text(
                         text = "A library without books is just a room. Time to build your collection.",
-                        color = Color.Gray,
+                        color = Color.LightGray,
                         textAlign = TextAlign.Center,
                         fontFamily = fsFont,
                         lineHeight = 20.sp,
@@ -196,7 +185,7 @@ import com.example.naivety.viewmodels.BookViewModel
             DropdownMenu(
                 expanded = showSortMenu,
                 onDismissRequest = { showSortMenu = false },
-                modifier = Modifier.background(Color(0xFF1A1A1A))
+                modifier = Modifier.background(Color.Black)
             ) {
                 DropdownMenuItem(
                     text = { Text("Recently Added", color = Color.White) },
