@@ -18,9 +18,11 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.ui.graphics.Color
+import com.example.naivety.ui.screens.MainScreen
 import com.example.naivety.ui.theme.TransparentSystemBars
+import com.example.naivety.utils.PreferencesManager
 
-class MainActivity : ComponentActivity() {
+class AuthActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
 
@@ -39,12 +41,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             NaivetyTheme {
                 TransparentSystemBars()
-                var showWalkthrough by remember { mutableStateOf(true) }
+                val showWalkthrough by remember { mutableStateOf(PreferencesManager.isFirstTime(this)) }
 
                 if (showWalkthrough) {
-                    WalkthroughScreen(onFinish = { showWalkthrough = false })
+                    WalkthroughScreen(onFinish = {
+                        PreferencesManager.setFirstTimeDone(this)
+                        startActivity(Intent(this, AuthActivity::class.java))
+                        finish()
+                        if (auth.currentUser != null) {
+                            navigateToMainScreen()
+                        }
+                    })
+                } else if (auth.currentUser == null) {
+                    AuthMainScreen(auth, googleSignInClient, ::signInWithGoogle, ::navigateToMainScreen)
                 } else {
-                    MainScreen(auth, googleSignInClient, ::signInWithGoogle, ::navigateToMainScreen)
+                    startActivity(Intent(this, AuthActivity::class.java))
+                    finish()
+                    navigateToMainScreen()
                 }
             }
         }

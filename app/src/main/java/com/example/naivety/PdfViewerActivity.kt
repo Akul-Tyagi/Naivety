@@ -54,6 +54,7 @@ class PdfViewerActivity : ComponentActivity() {
     private val viewModel: PdfViewerViewModel by viewModels()
     private var bookId: String? = null
     private lateinit var pdfView: PDFView
+    private val PREFS_NAME = "PDFViewerPrefs"
     private val LocalViewModel = compositionLocalOf<PdfViewerViewModel> {
         error("No ViewModel provided")
     }
@@ -68,7 +69,22 @@ class PdfViewerActivity : ComponentActivity() {
             // Generate a unique ID if none is provided
             bookId = java.util.UUID.randomUUID().toString()
         }
-        val lastPage = intent.getIntExtra("LAST_PAGE", 0)
+
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastPage = prefs.getInt("${bookId}_last_page", 0)
+        val savedReadingMode = prefs.getString("${bookId}_reading_mode", null)?.let {
+            try {
+                ReadingMode.valueOf(it)
+            } catch (e: Exception) {
+                ReadingMode.VERTICAL_PAGED
+            }
+        } ?: ReadingMode.VERTICAL_PAGED
+
+        // Update ViewModel with saved reading mode
+        viewModel.updateReadingMode(savedReadingMode)
+
+        // Load bookmarks for this book
+        viewModel.loadBookmarks(bookId!!)
 
         setContent {
             NaivetyTheme {
@@ -623,7 +639,18 @@ class PdfViewerActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         saveReadingProgress(pdfView.currentPage)
+        saveViewerSettings()
         viewModel.saveSettings(bookId)
+    }
+
+    private fun saveViewerSettings() {
+        bookId?.let { id ->
+            getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().apply {
+                putInt("${id}_last_page", pdfView.currentPage)
+                putString("${id}_reading_mode", viewModel.viewerState.value.readingMode.name)
+                apply()
+            }
+        }
     }
 
     override fun onDestroy() {

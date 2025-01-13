@@ -33,7 +33,7 @@ import com.example.naivety.viewmodels.BookViewModel
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.alinsa))
     val fsFont = FontFamily(Font(R.font.fsb))
-    var selectedSection by remember { mutableStateOf("Library") }
+    var selectedSection by remember { mutableStateOf("Home") }
     var showSortMenu by remember { mutableStateOf(false) }
 
     val books by viewModel.books.collectAsState()
@@ -107,13 +107,23 @@ import com.example.naivety.viewmodels.BookViewModel
                     icon = { Icon(Icons.Default.Home, "Home") },
                     label = { Text("Home", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
                     selected = selectedSection == "Home",
-                    onClick = { selectedSection = "Home" }
+                    onClick = { selectedSection = "Home" },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF8E42FF),
+                        unselectedIconColor = Color.White,
+                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                    )
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Coffee, "Lists") },
                     label = { Text("Lists", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
                     selected = selectedSection == "Lists",
-                    onClick = { selectedSection = "Lists" }
+                    onClick = { selectedSection = "Lists" },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF8E42FF),
+                        unselectedIconColor = Color.White,
+                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                    )
                 )
                 NavigationBarItem(
                     icon = {
@@ -131,13 +141,23 @@ import com.example.naivety.viewmodels.BookViewModel
                     icon = { Icon(Icons.Default.Explore, "Browse") },
                     label = { Text("Browse", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
                     selected = selectedSection == "Browse",
-                    onClick = { selectedSection = "Browse" }
+                    onClick = { selectedSection = "Browse" },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF8E42FF),
+                        unselectedIconColor = Color.White,
+                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                    )
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.MoreVert, "More") },
                     label = { Text("More", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
                     selected = selectedSection == "More",
-                    onClick = { selectedSection = "More" }
+                    onClick = { selectedSection = "More" },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF8E42FF),
+                        unselectedIconColor = Color.White,
+                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                    )
                 )
             }
         }
@@ -155,7 +175,6 @@ import com.example.naivety.viewmodels.BookViewModel
                         color = Color(0xFF8E42FF)
                     )
                 }
-
                 books.isEmpty() -> {
                     Text(
                         text = "A library without books is just a room. Time to build your collection.",
@@ -168,13 +187,13 @@ import com.example.naivety.viewmodels.BookViewModel
                             .padding(32.dp)
                     )
                 }
-
                 else -> {
                     BookGrid(
                         books = books,
                         onBookClick = { book ->
                             onNavigateToRead(Uri.parse(book.filePath))
                         },
+                        viewModel = viewModel,  // Pass the viewModel here
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -217,5 +236,6 @@ import com.example.naivety.viewmodels.BookViewModel
 enum class SortOrder {
     RECENT,
     TITLE,
-    AUTHOR
+    AUTHOR,
+    PROGRESS
 }

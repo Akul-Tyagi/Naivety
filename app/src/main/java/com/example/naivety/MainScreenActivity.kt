@@ -35,11 +35,8 @@ class MainScreenActivity : ComponentActivity() {
         setContent {
             NaivetyTheme {
                 TransparentSystemBars()
-                val books by viewModel.books.collectAsState()
-                val isLoading by viewModel.isLoading.collectAsState()
-
                 MainScreen(
-                    viewModel = viewModel,
+                    viewModel = viewModel,  // Pass viewModel here
                     onPdfSelect = {
                         pdfLauncher.launch(arrayOf("application/pdf"))
                     },

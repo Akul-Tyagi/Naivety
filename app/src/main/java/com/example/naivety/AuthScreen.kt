@@ -20,9 +20,10 @@ import androidx.compose.foundation.layout.size
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import com.example.naivety.utils.PreferencesManager
 
 @Composable
-fun AuthScreen(
+fun AuthMainScreen(
     auth: FirebaseAuth,
     googleSignInClient: GoogleSignInClient,
     signInWithGoogle: () -> Unit,

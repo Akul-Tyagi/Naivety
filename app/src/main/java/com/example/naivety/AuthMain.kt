@@ -5,11 +5,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun MainScreen(
+fun AuthMain(
     auth: FirebaseAuth,
     googleSignInClient: GoogleSignInClient,
     signInWithGoogle: () -> Unit,
     navigateToMainScreen: () -> Unit
 ) {
-    AuthScreen(auth, googleSignInClient, signInWithGoogle, navigateToMainScreen)
+    AuthMainScreen(auth, googleSignInClient, signInWithGoogle, navigateToMainScreen)
 }

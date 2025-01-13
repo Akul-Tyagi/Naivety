@@ -29,6 +29,7 @@ class PdfViewerViewModel(
     private val _isCurrentPageBookmarked = MutableStateFlow(false)
     val isCurrentPageBookmarked = _isCurrentPageBookmarked.asStateFlow()
     private var isDocumentLoaded = false
+    private var currentBookId: String? = null
 
     init {
         loadSavedSettings(null)
@@ -143,40 +144,52 @@ class PdfViewerViewModel(
     fun addBookmark(bookId: String, page: Int) {
         viewModelScope.launch {
             try {
-                val bookDao = AppDatabase.getDatabase(getApplication()).bookDao()
-                val book = bookDao.getBookById(bookId) ?: Book(
-                    id = bookId,
-                    title = "PDF Document",
-                    filePath = "",
-                    thumbnailPath = "",
-                    lastReadPage = page
-                ).also { bookDao.insertBook(it) }
+                val bookmark = Bookmark(
+                    bookId = bookId,
+                    page = page,
+                    dateCreated = System.currentTimeMillis()
+                )
+                bookmarkDao.addBookmark(bookmark)
 
-                if (!bookmarkDao.isPageBookmarked(bookId, page)) {
-                    val bookmark = Bookmark(bookId = bookId, page = page)
-                    bookmarkDao.addBookmark(bookmark)
-                    loadBookmarks(bookId)
-                    _isCurrentPageBookmarked.value = true
-                }
+                // Refresh bookmarks list
+                _bookmarks.value = bookmarkDao.getBookmarks(bookId)
+                _isCurrentPageBookmarked.value = true
             } catch (e: Exception) {
-                Log.e("Bookmark", "Failed to add bookmark", e)
+                Log.e("PdfViewModel", "Error adding bookmark", e)
             }
         }
     }
 
     fun removeBookmark(bookId: String, page: Int) {
         viewModelScope.launch {
-            bookmarkDao.getBookmarkAtPage(bookId, page)?.let { bookmark ->
-                bookmarkDao.removeBookmark(bookmark)
-                loadBookmarks(bookId)
-                _isCurrentPageBookmarked.value = false
+            try {
+                bookmarkDao.getBookmarkAtPage(bookId, page)?.let { bookmark ->
+                    bookmarkDao.removeBookmark(bookmark)
+
+                    // Refresh bookmarks list
+                    _bookmarks.value = bookmarkDao.getBookmarks(bookId)
+                    _isCurrentPageBookmarked.value = false
+                }
+            } catch (e: Exception) {
+                Log.e("PdfViewModel", "Error removing bookmark", e)
             }
         }
     }
 
     fun loadBookmarks(bookId: String) {
+        currentBookId = bookId
         viewModelScope.launch {
-            _bookmarks.value = bookmarkDao.getBookmarks(bookId)
+            try {
+                // Load bookmarks from database
+                _bookmarks.value = bookmarkDao.getBookmarks(bookId)
+
+                // Update current page bookmark status if we have a current page
+                _viewerState.value.currentPage.let { currentPage ->
+                    updateCurrentPageBookmarkStatus(bookId, currentPage)
+                }
+            } catch (e: Exception) {
+                Log.e("PdfViewModel", "Error loading bookmarks", e)
+            }
         }
     }
 
