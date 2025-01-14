@@ -4,6 +4,8 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -11,9 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.naivety.R
@@ -21,23 +26,35 @@ import com.example.naivety.models.Book
 import com.example.naivety.ui.components.BookGrid
 import com.example.naivety.ui.theme.NaivetyPurple
 import com.example.naivety.viewmodels.BookViewModel
+import kotlin.math.round
 
 @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun MainScreen(
-        viewModel: BookViewModel,
-        onPdfSelect: () -> Unit,
-        onNavigateToRead: (Uri) -> Unit,
-        onSortBooks: (SortOrder) -> Unit
-    ) {
+@Composable
+fun MainScreen(
+    viewModel: BookViewModel,
+    onPdfSelect: () -> Unit,
+    onNavigateToRead: (Uri) -> Unit,
+    onSortBooks: (SortOrder) -> Unit
+) {
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.alinsa))
     val fsFont = FontFamily(Font(R.font.fsb))
     var selectedSection by remember { mutableStateOf("Home") }
     var showSortMenu by remember { mutableStateOf(false) }
-
     val books by viewModel.books.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredBooks = remember(books, searchQuery) {
+        if (searchQuery.isEmpty()) {
+            books
+        } else {
+            books.filter { book ->
+                book.title.contains(searchQuery, ignoreCase = true) ||
+                        book.author?.contains(searchQuery, ignoreCase = true) == true
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -80,19 +97,126 @@ import com.example.naivety.viewmodels.BookViewModel
                         )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { showSortMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Sort,
-                                contentDescription = "Sort",
-                                tint = Color.White
-                            )
+                        Box {
+                            IconButton(onClick = { showSortMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Sort,
+                                    contentDescription = "Sort",
+                                    tint = Color.White
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false },
+                                modifier = Modifier
+                                    .background(Color(0xFF121212))
+                                    .width(180.dp),
+                                offset = DpOffset(x = (-120).dp, y = 8.dp),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Recently Added",
+                                            color = Color.White,
+                                            fontFamily = alinsaFont
+                                        )
+                                    },
+                                    onClick = {
+                                        onSortBooks(SortOrder.RECENT)
+                                        showSortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Title: A to Z",
+                                            color = Color.White,
+                                            fontFamily = alinsaFont
+                                        )
+                                    },
+                                    onClick = {
+                                        onSortBooks(SortOrder.TITLE)
+                                        showSortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Progress",
+                                            color = Color.White,
+                                            fontFamily = alinsaFont
+                                        )
+                                    },
+                                    onClick = {
+                                        onSortBooks(SortOrder.PROGRESS)
+                                        showSortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Author",
+                                            color = Color.White,
+                                            fontFamily = alinsaFont
+                                        )
+                                    },
+                                    onClick = {
+                                        onSortBooks(SortOrder.AUTHOR)
+                                        showSortMenu = false
+                                    }
+                                )
+                            }
                         }
-                        IconButton(onClick = { /* Search functionality */ }) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = Color.White
-                            )
+                        Box {
+                            if (!showSearch) {
+                                IconButton(onClick = { showSearch = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = Color.White
+                                    )
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .background(Color(0xFF1A1A1A), RoundedCornerShape(20.dp))
+                                        .width(200.dp)
+                                        .height(40.dp)
+                                        .padding(horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    BasicTextField(
+                                        value = searchQuery,
+                                        onValueChange = { searchQuery = it },
+                                        singleLine = true,
+                                        cursorBrush = SolidColor(Color(0xFF8E42FF)),
+                                        textStyle = TextStyle(
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontFamily = alinsaFont
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(horizontal = 8.dp)
+                                    )
+
+                                    IconButton(
+                                        onClick = {
+                                            showSearch = false
+                                            searchQuery = ""
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Close search",
+                                            tint = Color.White
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -111,7 +235,7 @@ import com.example.naivety.viewmodels.BookViewModel
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color(0xFF8E42FF),
                         unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                        indicatorColor = Color(0xFF222222)
                     )
                 )
                 NavigationBarItem(
@@ -122,7 +246,7 @@ import com.example.naivety.viewmodels.BookViewModel
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color(0xFF8E42FF),
                         unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                        indicatorColor = Color(0xFF222222)
                     )
                 )
                 NavigationBarItem(
@@ -145,7 +269,7 @@ import com.example.naivety.viewmodels.BookViewModel
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color(0xFF8E42FF),
                         unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                        indicatorColor = Color(0xFF222222)
                     )
                 )
                 NavigationBarItem(
@@ -156,7 +280,7 @@ import com.example.naivety.viewmodels.BookViewModel
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color(0xFF8E42FF),
                         unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222) // Light gray background for selected item
+                        indicatorColor = Color(0xFF222222)
                     )
                 )
             }
@@ -189,49 +313,18 @@ import com.example.naivety.viewmodels.BookViewModel
                 }
                 else -> {
                     BookGrid(
-                        books = books,
+                        books = filteredBooks,
                         onBookClick = { book ->
                             onNavigateToRead(Uri.parse(book.filePath))
                         },
-                        viewModel = viewModel,  // Pass the viewModel here
+                        viewModel = viewModel,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
             }
         }
-
-        if (showSortMenu) {
-            DropdownMenu(
-                expanded = showSortMenu,
-                onDismissRequest = { showSortMenu = false },
-                modifier = Modifier.background(Color.Black)
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Recently Added", color = Color.White) },
-                    onClick = {
-                        onSortBooks(SortOrder.RECENT)
-                        showSortMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Title: A to Z", color = Color.White) },
-                    onClick = {
-                        onSortBooks(SortOrder.TITLE)
-                        showSortMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Author", color = Color.White) },
-                    onClick = {
-                        onSortBooks(SortOrder.AUTHOR)
-                        showSortMenu = false
-                    }
-                )
-            }
-        }
     }
 }
-
 
 enum class SortOrder {
     RECENT,
