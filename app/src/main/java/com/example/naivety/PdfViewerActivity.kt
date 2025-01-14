@@ -48,8 +48,9 @@ import com.example.naivety.ui.theme.TransparentSystemBars
 import com.github.barteksc.pdfviewer.PDFView
 import com.github.barteksc.pdfviewer.util.FitPolicy
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class PdfViewerActivity : ComponentActivity() {
     private val viewModel: PdfViewerViewModel by viewModels()
     private var bookId: String? = null

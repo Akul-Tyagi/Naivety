@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -83,6 +84,23 @@ dependencies {
     // Replace the existing PDF viewer dependency with this
     implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 
+    //Browse Section
+
+    // Paging 3 with Compose support
+    implementation("androidx.paging:paging-compose:3.3.5")
+
+    // Dagger Hilt for dependency injection
+    implementation("com.google.dagger:hilt-android:2.51")
+    ksp("com.google.dagger:hilt-android-compiler:2.51")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.navigation:navigation-compose:2.8.5")
+    // Additional Compose dependencies for animations and effects
+    implementation("androidx.compose.animation:animation:1.7.6")
+    implementation("androidx.compose.foundation:foundation:1.7.6")
+
+    // For blur effects and other UI utilities
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+    implementation("com.google.accompanist:accompanist-placeholder:0.32.0")
     // Add for better PDF handling
     implementation("com.tom-roush:pdfbox-android:2.0.27.0") // PDF Viewer
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
@@ -102,4 +120,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+}
+
+ksp {
+    arg("dagger.fastInit", "enabled")
 }

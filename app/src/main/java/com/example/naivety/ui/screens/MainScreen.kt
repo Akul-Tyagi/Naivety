@@ -2,6 +2,7 @@ package com.example.naivety.ui.screens
 
 import android.net.Uri
 import android.os.Bundle
+import androidx.collection.emptyLongSet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,8 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.naivety.R
 import com.example.naivety.models.Book
+import com.example.naivety.navigation.Destinations
 import com.example.naivety.ui.components.BookGrid
 import com.example.naivety.ui.theme.NaivetyPurple
 import com.example.naivety.viewmodels.BookViewModel
@@ -34,7 +38,8 @@ fun MainScreen(
     viewModel: BookViewModel,
     onPdfSelect: () -> Unit,
     onNavigateToRead: (Uri) -> Unit,
-    onSortBooks: (SortOrder) -> Unit
+    onSortBooks: (SortOrder) -> Unit,
+    navController: NavHostController
 ) {
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.alinsa))
@@ -79,143 +84,171 @@ fun MainScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Library",
-                            fontFamily = alinsaFont,
-                            color = NaivetyPurple,
-                            fontSize = 19.sp
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box {
-                            IconButton(onClick = { showSortMenu = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Sort,
-                                    contentDescription = "Sort",
-                                    tint = Color.White
+                when (selectedSection) {
+                    "Home" -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Library",
+                                    fontFamily = alinsaFont,
+                                    color = NaivetyPurple,
+                                    fontSize = 19.sp
                                 )
                             }
-
-                            DropdownMenu(
-                                expanded = showSortMenu,
-                                onDismissRequest = { showSortMenu = false },
-                                modifier = Modifier
-                                    .background(Color(0xFF121212))
-                                    .width(180.dp),
-                                offset = DpOffset(x = (-120).dp, y = 8.dp),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "Recently Added",
-                                            color = Color.White,
-                                            fontFamily = alinsaFont
-                                        )
-                                    },
-                                    onClick = {
-                                        onSortBooks(SortOrder.RECENT)
-                                        showSortMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "Title: A to Z",
-                                            color = Color.White,
-                                            fontFamily = alinsaFont
-                                        )
-                                    },
-                                    onClick = {
-                                        onSortBooks(SortOrder.TITLE)
-                                        showSortMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "Progress",
-                                            color = Color.White,
-                                            fontFamily = alinsaFont
-                                        )
-                                    },
-                                    onClick = {
-                                        onSortBooks(SortOrder.PROGRESS)
-                                        showSortMenu = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "Author",
-                                            color = Color.White,
-                                            fontFamily = alinsaFont
-                                        )
-                                    },
-                                    onClick = {
-                                        onSortBooks(SortOrder.AUTHOR)
-                                        showSortMenu = false
-                                    }
-                                )
-                            }
-                        }
-                        Box {
-                            if (!showSearch) {
-                                IconButton(onClick = { showSearch = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = "Search",
-                                        tint = Color.White
-                                    )
-                                }
-                            } else {
-                                Row(
-                                    modifier = Modifier
-                                        .background(Color(0xFF1A1A1A), RoundedCornerShape(20.dp))
-                                        .width(200.dp)
-                                        .height(40.dp)
-                                        .padding(horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    BasicTextField(
-                                        value = searchQuery,
-                                        onValueChange = { searchQuery = it },
-                                        singleLine = true,
-                                        cursorBrush = SolidColor(Color(0xFF8E42FF)),
-                                        textStyle = TextStyle(
-                                            color = Color.White,
-                                            fontSize = 14.sp,
-                                            fontFamily = alinsaFont
-                                        ),
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(horizontal = 8.dp)
-                                    )
-
-                                    IconButton(
-                                        onClick = {
-                                            showSearch = false
-                                            searchQuery = ""
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box {
+                                    IconButton(onClick = { showSortMenu = true }) {
                                         Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = "Close search",
+                                            imageVector = Icons.Default.Sort,
+                                            contentDescription = "Sort",
                                             tint = Color.White
                                         )
                                     }
+
+                                    DropdownMenu(
+                                        expanded = showSortMenu,
+                                        onDismissRequest = { showSortMenu = false },
+                                        modifier = Modifier
+                                            .background(Color(0xFF121212))
+                                            .width(180.dp),
+                                        offset = DpOffset(x = (-120).dp, y = 8.dp),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    "Recently Added",
+                                                    color = Color.White,
+                                                    fontFamily = alinsaFont
+                                                )
+                                            },
+                                            onClick = {
+                                                onSortBooks(SortOrder.RECENT)
+                                                showSortMenu = false
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    "Title: A to Z",
+                                                    color = Color.White,
+                                                    fontFamily = alinsaFont
+                                                )
+                                            },
+                                            onClick = {
+                                                onSortBooks(SortOrder.TITLE)
+                                                showSortMenu = false
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    "Progress",
+                                                    color = Color.White,
+                                                    fontFamily = alinsaFont
+                                                )
+                                            },
+                                            onClick = {
+                                                onSortBooks(SortOrder.PROGRESS)
+                                                showSortMenu = false
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    "Author",
+                                                    color = Color.White,
+                                                    fontFamily = alinsaFont
+                                                )
+                                            },
+                                            onClick = {
+                                                onSortBooks(SortOrder.AUTHOR)
+                                                showSortMenu = false
+                                            }
+                                        )
+                                    }
                                 }
+                                Box {
+                                    if (!showSearch) {
+                                        IconButton(onClick = { showSearch = true }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Search,
+                                                contentDescription = "Search",
+                                                tint = Color.White
+                                            )
+                                        }
+                                    } else {
+                                        Row(
+                                            modifier = Modifier
+                                                .background(
+                                                    Color(0xFF1A1A1A),
+                                                    RoundedCornerShape(20.dp)
+                                                )
+                                                .width(200.dp)
+                                                .height(40.dp)
+                                                .padding(horizontal = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            BasicTextField(
+                                                value = searchQuery,
+                                                onValueChange = { searchQuery = it },
+                                                singleLine = true,
+                                                cursorBrush = SolidColor(Color(0xFF8E42FF)),
+                                                textStyle = TextStyle(
+                                                    color = Color.White,
+                                                    fontSize = 14.sp,
+                                                    fontFamily = alinsaFont
+                                                ),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .padding(horizontal = 8.dp)
+                                            )
+
+                                            IconButton(
+                                                onClick = {
+                                                    showSearch = false
+                                                    searchQuery = ""
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Close search",
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "Browse" -> {
+                        // No additional header for Browse section
+                    }
+                    "Lists" -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 8.dp, top = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Library",
+                                    fontFamily = alinsaFont,
+                                    color = NaivetyPurple,
+                                    fontSize = 19.sp
+                                )
                             }
                         }
                     }
@@ -292,33 +325,55 @@ fun MainScreen(
                 .padding(paddingValues)
                 .background(Color.Black)
         ) {
-            when {
-                isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFF8E42FF)
-                    )
+            when (selectedSection) {  // Add this when statement to handle different sections
+                "Home" -> {
+                    when {
+                        isLoading -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center),
+                                color = Color(0xFF8E42FF)
+                            )
+                        }
+
+                        books.isEmpty() -> {
+                            Text(
+                                text = "A library without books is just a room. Time to build your collection.",
+                                color = Color.LightGray,
+                                textAlign = TextAlign.Center,
+                                fontFamily = fsFont,
+                                lineHeight = 20.sp,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .padding(32.dp)
+                            )
+                        }
+
+                        else -> {
+                            BookGrid(
+                                books = filteredBooks,
+                                onBookClick = { book ->
+                                    onNavigateToRead(Uri.parse(book.filePath))
+                                },
+                                viewModel = viewModel,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
-                books.isEmpty() -> {
-                    Text(
-                        text = "A library without books is just a room. Time to build your collection.",
-                        color = Color.LightGray,
-                        textAlign = TextAlign.Center,
-                        fontFamily = fsFont,
-                        lineHeight = 20.sp,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(32.dp)
-                    )
-                }
-                else -> {
-                    BookGrid(
-                        books = filteredBooks,
+
+                "Browse" -> {
+                    BrowseScreen(
                         onBookClick = { book ->
-                            onNavigateToRead(Uri.parse(book.filePath))
-                        },
-                        viewModel = viewModel,
-                        modifier = Modifier.fillMaxSize()
+                            navController.navigate(
+                                Destinations.BookDetail.createRoute(
+                                    bookKey = book.key,
+                                    title = book.title,
+                                    author = book.author,
+                                    year = book.publishedYear,
+                                    coverUrl = book.coverUrl
+                                )
+                            )
+                        }
                     )
                 }
             }

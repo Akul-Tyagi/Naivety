@@ -18,10 +18,15 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.ui.graphics.Color
+import androidx.navigation.compose.rememberNavController
+import com.example.naivety.navigation.Destinations
+import com.example.naivety.navigation.NavGraph
 import com.example.naivety.ui.screens.MainScreen
 import com.example.naivety.ui.theme.TransparentSystemBars
 import com.example.naivety.utils.PreferencesManager
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class AuthActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
@@ -41,24 +46,21 @@ class AuthActivity : ComponentActivity() {
         setContent {
             NaivetyTheme {
                 TransparentSystemBars()
-                val showWalkthrough by remember { mutableStateOf(PreferencesManager.isFirstTime(this)) }
+                val navController = rememberNavController()
 
-                if (showWalkthrough) {
-                    WalkthroughScreen(onFinish = {
-                        PreferencesManager.setFirstTimeDone(this)
-                        startActivity(Intent(this, AuthActivity::class.java))
-                        finish()
-                        if (auth.currentUser != null) {
-                            navigateToMainScreen()
-                        }
-                    })
-                } else if (auth.currentUser == null) {
-                    AuthMainScreen(auth, googleSignInClient, ::signInWithGoogle, ::navigateToMainScreen)
-                } else {
-                    startActivity(Intent(this, AuthActivity::class.java))
-                    finish()
-                    navigateToMainScreen()
+                // Determine start destination based on walkthrough and auth state
+                val startDestination = when {
+                    PreferencesManager.isFirstTime(this) -> Destinations.Walkthrough.route
+                    auth.currentUser == null -> Destinations.Auth.route
+                    else -> Destinations.Main.route
                 }
+
+                NavGraph(
+                    navController = navController,
+                    auth = auth,
+                    googleSignInClient = googleSignInClient,
+                    startDestination = startDestination
+                )
             }
         }
     }

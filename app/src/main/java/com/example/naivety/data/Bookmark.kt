@@ -2,6 +2,7 @@ package com.example.naivety.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.naivety.models.Book
 
@@ -14,7 +15,8 @@ import com.example.naivety.models.Book
             childColumns = ["bookId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("bookId")] // Add this line
 )
 data class Bookmark(
     @PrimaryKey(autoGenerate = true)

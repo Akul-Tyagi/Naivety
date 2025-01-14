@@ -13,12 +13,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.rememberNavController
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.example.naivety.ui.theme.TransparentSystemBars
 import com.example.naivety.viewmodels.BookViewModel
 import kotlinx.coroutines.launch
 import com.example.naivety.ui.screens.MainScreen
 import com.example.naivety.ui.screens.SortOrder
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
 class MainScreenActivity : ComponentActivity() {
     private val viewModel: BookViewModel by viewModels()
 
@@ -35,6 +39,7 @@ class MainScreenActivity : ComponentActivity() {
         setContent {
             NaivetyTheme {
                 TransparentSystemBars()
+                val navController = rememberNavController()
                 MainScreen(
                     viewModel = viewModel,  // Pass viewModel here
                     onPdfSelect = {
@@ -47,7 +52,8 @@ class MainScreenActivity : ComponentActivity() {
                     },
                     onSortBooks = { sortOrder ->
                         viewModel.sortBooks(sortOrder)
-                    }
+                    },
+                    navController = navController
                 )
             }
         }
