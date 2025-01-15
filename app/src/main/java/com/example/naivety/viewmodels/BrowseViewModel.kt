@@ -1,5 +1,4 @@
-// app/src/main/java/com/example/naivety/viewmodels/BrowseViewModel.kt
-
+// BrowseViewModel.kt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -12,13 +11,11 @@ import javax.inject.Inject
 class BrowseViewModel @Inject constructor(
     private val repository: BrowseRepository
 ) : ViewModel() {
-
-    val books = repository
-        .getRecommendedBooks()
-        .cachedIn(viewModelScope)
-
     private val _selectedBook = MutableStateFlow<OpenLibraryBook?>(null)
     val selectedBook = _selectedBook.asStateFlow()
+
+    val books = repository.getRecommendedBooks()
+        .cachedIn(viewModelScope)
 
     fun onBookLongPressed(book: OpenLibraryBook) {
         _selectedBook.value = book

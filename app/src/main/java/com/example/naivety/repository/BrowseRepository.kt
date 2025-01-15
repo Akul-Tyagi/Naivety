@@ -1,10 +1,10 @@
+// app/src/main/java/com/example/naivety/repository/BrowseRepository.kt
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-// app/src/main/java/com/example/naivety/repository/BrowseRepository.kt
 
 class BrowseRepository @Inject constructor(
     private val api: OpenLibraryApi
@@ -19,5 +19,9 @@ class BrowseRepository @Inject constructor(
         ) {
             BookPagingSource(api)
         }.flow
+    }
+
+    suspend fun getBookDetails(bookKey: String): OpenLibraryBookDetail {
+        return api.getBookDetails(bookKey)
     }
 }

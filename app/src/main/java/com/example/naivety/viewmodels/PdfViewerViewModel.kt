@@ -8,20 +8,28 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.naivety.data.AppDatabase
 import com.example.naivety.data.Bookmark
 import com.example.naivety.models.Book
+import com.example.naivety.repository.BookRepository
 import com.example.naivety.ui.pdf.*
+import dagger.hilt.android.internal.Contexts.getApplication
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class PdfViewerViewModel(
-    application: Application
-) : AndroidViewModel(application) {
-    private val bookmarkDao = AppDatabase.getDatabase(application).bookmarkDao()
+@HiltViewModel
+class PdfViewerViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val bookRepository: BookRepository
+) : ViewModel() {
+    private val bookmarkDao = bookRepository.bookmarkDao
     private val _viewerState = MutableStateFlow(PdfViewerState())
     val viewerState = _viewerState.asStateFlow()
     private val _bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
@@ -85,9 +93,6 @@ class PdfViewerViewModel(
         viewModelScope.launch {
             _viewerState.update { currentState ->
                 currentState.copy(settings = settings)
-            }
-            (getApplication<Application>() as? Activity)?.let { activity ->
-                handleFullscreenSettings(activity, settings.isFullscreen)
             }
         }
     }
@@ -195,15 +200,14 @@ class PdfViewerViewModel(
 
     fun updatePage(bookId: String, page: Int, position: Float) {
         viewModelScope.launch {
-            AppDatabase.getDatabase(getApplication()).bookDao()
-                .updateReadingProgress(bookId, page, position)
+            bookRepository.updateReadingProgress(bookId, page, position)
             _viewerState.update { it.copy(currentPage = page) }
         }
     }
 
     fun saveSettings(bookId: String?) {
         viewModelScope.launch {
-            val prefs = getApplication<Application>().getSharedPreferences(
+            val prefs = context.getSharedPreferences(
                 "pdf_viewer_settings_$bookId",
                 Context.MODE_PRIVATE
             )
@@ -222,7 +226,7 @@ class PdfViewerViewModel(
 
     private fun loadSavedSettings(bookId: String?) {
         viewModelScope.launch {
-            val prefs = getApplication<Application>().getSharedPreferences(
+            val prefs = context.getSharedPreferences(
                 "pdf_viewer_settings_$bookId",
                 Context.MODE_PRIVATE
             )

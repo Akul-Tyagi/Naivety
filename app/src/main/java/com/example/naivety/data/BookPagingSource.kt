@@ -1,7 +1,6 @@
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 
-// app/src/main/java/com/example/naivety/data/BookPagingSource.kt
 class BookPagingSource(
     private val api: OpenLibraryApi
 ) : PagingSource<Int, OpenLibraryBook>() {

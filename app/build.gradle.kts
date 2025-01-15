@@ -2,9 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt)
     id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -85,13 +85,16 @@ dependencies {
     implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 
     //Browse Section
-
     // Paging 3 with Compose support
     implementation("androidx.paging:paging-compose:3.3.5")
 
     // Dagger Hilt for dependency injection
-    implementation("com.google.dagger:hilt-android:2.51")
-    ksp("com.google.dagger:hilt-android-compiler:2.51")
+    implementation("com.google.devtools.ksp:symbol-processing-api:2.1.0-1.0.29")
+    implementation("com.google.dagger:dagger-compiler:2.51.1")
+    ksp("com.google.dagger:dagger-compiler:2.51.1")
+    ksp("com.google.dagger:hilt-compiler:2.51.1")
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("androidx.navigation:navigation-compose:2.8.5")
     // Additional Compose dependencies for animations and effects
@@ -120,8 +123,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-}
-
-ksp {
-    arg("dagger.fastInit", "enabled")
 }
