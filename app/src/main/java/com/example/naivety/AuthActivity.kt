@@ -36,6 +36,11 @@ class AuthActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         auth = FirebaseAuth.getInstance()
 
+        if (auth.currentUser != null) {
+            navigateToMainScreen()
+            return
+        }
+
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
@@ -48,7 +53,7 @@ class AuthActivity : ComponentActivity() {
                 TransparentSystemBars()
                 val navController = rememberNavController()
 
-                // Determine start destination based on walkthrough and auth state
+                // Determine start destination based on auth state
                 val startDestination = when {
                     PreferencesManager.isFirstTime(this) -> Destinations.Walkthrough.route
                     auth.currentUser == null -> Destinations.Auth.route
@@ -72,13 +77,13 @@ class AuthActivity : ComponentActivity() {
         try {
             val account = task.getResult(ApiException::class.java)
             if (account != null) {
-                Log.d("MainActivity", "Google sign-in successful")
+                Log.d("AuthActivity", "Google sign-in successful")
                 firebaseAuthWithGoogle(account)
             } else {
-                Log.d("MainActivity", "Google sign-in failed: account is null")
+                Log.d("AuthActivity", "Google sign-in failed: account is null")
             }
         } catch (e: ApiException) {
-            Log.e("MainActivity", "Google sign-in failed", e)
+            Log.e("AuthActivity", "Google sign-in failed", e)
         }
     }
 
@@ -87,23 +92,22 @@ class AuthActivity : ComponentActivity() {
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    Log.d("MainActivity", "Firebase authentication with Google successful")
+                    Log.d("AuthActivity", "Firebase authentication successful")
+                    PreferencesManager.setFirstTimeDone(this)
                     navigateToMainScreen()
                 } else {
-                    Log.e("MainActivity", "Firebase authentication with Google failed", task.exception)
+                    Log.e("AuthActivity", "Firebase authentication failed", task.exception)
                 }
             }
     }
 
-    private fun signInWithGoogle() {
+    fun signInWithGoogle() {
         val signInIntent = googleSignInClient.signInIntent
         googleSignInLauncher.launch(signInIntent)
     }
 
     private fun navigateToMainScreen() {
-        Log.d("MainActivity", "Navigating to main screen")
-        val intent = Intent(this, MainScreenActivity::class.java)
-        startActivity(intent)
+        startActivity(Intent(this, MainScreenActivity::class.java))
         finish()
     }
 }

@@ -14,12 +14,15 @@ import androidx.compose.runtime.*
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.example.naivety.navigation.NavGraph
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.example.naivety.ui.theme.TransparentSystemBars
 import com.example.naivety.viewmodels.BookViewModel
 import kotlinx.coroutines.launch
-import com.example.naivety.ui.screens.MainScreen
-import com.example.naivety.ui.screens.SortOrder
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -32,6 +35,11 @@ class MainScreenActivity : ComponentActivity() {
         uri?.let { handlePdfSelection(it) }
     }
 
+    // Add this function to be called from NavGraph
+    fun launchPdfSelection() {
+        pdfLauncher.launch(arrayOf("application/pdf"))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -40,20 +48,13 @@ class MainScreenActivity : ComponentActivity() {
             NaivetyTheme {
                 TransparentSystemBars()
                 val navController = rememberNavController()
-                MainScreen(
-                    viewModel = viewModel,  // Pass viewModel here
-                    onPdfSelect = {
-                        pdfLauncher.launch(arrayOf("application/pdf"))
-                    },
-                    onNavigateToRead = { uri ->
-                        viewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
-                            openPdfViewer(uri, book.id)
-                        }
-                    },
-                    onSortBooks = { sortOrder ->
-                        viewModel.sortBooks(sortOrder)
-                    },
-                    navController = navController
+                NavGraph(
+                    navController = navController,
+                    auth = Firebase.auth,
+                    googleSignInClient = GoogleSignIn.getClient(
+                        this,
+                        GoogleSignInOptions.DEFAULT_SIGN_IN
+                    )
                 )
             }
         }
@@ -81,6 +82,7 @@ class MainScreenActivity : ComponentActivity() {
             }
         }
     }
+
     private fun openPdfViewer(uri: Uri, bookId: String) {
         val intent = Intent(this, PdfViewerActivity::class.java).apply {
             data = uri

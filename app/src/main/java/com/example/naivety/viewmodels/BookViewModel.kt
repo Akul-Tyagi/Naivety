@@ -6,13 +6,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.naivety.data.AppDatabase
 import com.example.naivety.models.Book
-import com.example.naivety.ui.screens.SortOrder
 import com.example.naivety.utils.PdfThumbnailHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
+import com.example.naivety.models.SortOrder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -25,7 +25,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableSharedFlow<String>()
-    val errorMessage: SharedFlow<String> = _errorMessage.asSharedFlow()
+    val errorMessage: SharedFlow<String> = _errorMessage
 
     init {
         loadBooks()
@@ -35,25 +35,22 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // First emit empty list to clear any stale data
-                _books.value = emptyList()
-
-                // Collect books from database
                 bookDao.getAllBooks()
                     .catch { e ->
-                        emitError("Failed to load books: ${e.message}")
                         _isLoading.value = false
+                        e.printStackTrace()
                     }
                     .collect { bookList ->
                         _books.value = bookList
                         _isLoading.value = false
                     }
             } catch (e: Exception) {
-                emitError("Failed to load books: ${e.message}")
                 _isLoading.value = false
+                e.printStackTrace()
             }
         }
     }
+
 
     fun addBook(uri: Uri, title: String) {
         viewModelScope.launch {
@@ -76,10 +73,9 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 bookDao.insertBook(newBook)
-                // Force refresh the books list
-                loadBooks()
+                loadBooks() // Reload books after adding new one
             } catch (e: Exception) {
-                emitError("Failed to add book: ${e.message}")
+                e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }
@@ -111,13 +107,14 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     fun sortBooks(sortOrder: SortOrder) {
         viewModelScope.launch {
-            val sortedBooks = when (sortOrder) {
-                SortOrder.RECENT -> _books.value.sortedByDescending { it.dateAdded }
-                SortOrder.TITLE -> _books.value.sortedBy { it.title }
-                SortOrder.AUTHOR -> _books.value.sortedBy { it.author ?: it.title }
-                SortOrder.PROGRESS -> _books.value.sortedByDescending { getReadingProgress(it) }
+            val currentBooks = _books.value.toMutableList()
+            when (sortOrder) {
+                SortOrder.RECENT -> currentBooks.sortByDescending { it.dateAdded }
+                SortOrder.TITLE -> currentBooks.sortBy { it.title.lowercase() }
+                SortOrder.PROGRESS -> currentBooks.sortByDescending { it.lastReadPage.toFloat() / it.totalPages }
+                SortOrder.AUTHOR -> currentBooks.sortBy { it.author?.lowercase() }
             }
-            _books.value = sortedBooks
+            _books.value = currentBooks
         }
     }
 

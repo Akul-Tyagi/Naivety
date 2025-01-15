@@ -1,4 +1,6 @@
 // app/src/main/java/com/example/naivety/network/models/OpenLibraryResponse.kt
+package com.example.naivety.network.models
+
 data class OpenLibraryResponse(
     val works: List<OpenLibraryWork>,
     val nextPage: String?

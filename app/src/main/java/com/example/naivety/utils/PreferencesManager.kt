@@ -21,12 +21,4 @@ object PreferencesManager {
     fun setFirstTimeDone(context: Context) {
         getPreferences(context).edit().putBoolean(KEY_FIRST_TIME, false).apply()
     }
-
-    fun setLoggedIn(context: Context, isLoggedIn: Boolean) {
-        getPreferences(context).edit().putBoolean(KEY_IS_LOGGED_IN, isLoggedIn).apply()
-    }
-
-    fun isLoggedIn(context: Context): Boolean {
-        return getPreferences(context).getBoolean(KEY_IS_LOGGED_IN, false)
-    }
 }

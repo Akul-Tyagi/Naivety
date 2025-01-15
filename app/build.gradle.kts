@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
     id("com.google.gms.google-services")
+    id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
 }
 
@@ -90,9 +90,6 @@ dependencies {
 
     // Dagger Hilt for dependency injection
     implementation("com.google.devtools.ksp:symbol-processing-api:2.1.0-1.0.29")
-    implementation("com.google.dagger:dagger-compiler:2.51.1")
-    ksp("com.google.dagger:dagger-compiler:2.51.1")
-    ksp("com.google.dagger:hilt-compiler:2.51.1")
     implementation("com.google.dagger:hilt-android:2.51.1")
     ksp("com.google.dagger:hilt-android-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
@@ -100,7 +97,7 @@ dependencies {
     // Additional Compose dependencies for animations and effects
     implementation("androidx.compose.animation:animation:1.7.6")
     implementation("androidx.compose.foundation:foundation:1.7.6")
-
+    implementation ("androidx.core:core-splashscreen:1.0.1")
     // For blur effects and other UI utilities
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("com.google.accompanist:accompanist-placeholder:0.32.0")

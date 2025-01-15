@@ -1,4 +1,5 @@
 // app/src/main/java/com/example/naivety/models/OpenLibraryBook.kt
+package com.example.naivety.models
 
 data class OpenLibraryBook(
     val key: String,

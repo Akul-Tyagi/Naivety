@@ -1,5 +1,8 @@
 // app/src/main/java/com/example/naivety/network/OpenLibraryApi.kt
+package com.example.naivety.network
 
+import com.example.naivety.network.models.OpenLibraryBookDetail
+import com.example.naivety.network.models.OpenLibraryResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 

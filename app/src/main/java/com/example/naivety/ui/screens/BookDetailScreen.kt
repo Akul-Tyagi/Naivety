@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.naivety.viewmodels.BookDetailViewModel
-
+import com.example.naivety.models.OpenLibraryBook
 // app/src/main/java/com/example/naivety/ui/screens/BookDetailScreen.kt
 
 @Composable

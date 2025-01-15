@@ -3,12 +3,13 @@
 package com.example.naivety.navigation
 
 import BookDetailScreen
-import OpenLibraryBook
+import com.example.naivety.models.OpenLibraryBook
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -17,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.naivety.*
 import com.example.naivety.ui.screens.*
+import com.example.naivety.viewmodels.BookViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 
@@ -27,6 +29,10 @@ fun NavGraph(
     googleSignInClient: GoogleSignInClient,
     startDestination: String = Destinations.Walkthrough.route
 ) {
+
+    val context = LocalContext.current
+    val mainViewModel: BookViewModel = hiltViewModel()
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -47,7 +53,9 @@ fun NavGraph(
             AuthMain(
                 auth = auth,
                 googleSignInClient = googleSignInClient,
-                signInWithGoogle = { /* Implement in AuthActivity */ },
+                signInWithGoogle = {
+                    (context as? AuthActivity)?.signInWithGoogle()
+                },
                 navigateToMainScreen = {
                     navController.navigate(Destinations.Main.route) {
                         popUpTo(Destinations.Auth.route) { inclusive = true }
@@ -57,15 +65,25 @@ fun NavGraph(
         }
 
         // Main Screen
-        composable(Destinations.Main.route) { backStackEntry ->
+        composable(Destinations.Main.route) {
             MainScreen(
-                viewModel = viewModel(),
-                onPdfSelect = { /* Handle in MainScreenActivity */ },
+                viewModel = mainViewModel,
+                onPdfSelect = {
+                    // Use the activity's PDF launcher
+                    (context as? MainScreenActivity)?.launchPdfSelection()
+                },
                 onNavigateToRead = { uri ->
-                    navController.navigate(Destinations.PdfViewer.createRoute(uri))
+                    // Navigate to PDF viewer with the URI
+                    mainViewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
+                        val intent = Intent(context, PdfViewerActivity::class.java).apply {
+                            data = uri
+                            putExtra("BOOK_ID", book.id)
+                        }
+                        context.startActivity(intent)
+                    }
                 },
                 onSortBooks = { sortOrder ->
-                    /* Handle in MainScreenActivity */
+                    mainViewModel.sortBooks(sortOrder)
                 },
                 navController = navController
             )
@@ -101,12 +119,10 @@ fun NavGraph(
             )
         }
 
-        // PDF Viewer Screen
-        // PDF Viewer Screen
         composable(
             route = Destinations.PdfViewer.route,
             arguments = listOf(
-                navArgument("encodedUri") { // Changed from uri to encodedUri to match Destinations
+                navArgument("encodedUri") {
                     type = NavType.StringType
                 }
             )
@@ -118,10 +134,15 @@ fun NavGraph(
                     val uri = Uri.parse(Uri.decode(it))
                     val intent = Intent(context, PdfViewerActivity::class.java).apply {
                         data = uri
+                        // Get the book ID if available
+                        mainViewModel.books.value.find { book ->
+                            book.filePath == uri.toString()
+                        }?.let { book ->
+                            putExtra("BOOK_ID", book.id)
+                        }
                     }
                     context.startActivity(intent)
                 }
-                // Pop back to avoid the blank screen when returning
                 navController.popBackStack()
             }
         }

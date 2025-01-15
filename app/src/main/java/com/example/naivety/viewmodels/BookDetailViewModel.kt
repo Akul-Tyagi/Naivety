@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.flow.asStateFlow
-import OpenLibraryBookDetail
-import BrowseRepository
+import com.example.naivety.network.models.OpenLibraryBookDetail
+import com.example.naivety.repository.BrowseRepository
 
 @HiltViewModel
 class BookDetailViewModel @Inject constructor(

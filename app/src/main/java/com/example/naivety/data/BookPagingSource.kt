@@ -1,5 +1,10 @@
+// app/src/main/java/com/example/naivety/data/BookPagingSource.kt
+package com.example.naivety.data
+
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.example.naivety.models.OpenLibraryBook
+import com.example.naivety.network.OpenLibraryApi
 
 class BookPagingSource(
     private val api: OpenLibraryApi
