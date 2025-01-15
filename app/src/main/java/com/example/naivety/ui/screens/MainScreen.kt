@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.naivety.R
 import com.example.naivety.models.SortOrder
+import com.example.naivety.navigation.Destinations
 import com.example.naivety.ui.components.SearchBar
 import com.example.naivety.ui.components.SortDropdownMenu
 import com.example.naivety.ui.components.BookGrid
@@ -37,20 +38,8 @@ fun MainScreen(
     val fsFont = FontFamily(Font(R.font.fsb))
     var selectedSection by remember { mutableStateOf("Home") }
     var showSortMenu by remember { mutableStateOf(false) }
-    val books by viewModel.books.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    val filteredBooks = remember(books, searchQuery) {
-        if (searchQuery.isEmpty()) {
-            books
-        } else {
-            books.filter { book ->
-                book.title.contains(searchQuery, ignoreCase = true) ||
-                        book.author?.contains(searchQuery, ignoreCase = true) == true
-            }
-        }
-    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -78,8 +67,8 @@ fun MainScreen(
                 }
 
                 // Section Header
-                when (selectedSection) {
-                    "Home" -> HomeTopBar(
+                if (selectedSection == "Home") {
+                    HomeTopBar(
                         alinsaFont = alinsaFont,
                         showSortMenu = showSortMenu,
                         onSortMenuChange = { showSortMenu = it },
@@ -97,7 +86,6 @@ fun MainScreen(
                 modifier = Modifier.background(Color.Black),
                 containerColor = Color.Black
             ) {
-                // Home
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Home, "Home") },
                     label = { Text("Home", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
@@ -110,7 +98,6 @@ fun MainScreen(
                     )
                 )
 
-                // Lists
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Coffee, "Lists") },
                     label = { Text("Lists", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
@@ -123,7 +110,6 @@ fun MainScreen(
                     )
                 )
 
-                // Add Button
                 NavigationBarItem(
                     icon = {
                         Icon(
@@ -137,7 +123,6 @@ fun MainScreen(
                     label = null
                 )
 
-                // Browse
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Explore, "Browse") },
                     label = { Text("Browse", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
@@ -150,7 +135,6 @@ fun MainScreen(
                     )
                 )
 
-                // More
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.MoreVert, "More") },
                     label = { Text("More", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
@@ -171,35 +155,102 @@ fun MainScreen(
                 .padding(paddingValues)
                 .background(Color.Black)
         ) {
-            when {
-                isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFF8E42FF)
+            when (selectedSection) {
+                "Home" -> {
+                    HomeSection(
+                        viewModel = viewModel,
+                        searchQuery = searchQuery,
+                        onNavigateToRead = onNavigateToRead
                     )
                 }
-                books.isEmpty() -> {
-                    Text(
-                        text = "A library without books is just a room. Time to build your collection.",
-                        color = Color.LightGray,
-                        textAlign = TextAlign.Center,
-                        fontFamily = fsFont,
-                        lineHeight = 20.sp,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(32.dp)
+                "Browse" -> {
+                    BrowseScreen(
+                        onBookClick = { book ->
+                            navController.navigate(
+                                Destinations.BookDetail.createRoute(
+                                    book.key,
+                                    book.title,
+                                    book.author,
+                                    book.publishedYear,
+                                    book.coverUrl
+                                )
+                            )
+                        }
                     )
                 }
                 else -> {
-                    BookGrid(
-                        books = filteredBooks,
-                        onBookClick = { book ->
-                            onNavigateToRead(Uri.parse(book.filePath))
-                        },
-                        viewModel = viewModel,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    // Placeholder for Lists and More sections
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Coming Soon",
+                            color = Color.White,
+                            fontFamily = alinsaFont,
+                            fontSize = 20.sp
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeSection(
+    viewModel: BookViewModel,
+    searchQuery: String,
+    onNavigateToRead: (Uri) -> Unit
+) {
+    val books by viewModel.books.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val fsFont = FontFamily(Font(R.font.fsb))
+
+    val filteredBooks = remember(books, searchQuery) {
+        if (searchQuery.isEmpty()) {
+            books
+        } else {
+            books.filter { book ->
+                book.title.contains(searchQuery, ignoreCase = true) ||
+                        book.author?.contains(searchQuery, ignoreCase = true) == true
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+    ) {
+        when {
+            isLoading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color(0xFF8E42FF)
+                )
+            }
+            books.isEmpty() -> {
+                Text(
+                    text = "A library without books is just a room. Time to build your collection.",
+                    color = Color.LightGray,
+                    textAlign = TextAlign.Center,
+                    fontFamily = fsFont,
+                    lineHeight = 20.sp,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(32.dp)
+                )
+            }
+            else -> {
+                BookGrid(
+                    books = filteredBooks,
+                    onBookClick = { book ->
+                        onNavigateToRead(Uri.parse(book.filePath))
+                    },
+                    viewModel = viewModel,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }
@@ -232,7 +283,6 @@ private fun HomeTopBar(
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Sort Menu
             Box {
                 IconButton(onClick = { onSortMenuChange(true) }) {
                     Icon(
@@ -250,7 +300,6 @@ private fun HomeTopBar(
                 )
             }
 
-            // Search
             Box {
                 if (!showSearch) {
                     IconButton(onClick = { onShowSearchChange(true) }) {

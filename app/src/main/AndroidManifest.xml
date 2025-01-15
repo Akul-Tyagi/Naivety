@@ -24,7 +24,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MainScreenActivity" />
+        <activity
+            android:name=".MainScreenActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Naivety"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name=".PdfViewerActivity" />
     </application>
 </manifest>

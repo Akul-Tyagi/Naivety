@@ -34,19 +34,24 @@ class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
 
-        if (auth.currentUser != null) {
-            navigateToMainScreen()
-            return
-        }
-
+        // Initialize Google Sign In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
 
+        // Initialize googleSignInClient before using it
         googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        // Check if user is already signed in
+        if (auth.currentUser != null && !PreferencesManager.isFirstTime(this)) {
+            navigateToMainScreen()
+            return
+        }
 
         setContent {
             NaivetyTheme {
@@ -69,6 +74,7 @@ class AuthActivity : ComponentActivity() {
             }
         }
     }
+
 
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()

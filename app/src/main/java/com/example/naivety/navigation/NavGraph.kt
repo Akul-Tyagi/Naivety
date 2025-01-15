@@ -3,6 +3,7 @@
 package com.example.naivety.navigation
 
 import BookDetailScreen
+import android.app.Activity
 import com.example.naivety.models.OpenLibraryBook
 import android.content.Intent
 import android.net.Uri
@@ -27,7 +28,7 @@ fun NavGraph(
     navController: NavHostController,
     auth: FirebaseAuth,
     googleSignInClient: GoogleSignInClient,
-    startDestination: String = Destinations.Walkthrough.route
+    startDestination: String
 ) {
 
     val context = LocalContext.current
@@ -37,7 +38,6 @@ fun NavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
-        // Walkthrough Screen
         composable(Destinations.Walkthrough.route) {
             WalkthroughScreen(
                 onFinish = {
@@ -57,9 +57,8 @@ fun NavGraph(
                     (context as? AuthActivity)?.signInWithGoogle()
                 },
                 navigateToMainScreen = {
-                    navController.navigate(Destinations.Main.route) {
-                        popUpTo(Destinations.Auth.route) { inclusive = true }
-                    }
+                    context.startActivity(Intent(context, MainScreenActivity::class.java))
+                    (context as? Activity)?.finish()
                 }
             )
         }
@@ -69,7 +68,6 @@ fun NavGraph(
             MainScreen(
                 viewModel = mainViewModel,
                 onPdfSelect = {
-                    // Use the activity's PDF launcher
                     (context as? MainScreenActivity)?.launchPdfSelection()
                 },
                 onNavigateToRead = { uri ->
@@ -88,7 +86,6 @@ fun NavGraph(
                 navController = navController
             )
         }
-
         // Book Detail Screen
         composable(
             route = Destinations.BookDetail.route,
