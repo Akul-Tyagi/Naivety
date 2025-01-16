@@ -112,7 +112,18 @@ fun NavGraph(
                     coverUrl = coverUrl,
                     description = ""
                 ),
-                onBackClick = { navController.navigateUp() }
+                onBackPressed = {
+                    // This will ensure we go back to the browse screen
+                    navController.previousBackStackEntry?.destination?.route?.let { previousRoute ->
+                        if (previousRoute.startsWith("browse")) {
+                            navController.navigateUp()
+                        } else {
+                            navController.navigate(Destinations.Browse.route) {
+                                popUpTo(Destinations.BookDetail.route) { inclusive = true }
+                            }
+                        }
+                    }
+                }
             )
         }
 

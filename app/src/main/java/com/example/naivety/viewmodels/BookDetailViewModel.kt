@@ -36,19 +36,20 @@ class BookDetailViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 _error.value = null
-
-                // Remove the "/works/" prefix if it exists in the bookKey
                 val cleanBookKey = bookKey.removePrefix("/works/")
-                val details = repository.getBookDetails(cleanBookKey) // Use the repository function instead
+                println("Fetching details for book key: $cleanBookKey") // Debug log
+                val details = repository.getBookDetails(cleanBookKey)
+                println("Received book details: $details") // Debug log
                 _bookDetails.value = details
-
             } catch (e: Exception) {
+                println("Error loading book details: ${e.message}") // Debug log
                 _error.value = e.message ?: "Failed to load book details"
             } finally {
                 _isLoading.value = false
             }
         }
     }
+
     fun updateRating(rating: Float) {
         viewModelScope.launch {
             try {

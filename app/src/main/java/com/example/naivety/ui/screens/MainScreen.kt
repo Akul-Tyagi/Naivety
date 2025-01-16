@@ -1,6 +1,16 @@
 package com.example.naivety.ui.screens
 
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -16,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import com.example.naivety.R
 import com.example.naivety.models.SortOrder
 import com.example.naivety.navigation.Destinations
@@ -41,158 +53,166 @@ fun MainScreen(
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Black)
-            ) {
-                // App Title
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Naivety",
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    Column(
                         modifier = Modifier
-                            .padding(7.dp)
-                            .padding(top = 28.dp),
-                        fontFamily = sonderFont,
-                        fontSize = 24.sp,
-                        color = Color(0xFF8E42FF),
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                // Section Header
-                if (selectedSection == "Home") {
-                    HomeTopBar(
-                        alinsaFont = alinsaFont,
-                        showSortMenu = showSortMenu,
-                        onSortMenuChange = { showSortMenu = it },
-                        onSortBooks = onSortBooks,
-                        showSearch = showSearch,
-                        onShowSearchChange = { showSearch = it },
-                        searchQuery = searchQuery,
-                        onSearchQueryChange = { searchQuery = it }
-                    )
-                }
-            }
-        },
-        bottomBar = {
-            NavigationBar(
-                modifier = Modifier.background(Color.Black),
-                containerColor = Color.Black
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, "Home") },
-                    label = { Text("Home", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
-                    selected = selectedSection == "Home",
-                    onClick = { selectedSection = "Home" },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF8E42FF),
-                        unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222)
-                    )
-                )
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Coffee, "Lists") },
-                    label = { Text("Lists", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
-                    selected = selectedSection == "Lists",
-                    onClick = { selectedSection = "Lists" },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF8E42FF),
-                        unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222)
-                    )
-                )
-
-                NavigationBarItem(
-                    icon = {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Add",
-                            modifier = Modifier.size(32.dp)
-                        )
-                    },
-                    selected = false,
-                    onClick = onPdfSelect,
-                    label = null
-                )
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Explore, "Browse") },
-                    label = { Text("Browse", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
-                    selected = selectedSection == "Browse",
-                    onClick = { selectedSection = "Browse" },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF8E42FF),
-                        unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222)
-                    )
-                )
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.MoreVert, "More") },
-                    label = { Text("More", fontFamily = alinsaFont, color = Color(0xFF8E42FF)) },
-                    selected = selectedSection == "More",
-                    onClick = { selectedSection = "More" },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF8E42FF),
-                        unselectedIconColor = Color.White,
-                        indicatorColor = Color(0xFF222222)
-                    )
-                )
-            }
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color.Black)
-        ) {
-            when (selectedSection) {
-                "Home" -> {
-                    HomeSection(
-                        viewModel = viewModel,
-                        searchQuery = searchQuery,
-                        onNavigateToRead = onNavigateToRead
-                    )
-                }
-                "Browse" -> {
-                    BrowseScreen(
-                        onBookClick = { book ->
-                            navController.navigate(
-                                Destinations.BookDetail.createRoute(
-                                    book.key,
-                                    book.title,
-                                    book.author,
-                                    book.publishedYear,
-                                    book.coverUrl
-                                )
+                            .fillMaxWidth()
+                            .background(Color.Black)
+                    ) {
+                        // App Title
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Naivety",
+                                modifier = Modifier
+                                    .padding(7.dp)
+                                    .padding(top = 28.dp),
+                                fontFamily = sonderFont,
+                                fontSize = 24.sp,
+                                color = Color(0xFF8E42FF),
+                                textAlign = TextAlign.Center
                             )
                         }
+
+                        if (selectedSection == "Home") {
+                            HomeTopBar(
+                                alinsaFont = alinsaFont,
+                                showSortMenu = showSortMenu,
+                                onSortMenuChange = { showSortMenu = it },
+                                onSortBooks = onSortBooks,
+                                showSearch = showSearch,
+                                onShowSearchChange = { showSearch = it },
+                                searchQuery = searchQuery,
+                                onSearchQueryChange = { searchQuery = it }
+                            )
+                        }
+                    }
+                },
+                bottomBar = {
+                    NavigationBarWithAnimation(
+                        selectedSection = selectedSection,
+                        onSectionSelected = { selectedSection = it },
+                        alinsaFont = alinsaFont,
+                        onPdfSelect = onPdfSelect
                     )
                 }
-                else -> {
-                    // Placeholder for Lists and More sections
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Coming Soon",
-                            color = Color.White,
-                            fontFamily = alinsaFont,
-                            fontSize = 20.sp
-                        )
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .background(Color.Black)
+                ) {
+                    // Crossfade animation between sections
+                    Crossfade(
+                        targetState = selectedSection,
+                        animationSpec = tween(300)
+                    ) { section ->
+                        when (section) {
+                            "Home" -> {
+                                HomeSection(
+                                    viewModel = viewModel,
+                                    searchQuery = searchQuery,
+                                    onNavigateToRead = onNavigateToRead
+                                )
+                            }
+
+                            "Browse" -> {
+                                BrowseScreen(
+                                    onBookClick = { book ->
+                                        navController.navigate(
+                                            Destinations.BookDetail.createRoute(
+                                                book.key,
+                                                book.title,
+                                                book.author,
+                                                book.publishedYear,
+                                                book.coverUrl
+                                            )
+                                        )
+                                    }
+                                )
+                            }
+
+                            else -> {
+                                ComingSoonSection(alinsaFont = alinsaFont)
+                            }
+                        }
                     }
                 }
             }
+        }
+
+@Composable
+private fun NavigationBarWithAnimation(
+    selectedSection: String,
+    onSectionSelected: (String) -> Unit,
+    alinsaFont: FontFamily,
+    onPdfSelect: () -> Unit
+) {
+    NavigationBar(
+        modifier = Modifier
+            .background(Color.Black)
+            .animateContentSize(),
+        containerColor = Color.Black
+    ) {
+        val items = listOf(
+            Triple(Icons.Default.Home, "Home", "Home"),
+            Triple(Icons.Default.Coffee, "Lists", "Lists"),
+            Triple(Icons.Default.Add, "Add", ""),
+            Triple(Icons.Default.Explore, "Browse", "Browse"),
+            Triple(Icons.Default.MoreVert, "More", "More")
+        )
+
+        items.forEach { (icon, label, section) ->
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        modifier = if (label == "Add") Modifier.size(32.dp) else Modifier
+                    )
+                },
+                label = if (label != "Add") {
+                    {
+                        Text(
+                            text = label,
+                            fontFamily = alinsaFont,
+                            color = Color(0xFF8E42FF)
+                        )
+                    }
+                } else null,
+                selected = selectedSection == section,
+                onClick = if (label == "Add") onPdfSelect else { -> onSectionSelected(section) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFF8E42FF),
+                    unselectedIconColor = Color.White,
+                    indicatorColor = Color(0xFF222222)
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun ComingSoonSection(alinsaFont: FontFamily) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Coming Soon",
+                color = Color.White,
+                fontFamily = alinsaFont,
+                fontSize = 20.sp
+            )
         }
     }
 }

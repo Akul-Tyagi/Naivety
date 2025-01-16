@@ -7,19 +7,17 @@ import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.network.OpenLibraryApi
 
 class BookPagingSource(
-    private val api: OpenLibraryApi
+    private val api: OpenLibraryApi,
+    private val query: String = ""
 ) : PagingSource<Int, OpenLibraryBook>() {
-    override fun getRefreshKey(state: PagingState<Int, OpenLibraryBook>): Int? {
-        return state.anchorPosition?.let { anchorPosition ->
-            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
-        }
-    }
-
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, OpenLibraryBook> {
         return try {
             val page = params.key ?: 1
-            val response = api.getBooksBySubject("fiction")
+            val response = if (query.isNotBlank()) {
+                api.searchBooks(query, page)
+            } else {
+                api.getBooksBySubject("fiction", page)
+            }
 
             val books = response.works.map { work ->
                 OpenLibraryBook(
@@ -30,7 +28,7 @@ class BookPagingSource(
                     } ?: "",
                     author = work.authors?.firstOrNull()?.name ?: "Unknown Author",
                     publishedYear = work.first_publish_year ?: 0,
-                    description = "" // Will be loaded in detail view
+                    description = ""
                 )
             }
 
@@ -41,6 +39,13 @@ class BookPagingSource(
             )
         } catch (e: Exception) {
             LoadResult.Error(e)
+        }
+    }
+
+    override fun getRefreshKey(state: PagingState<Int, OpenLibraryBook>): Int? {
+        return state.anchorPosition?.let { anchorPosition ->
+            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
+                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
         }
     }
 }

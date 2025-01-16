@@ -87,6 +87,8 @@ dependencies {
     //Browse Section
     // Paging 3 with Compose support
     implementation("androidx.paging:paging-compose:3.3.5")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     // Dagger Hilt for dependency injection
     implementation("com.google.devtools.ksp:symbol-processing-api:2.1.0-1.0.29")

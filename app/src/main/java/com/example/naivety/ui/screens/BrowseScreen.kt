@@ -7,6 +7,7 @@ import BookPreviewModal
 import com.example.naivety.models.OpenLibraryBook
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -41,7 +42,6 @@ fun BrowseScreen(
     val books = viewModel.books.collectAsLazyPagingItems()
     val selectedBook by viewModel.selectedBook.collectAsState()
     val fsFont = FontFamily(Font(R.font.fsultralit))
-    val viewModel: BrowseViewModel = hiltViewModel()
 
     Column(
         modifier = Modifier
@@ -57,8 +57,8 @@ fun BrowseScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp) // Fixed height for consistent alignment
-                    .background(Color(0xFF1A1A1A), RoundedCornerShape(28.dp))
+                    .height(43.dp) // Fixed height for consistent alignment
+                    .background(Color.Transparent, RoundedCornerShape(28.dp))
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
 
@@ -75,12 +75,14 @@ fun BrowseScreen(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp), // Match parent height
+                        .height(43.dp), // Match parent height
                     contentAlignment = Alignment.CenterStart // Center the content vertically
                 ) {
                     BasicTextField(
                         value = searchQuery,
-                        onValueChange = { searchQuery = it },
+                        onValueChange = {
+                            searchQuery = it // Add this function to BrowseViewModel
+                        },
                         textStyle = TextStyle(
                             color = Color.White,
                             fontSize = 20.sp,
@@ -109,33 +111,74 @@ fun BrowseScreen(
                 }
             }
         }
-        // Pinterest-style grid
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(2),
+        // Book Grid
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .blur(if (selectedBook != null) 8.dp else 0.dp),
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalItemSpacing = 8.dp
+                .blur(if (selectedBook != null) 8.dp else 0.dp)
         ) {
-            items(books.itemCount) { index ->
-                books[index]?.let { book ->
-                    BookCard(
-                        book = book,
-                        onLongPress = { viewModel.onBookLongPressed(book) },
-                        onClick = { onBookClick(book) },
-                        modifier = Modifier.animateItem()
-                    )
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalItemSpacing = 8.dp
+            ) {
+                items(books.itemCount) { index ->
+                    books[index]?.let { book ->
+                        key(book.key) {
+                            BookCard(
+                                book = book,
+                                onLongPress = { viewModel.onBookLongPressed(book) },
+                                onClick = { onBookClick(book) },
+                                modifier = Modifier
+                                    .animateItemPlacement()
+                                    .blur(if (selectedBook?.key == book.key) 0.dp else if (selectedBook != null) 8.dp else 0.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
 
         selectedBook?.let { book ->
-            BookPreviewModal(
-                book = book,
-                onDismiss = { viewModel.clearSelectedBook() }
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable { viewModel.clearSelectedBook() }
+            ) {
+                Card(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.Center)
+                        .width(280.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = book.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = book.author,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = book.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
         }
     }
 }

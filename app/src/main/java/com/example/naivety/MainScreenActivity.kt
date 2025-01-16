@@ -1,5 +1,6 @@
 package com.example.naivety
 
+import BookDetailScreen
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -18,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
 import com.example.naivety.navigation.NavGraph
 import com.example.naivety.ui.screens.MainScreen
@@ -29,6 +31,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.naivety.models.OpenLibraryBook
+import com.example.naivety.navigation.Destinations
+import com.example.naivety.ui.screens.BrowseScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -60,6 +69,12 @@ class MainScreenActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
+                    NavHost(
+                        navController = navController,
+                        startDestination = "main" ,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        composable("main") {
                     MainScreen(
                         viewModel = viewModel,
                         onPdfSelect = { launchPdfSelection() },
@@ -77,6 +92,48 @@ class MainScreenActivity : ComponentActivity() {
                         },
                         navController = navController
                     )
+                }
+                        composable(Destinations.Browse.route) {
+                            BrowseScreen(
+                                onBookClick = { book ->
+                                    navController.navigate(
+                                        Destinations.BookDetail.createRoute(
+                                            bookKey = book.key,
+                                            title = book.title,
+                                            author = book.author,
+                                            year = book.publishedYear,
+                                            coverUrl = book.coverUrl
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                        // Add BookDetail destination here
+                        composable(
+                            route = Destinations.BookDetail.route,
+                            arguments = listOf(
+                                navArgument("bookKey") { type = NavType.StringType },
+                                navArgument("title") { type = NavType.StringType },
+                                navArgument("author") { type = NavType.StringType },
+                                navArgument("year") { type = NavType.IntType },
+                                navArgument("coverUrl") { type = NavType.StringType }
+                            )
+                        ) {
+                            BookDetailScreen(
+                                book = OpenLibraryBook(
+                                    key = it.arguments?.getString("bookKey") ?: "",
+                                    title = it.arguments?.getString("title") ?: "",
+                                    author = it.arguments?.getString("author") ?: "",
+                                    publishedYear = it.arguments?.getInt("year") ?: 0,
+                                    coverUrl = it.arguments?.getString("coverUrl") ?: "",
+                                    description = ""
+                                ),
+                                onBackPressed = {
+                                    navController.navigateUp()
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
