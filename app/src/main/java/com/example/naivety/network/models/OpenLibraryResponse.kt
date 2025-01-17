@@ -8,13 +8,13 @@ data class OpenLibraryResponse(
 data class OpenLibraryWork(
     val key: String,
     val title: String,
-    val cover_id: Long?,
-    val authors: List<OpenLibraryAuthor>?,
+    val cover_i: Long?,
+    val author_name: List<String>?,
     val first_publish_year: Int?
 ){
     val coverUrl: String
-        get() = if (cover_id != null) {
-            "https://covers.openlibrary.org/b/id/$cover_id-L.jpg"
+        get() = if (cover_i != null) {
+            "https://covers.openlibrary.org/b/id/$cover_i-L.jpg"
         } else {
             "" // Provide a default cover URL
         }

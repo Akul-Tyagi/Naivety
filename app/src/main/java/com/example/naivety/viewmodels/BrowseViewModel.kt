@@ -3,8 +3,11 @@ package com.example.naivety.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.example.naivety.data.BookPagingSource
 import com.example.naivety.models.OpenLibraryBook
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -23,7 +26,7 @@ class BrowseViewModel @Inject constructor(
     val searchQuery = _searchQuery.asStateFlow()
 
     val books = searchQuery
-        .debounce(300L) // Add debounce to prevent too many API calls
+        .debounce(300L)
         .flatMapLatest { query ->
             repository.getRecommendedBooks(query)
         }

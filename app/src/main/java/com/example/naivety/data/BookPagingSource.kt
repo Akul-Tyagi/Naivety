@@ -5,28 +5,31 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.network.OpenLibraryApi
+import com.example.naivety.repository.BrowseRepository
 
 class BookPagingSource(
     private val api: OpenLibraryApi,
     private val query: String = ""
 ) : PagingSource<Int, OpenLibraryBook>() {
+
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, OpenLibraryBook> {
         return try {
             val page = params.key ?: 1
-            val response = if (query.isNotBlank()) {
-                api.searchBooks(query, page)
+
+            val response = if (query.isBlank()) {
+                api.getTrendingBooks(page)
             } else {
-                api.getBooksBySubject("fiction", page)
+                api.searchBooks(query, page)
             }
 
             val books = response.works.map { work ->
                 OpenLibraryBook(
                     key = work.key,
                     title = work.title,
-                    coverUrl = work.cover_id?.let {
+                    coverUrl = work.cover_i?.let {
                         "https://covers.openlibrary.org/b/id/$it-L.jpg"
                     } ?: "",
-                    author = work.authors?.firstOrNull()?.name ?: "Unknown Author",
+                    author = work.author_name?.firstOrNull() ?: "Unknown Author",
                     publishedYear = work.first_publish_year ?: 0,
                     description = ""
                 )
@@ -44,8 +47,8 @@ class BookPagingSource(
 
     override fun getRefreshKey(state: PagingState<Int, OpenLibraryBook>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
-            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+            val anchorPage = state.closestPageToPosition(anchorPosition)
+            anchorPage?.prevKey?.plus(1) ?: anchorPage?.nextKey?.minus(1)
         }
     }
 }

@@ -13,7 +13,7 @@ interface OpenLibraryApi {
         @Path("subject") subject: String,
         @Query("page") page: Int,
         @Query("limit") limit: Int = 20,
-        @Query("fields") fields: String = "key,title,cover_id,authors" // Add this parameter
+        @Query("fields") fields: String = "key,title,cover_i,authors" // Add this parameter
     ): OpenLibraryResponse
 
     @GET("works/{workId}.json")
@@ -23,7 +23,15 @@ interface OpenLibraryApi {
     suspend fun searchBooks(
         @Query("q") query: String,
         @Query("page") page: Int,
-        @Query("limit") limit: Int = 20
+        @Query("limit") limit: Int = 20,
+        @Query("fields") fields: String = "key,title,cover_i,author_name,first_publish_year"
+    ): OpenLibraryResponse
+
+    @GET("trending/weekly.json")
+    suspend fun getTrendingBooks(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int = 20,
+        @Query("fields") fields: String = "key,title,cover_i,author_name,first_publish_year"
     ): OpenLibraryResponse
 
     @GET("works/{workId}/ratings.json")

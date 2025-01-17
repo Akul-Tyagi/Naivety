@@ -16,15 +16,20 @@ import javax.inject.Singleton
 class BrowseRepository @Inject constructor(
     private val api: OpenLibraryApi
 ) {
+    companion object {
+        const val PAGE_SIZE = 20
+    }
+
     fun getRecommendedBooks(query: String = ""): Flow<PagingData<OpenLibraryBook>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 20,
+                pageSize = PAGE_SIZE,
                 enablePlaceholders = false,
-                prefetchDistance = 5
+                prefetchDistance = 2,
+                initialLoadSize = PAGE_SIZE
             )
         ) {
-            BookPagingSource(api, query)  // Remove the query parameter
+            BookPagingSource(api, query)
         }.flow
     }
 
@@ -37,7 +42,6 @@ class BrowseRepository @Inject constructor(
                 ratings_count = ratings.summary.count
             )
         } catch (e: Exception) {
-            // If ratings fetch fails, return details without ratings
             return details
         }
     }
