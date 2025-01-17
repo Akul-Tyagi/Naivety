@@ -57,7 +57,7 @@ fun BrowseScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(43.dp) // Fixed height for consistent alignment
+                    .height(34.dp) // Fixed height for consistent alignment
                     .background(Color.Transparent, RoundedCornerShape(28.dp))
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +67,7 @@ fun BrowseScreen(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
                     tint = Color.Gray,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -75,7 +75,8 @@ fun BrowseScreen(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(43.dp), // Match parent height
+                        .background(Color.Transparent)
+                        .height(34.dp), // Match parent height
                     contentAlignment = Alignment.CenterStart // Center the content vertically
                 ) {
                     BasicTextField(
