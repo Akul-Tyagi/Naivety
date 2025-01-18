@@ -1,5 +1,6 @@
 package com.example.naivety.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,16 +34,16 @@ class BookDetailViewModel @Inject constructor(
 
     fun loadBookDetails(bookKey: String) {
         viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
             try {
-                _isLoading.value = true
-                _error.value = null
                 val cleanBookKey = bookKey.removePrefix("/works/")
-                println("Fetching details for book key: $cleanBookKey") // Debug log
+                println("Fetching details for book key: $cleanBookKey")
                 val details = repository.getBookDetails(cleanBookKey)
-                println("Received book details: $details") // Debug log
+                println("Received book details: $details")
                 _bookDetails.value = details
             } catch (e: Exception) {
-                println("Error loading book details: ${e.message}") // Debug log
+                println("Error loading book details: ${e.message}")
                 _error.value = e.message ?: "Failed to load book details"
             } finally {
                 _isLoading.value = false

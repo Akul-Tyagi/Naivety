@@ -1,16 +1,9 @@
 package com.example.naivety.ui.screens
 
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -43,12 +36,13 @@ fun MainScreen(
     onPdfSelect: () -> Unit,
     onNavigateToRead: (Uri) -> Unit,
     onSortBooks: (SortOrder) -> Unit,
-    navController: NavHostController
+    navController: NavHostController,
+    defaultSection: String = "Home"
 ) {
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.alinsa))
     val fsFont = FontFamily(Font(R.font.fsb))
-    var selectedSection by remember { mutableStateOf("Home") }
+    var selectedSection by remember { mutableStateOf(defaultSection) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }

@@ -4,6 +4,7 @@ package com.example.naivety.ui.screens
 
 import BookCard
 import BookPreviewModal
+import SearchResultsScreen
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -21,6 +22,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -37,6 +40,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -56,175 +60,158 @@ fun BrowseScreen(
     var searchQuery by remember { mutableStateOf("") }
     val books = viewModel.books.collectAsLazyPagingItems()
     val selectedBook by viewModel.selectedBook.collectAsState()
+    val searchState by viewModel.searchState.collectAsState()
     val fsFont = FontFamily(Font(R.font.fsultralit))
+    var showSearchResults by remember { mutableStateOf(false) }
+    val searchResults by viewModel.searchResults.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        // Search Bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(34.dp) // Fixed height for consistent alignment
-                    .background(Color.Transparent, RoundedCornerShape(28.dp))
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-
-                ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(Color.Transparent)
-                        .height(34.dp), // Match parent height
-                    contentAlignment = Alignment.CenterStart // Center the content vertically
-                ) {
-                    BasicTextField(
-                        value = searchQuery,
-                        onValueChange = { newQuery ->
-                            searchQuery = newQuery
-                            // Don't trigger search immediately on each keystroke
-                        },
-                        textStyle = TextStyle(
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontFamily = fsFont
-                        ),
-                        cursorBrush = SolidColor(Color(0xFF8E42FF)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterStart)
-                            .onKeyEvent { keyEvent ->
-                                if (keyEvent.key == Key.Enter) {
-                                    viewModel.searchBooks(searchQuery)
-                                    true
-                                } else false
-                            },
-                        decorationBox = { innerTextField ->
-                            Box(
-                                contentAlignment = Alignment.CenterStart // Center placeholder text
-                            ) {
-                                if (searchQuery.isEmpty()) {
-                                    Text(
-                                        text = "Find a story worth staying up for.",
-                                        color = Color.Gray,
-                                        fontSize = 20.sp,
-                                        fontFamily = fsFont
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        }
-                    )
-                }
-            }
-        }
-        // Book Grid
-        Box(
+    if (showSearchResults) {
+        SearchResultsScreen(
+            books = searchResults,
+            onBookClick = onBookClick,
+            onBackPress = {
+                showSearchResults = false
+                viewModel.clearSearch()
+            },
+            isLoading = searchState is SearchState.Searching
+        )
+    } else {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            LazyVerticalStaggeredGrid(
-                columns = StaggeredGridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalItemSpacing = 10.dp,
-                state = rememberLazyStaggeredGridState()
-            ) {
-                items(
-                    count = books.itemCount,
-                    key = { index ->
-                        // Create a truly unique key combining index and book key
-                        val book = books[index]
-                        "${index}_${book?.key ?: System.nanoTime()}"
-                    }
-                ) { index ->
-                    val book = books[index]
-                    if (book != null) {
-                        BookCard(
-                            book = book,
-                            onLongPress = { viewModel.onBookLongPressed(book) },
-                            onClick = { onBookClick(book) },
-                            modifier = Modifier
-                                .animateItemPlacement()
-                                .blur(if (selectedBook?.key == book.key) 0.dp else if (selectedBook != null) 8.dp else 0.dp)
-                        )
-                    } else {
-                        // Placeholder while loading
-                        PlaceholderBookCard()
-                    }
-                }
+            CustomSearchBar(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                onSearchSubmit = { query ->
+                    viewModel.searchBooks(query)
+                    showSearchResults = true
+                },
+                fsFont = FontFamily(Font(R.font.fsultralit))
+            )
 
-                // Add loading state at the bottom with correct span type
-                when (books.loadState.append) {
-                    is LoadState.Loading -> {
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            LoadingIndicator()
-                        }
-                    }
-                    is LoadState.Error -> {
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            ErrorItem { books.retry() }
-                        }
-                    }
-                    else -> {}
-                }
-            }
-        }
-
-
-        selectedBook?.let { book ->
+            // Book Grid
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable { viewModel.clearSelectedBook() }
+                    .background(Color.Black)
             ) {
-                Card(
+                when (searchState) {
+                    is SearchState.Searching -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = Color(0xFF8E42FF)
+                        )
+                    }
+
+                    is SearchState.NoResults -> {
+                        Text(
+                            text = "No results found",
+                            color = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+
+                    is SearchState.Error -> {
+                        Text(
+                            text = "Error searching books",
+                            color = Color.Red,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+
+                    else -> {
+                        LazyVerticalStaggeredGrid(
+                            columns = StaggeredGridCells.Fixed(2),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalItemSpacing = 10.dp,
+                            state = rememberLazyStaggeredGridState()
+                        ) {
+                            items(
+                                count = books.itemCount,
+                                key = { index ->
+                                    // Create a truly unique key combining index and book key
+                                    val book = books[index]
+                                    "${index}_${book?.key ?: System.nanoTime()}"
+                                }
+                            ) { index ->
+                                val book = books[index]
+                                if (book != null) {
+                                    BookCard(
+                                        book = book,
+                                        onLongPress = { viewModel.onBookLongPressed(book) },
+                                        onClick = { onBookClick(book) },
+                                        modifier = Modifier
+                                            .animateItemPlacement()
+                                            .blur(if (selectedBook?.key == book.key) 0.dp else if (selectedBook != null) 8.dp else 0.dp)
+                                    )
+                                } else {
+                                    // Placeholder while loading
+                                    PlaceholderBookCard()
+                                }
+                            }
+
+                            // Add loading state at the bottom with correct span type
+                            when (books.loadState.append) {
+                                is LoadState.Loading -> {
+                                    item(span = StaggeredGridItemSpan.FullLine) {
+                                        LoadingIndicator()
+                                    }
+                                }
+
+                                is LoadState.Error -> {
+                                    item(span = StaggeredGridItemSpan.FullLine) {
+                                        ErrorItem { books.retry() }
+                                    }
+                                }
+
+                                else -> {}
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            selectedBook?.let { book ->
+                Box(
                     modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.Center)
-                        .width(280.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .clickable { viewModel.clearSelectedBook() }
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+                    Card(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .align(Alignment.Center)
+                            .width(280.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
                     ) {
-                        Text(
-                            text = book.title,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = book.author,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = book.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = book.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = book.author,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = book.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
                     }
                 }
             }
@@ -297,4 +284,74 @@ fun Modifier.shimmerBackground(): Modifier = composed {
         )
     )
     background(Color.Gray.copy(alpha = alpha))
+}
+
+@Composable
+private fun CustomSearchBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchSubmit: (String) -> Unit,
+    fsFont: FontFamily
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(43.dp)
+            .background(Color(0xFF1A1A1A), RoundedCornerShape(25.dp))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                singleLine = true,
+                cursorBrush = SolidColor(Color(0xFF8E42FF)),
+                textStyle = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontFamily = fsFont
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search
+                ),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        onSearchSubmit(searchQuery)
+                    }
+                ),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "Find a story worth staying up for...",
+                                color = Color.Gray,
+                                fontSize = 16.sp,
+                                fontFamily = fsFont
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+            IconButton(
+                onClick = { onSearchSubmit(searchQuery) },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = Color(0xFF8E42FF),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
 }

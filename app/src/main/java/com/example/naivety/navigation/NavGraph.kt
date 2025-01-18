@@ -64,7 +64,12 @@ fun NavGraph(
         }
 
         // Main Screen
-        composable(Destinations.Main.route) {
+        composable(Destinations.Main.route) { backStackEntry ->
+            val fromBookDetail = backStackEntry.savedStateHandle.get<Boolean>("fromBookDetail") ?: false
+            val defaultSection = if (fromBookDetail) "Browse" else "Home"
+
+            backStackEntry.savedStateHandle["fromBookDetail"] = null
+
             MainScreen(
                 viewModel = mainViewModel,
                 onPdfSelect = {
@@ -83,7 +88,8 @@ fun NavGraph(
                 onSortBooks = { sortOrder ->
                     mainViewModel.sortBooks(sortOrder)
                 },
-                navController = navController
+                navController = navController,
+                defaultSection = defaultSection
             )
         }
         // Book Detail Screen
@@ -123,7 +129,8 @@ fun NavGraph(
                             }
                         }
                     }
-                }
+                },
+                navController = navController
             )
         }
 

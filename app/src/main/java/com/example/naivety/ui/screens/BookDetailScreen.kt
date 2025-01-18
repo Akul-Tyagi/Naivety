@@ -1,3 +1,4 @@
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutQuart
@@ -61,9 +62,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.naivety.R
 import com.example.naivety.models.OpenLibraryBook
+import com.example.naivety.navigation.Destinations
 import com.example.naivety.viewmodels.BookComment
 import com.example.naivety.viewmodels.BookDetailViewModel
 
@@ -72,6 +75,7 @@ fun BookDetailScreen(
     book: OpenLibraryBook,
     onBackPressed: () -> Unit,
     viewModel: BookDetailViewModel = hiltViewModel(),
+    navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     val bookDetails by viewModel.bookDetails.collectAsState()
@@ -80,6 +84,13 @@ fun BookDetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     var isLiked by remember { mutableStateOf(false) }
+    var selectedSection by remember { mutableStateOf("Browse") }
+
+    BackHandler {
+        // Set the flag before navigating back
+        navController.previousBackStackEntry?.savedStateHandle?.set("fromBookDetail", true)
+        onBackPressed()
+    }
 
     LaunchedEffect(book.key) {
         viewModel.loadBookDetails(book.key)
@@ -205,7 +216,7 @@ fun BookDetailScreen(
                         )
                         Spacer(modifier = Modifier.width(26.dp))
                         Text(
-                            text = "${bookDetails?.ratings_count ?: 0} ratings",
+                            text = "${bookDetails?.pageCount ?: "Pages unavailable"}",
                             style = MaterialTheme.typography.bodyLarge.copy(fontFamily = customFonttttttt),
                             color = Color.Gray
                         )

@@ -1,6 +1,7 @@
 package com.example.naivety
 
 import BookDetailScreen
+import SearchResultsScreen
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -74,25 +75,32 @@ class MainScreenActivity : ComponentActivity() {
                         startDestination = "main" ,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        composable("main") {
-                    MainScreen(
-                        viewModel = viewModel,
-                        onPdfSelect = { launchPdfSelection() },
-                        onNavigateToRead = { uri ->
-                            viewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
-                                val intent = Intent(this@MainScreenActivity, PdfViewerActivity::class.java).apply {
-                                    data = uri
-                                    putExtra("BOOK_ID", book.id)
-                                }
-                                startActivity(intent)
+                        composable("main") { backStackEntry ->
+                            // Get the default section from saved state handle or use "Browse" if coming from BookDetail
+                            val defaultSection = if (backStackEntry.savedStateHandle.get<Boolean>("fromBookDetail") == true) {
+                                "Browse"
+                            } else {
+                                "Home"
                             }
-                        },
-                        onSortBooks = { sortOrder ->
-                            viewModel.sortBooks(sortOrder)
-                        },
-                        navController = navController
-                    )
-                }
+                            MainScreen(
+                                viewModel = viewModel,
+                                onPdfSelect = { launchPdfSelection() },
+                                onNavigateToRead = { uri ->
+                                    viewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
+                                        val intent = Intent(this@MainScreenActivity, PdfViewerActivity::class.java).apply {
+                                            data = uri
+                                            putExtra("BOOK_ID", book.id)
+                                        }
+                                        startActivity(intent)
+                                    }
+                                },
+                                onSortBooks = { sortOrder ->
+                                    viewModel.sortBooks(sortOrder)
+                                },
+                                navController = navController,
+                                defaultSection = defaultSection
+                            )
+                        }
                         composable(Destinations.Browse.route) {
                             BrowseScreen(
                                 onBookClick = { book ->
@@ -129,8 +137,10 @@ class MainScreenActivity : ComponentActivity() {
                                     description = ""
                                 ),
                                 onBackPressed = {
+                                    navController.previousBackStackEntry?.savedStateHandle?.set("fromBookDetail", true)
                                     navController.navigateUp()
-                                }
+                                },
+                                navController = navController
                             )
                         }
                     }
