@@ -9,5 +9,7 @@ data class OpenLibraryBook(
     val publishedYear: Int,
     val description: String,
     val rating: Float = 0f,
-    val ratingsCount: Int = 0
+    val ratingsCount: Int = 0,
+    val pageCount: Int? = null
+
 )

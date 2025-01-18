@@ -7,6 +7,7 @@ sealed class Destinations(val route: String) {
     object Auth : Destinations("auth")
     object Main : Destinations("main")
     object Browse : Destinations("browse")
+    object Lists : Destinations("lists")
 
     object BookDetail : Destinations(
         "bookDetail/{bookKey}/{title}/{author}/{year}/{coverUrl}"
@@ -28,5 +29,9 @@ sealed class Destinations(val route: String) {
         fun createRoute(uri: Uri): String {
             return "pdf_viewer/${Uri.encode(uri.toString())}"
         }
+    }
+
+    object ListDetail : Destinations("list/{listId}") {
+        fun createRoute(listId: String): String = "list/$listId"
     }
 }

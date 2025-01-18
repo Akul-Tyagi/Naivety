@@ -1,8 +1,10 @@
 // app/src/main/java/com/example/naivety/di/NetworkModule.kt
 package com.example.naivety.di
 
+import com.example.naivety.data.AppDatabase
 import com.example.naivety.network.OpenLibraryApi
 import com.example.naivety.repository.BrowseRepository
+import com.example.naivety.repository.ListsRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -58,5 +60,14 @@ object NetworkModule {
     @Singleton
     fun provideBrowseRepository(api: OpenLibraryApi): BrowseRepository {
         return BrowseRepository(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideListsRepository(
+        database: AppDatabase,
+        api: OpenLibraryApi
+    ): ListsRepository {
+        return ListsRepository(database, api)
     }
 }

@@ -104,7 +104,7 @@ fun MainScreen(
                     // Crossfade animation between sections
                     Crossfade(
                         targetState = selectedSection,
-                        animationSpec = tween(300)
+                        animationSpec = tween(200)
                     ) { section ->
                         when (section) {
                             "Home" -> {
@@ -114,7 +114,22 @@ fun MainScreen(
                                     onNavigateToRead = onNavigateToRead
                                 )
                             }
-
+                            "Lists" -> {
+                                ListsScreen(
+                                    onNavigateToRead = onNavigateToRead,
+                                    onBookClick = { book ->
+                                        navController.navigate(
+                                            Destinations.BookDetail.createRoute(
+                                                book.key,
+                                                book.title,
+                                                book.author,
+                                                book.publishedYear,
+                                                book.coverUrl
+                                            )
+                                        )
+                                    }
+                                )
+                            }
                             "Browse" -> {
                                 BrowseScreen(
                                     onBookClick = { book ->

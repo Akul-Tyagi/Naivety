@@ -27,9 +27,12 @@ fun BookCard(
     book: OpenLibraryBook,
     onLongPress: () -> Unit,
     onClick: () -> Unit,
+    isLiked: Boolean = false,
+    onLikeToggle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var isLongPressed by remember { mutableStateOf(false) }
+    var showListsDialog by remember { mutableStateOf(false) }
+    var isLongPressActive by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -53,7 +56,7 @@ fun BookCard(
             )
         }
 
-        // Add like button overlay
+        // Add like button overlay with long press functionality
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -61,27 +64,33 @@ fun BookCard(
                 .size(32.dp)
                 .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                 .combinedClickable(
-                    onClick = { /* Add like functionality later */ },
+                    onClick = onLikeToggle,
                     onLongClick = {
-                        isLongPressed = true
-                        onLongPress()
+                        showListsDialog = true
+                        isLongPressActive = true
                     }
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.Favorite,
+                imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                 contentDescription = "Like",
-                tint = Color.White,
+                tint = if (isLiked) Color.Red else Color.White,
                 modifier = Modifier.size(20.dp)
+            )
+        }
+
+        if (showListsDialog) {
+            ListSelectionDialog(
+                book = book,
+                onDismiss = { showListsDialog = false }
             )
         }
     }
 
-    // Reset long press state when component is disposed
     DisposableEffect(Unit) {
         onDispose {
-            isLongPressed = false
+            isLongPressActive = false
         }
     }
 }
