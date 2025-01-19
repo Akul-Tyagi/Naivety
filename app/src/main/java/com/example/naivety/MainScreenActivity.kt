@@ -85,10 +85,10 @@ class MainScreenActivity : ComponentActivity() {
                             MainScreen(
                                 viewModel = viewModel,
                                 onPdfSelect = { launchPdfSelection() },
-                                onNavigateToRead = { uri ->
-                                    viewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
+                                onNavigateToRead = { uri ->  // Change this line to accept String
+                                    viewModel.books.value.find { it.filePath == uri }?.let { book ->
                                         val intent = Intent(this@MainScreenActivity, PdfViewerActivity::class.java).apply {
-                                            data = uri
+                                            data = Uri.parse(uri)  // Convert String to Uri here
                                             putExtra("BOOK_ID", book.id)
                                         }
                                         startActivity(intent)

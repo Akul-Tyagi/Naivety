@@ -2,33 +2,30 @@ package com.example.naivety.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.naivety.data.List
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 import com.example.naivety.data.BookListCrossRef
 import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.repository.ListsRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import javax.inject.Inject
+import com.example.naivety.data.List as UserList
 
 @HiltViewModel
 class ListsViewModel @Inject constructor(
     private val repository: ListsRepository
 ) : ViewModel() {
-    private val _lists = MutableStateFlow<List<List>>(emptyList())
+    private val _lists = MutableStateFlow<kotlin.collections.List<UserList>>(emptyList())
     val lists = _lists.asStateFlow()
+
+    private val _selectedListId = MutableStateFlow<String?>(null)
+    val selectedListId = _selectedListId.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
-
-    private val _selectedListId = MutableStateFlow<String?>(null)
-    val selectedListId = _selectedListId.asStateFlow()
 
     init {
         loadLists()
@@ -37,11 +34,16 @@ class ListsViewModel @Inject constructor(
 
     private fun loadLists() {
         viewModelScope.launch {
-            repository.getAllLists().collect { lists ->
-                _lists.value = lists
-                if (_selectedListId.value == null && lists.isNotEmpty()) {
-                    _selectedListId.value = lists.first().id
+            try {
+                _isLoading.value = true
+                repository.getAllLists().collect { listItems: kotlin.collections.List<UserList> ->
+                    _lists.value = listItems
+                    if (_selectedListId.value == null && listItems.isNotEmpty()) {
+                        _selectedListId.value = listItems.first().id
+                    }
                 }
+            } finally {
+                _isLoading.value = false
             }
         }
     }
@@ -58,7 +60,7 @@ class ListsViewModel @Inject constructor(
         viewModelScope.launch {
             val count = repository.getListCount()
             val newListName = if (count > 0) "$name${count + 1}" else name
-            val newList = List(name = newListName)
+            val newList = UserList(name = newListName)
             repository.insertList(newList)
         }
     }
@@ -95,16 +97,8 @@ class ListsViewModel @Inject constructor(
         }
     }
 
-    fun loadBooksForList(listId: String): Flow<List<OpenLibraryBook>> {
-        return repository.getBooksInList(listId).map { crossRefs ->
-            // Here you'll need to fetch book details from your API
-            // This is a placeholder - implement actual book fetching
-            crossRefs.mapNotNull { crossRef ->
-                // Fetch book details using the bookKey
-                // You'll need to implement this in your repository
-                repository.getBookDetails(crossRef.bookKey)
-            }
-        }
+    fun loadBooksForList(listId: String): Flow<kotlin.collections.List<OpenLibraryBook>> {
+        return repository.getBooksInList(listId)
     }
 
     fun toggleBookInList(bookKey: String, listId: String) {
@@ -118,26 +112,12 @@ class ListsViewModel @Inject constructor(
         }
     }
 
-    fun reorderLists(newOrder: kotlin.collections.List<List>) {
+    fun reorderLists(newOrder: kotlin.collections.List<UserList>) {
         viewModelScope.launch {
             try {
                 repository.updateListOrder(newOrder)
             } catch (e: Exception) {
-                // Handle error
                 _error.value = "Failed to reorder lists"
-            }
-        }
-    }
-    init {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                createDefaultListIfNeeded()
-                loadLists()
-            } catch (e: Exception) {
-                _error.value = "Failed to initialize lists"
-            } finally {
-                _isLoading.value = false
             }
         }
     }

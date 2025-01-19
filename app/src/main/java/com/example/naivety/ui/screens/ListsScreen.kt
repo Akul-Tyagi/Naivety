@@ -26,7 +26,7 @@ import com.example.naivety.viewmodels.ListsViewModel
 import androidx.compose.runtime.getValue
 import com.example.naivety.ui.components.EditListDialog
 import com.example.naivety.ui.components.ReorderableLists
-import com.example.naivety.data.AppDatabase
+import com.example.naivety.data.List as UserList
 
 @Composable
 fun ListsScreen(
@@ -34,12 +34,11 @@ fun ListsScreen(
     onNavigateToRead: (String) -> Unit,
     onBookClick: (OpenLibraryBook) -> Unit
 ) {
-    val lists by viewModel.lists.collectAsState()
-    val selectedListId by viewModel.selectedListId.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    var showEditDialog by remember { mutableStateOf<List?>(null) }
-    val sonderFont = FontFamily(Font(R.font.sonder))
+    val lists = viewModel.lists.collectAsState().value
+    val selectedListId = viewModel.selectedListId.collectAsState().value
+    val isLoading = viewModel.isLoading.collectAsState().value
+    val error = viewModel.error.collectAsState().value
+    var showEditDialog by remember { mutableStateOf<UserList?>(null) }
     val alinsaFont = FontFamily(Font(R.font.alinsa))
 
     Column(
@@ -55,7 +54,8 @@ fun ListsScreen(
             onEditList = { showEditDialog = it },
             modifier = Modifier.fillMaxWidth()
         )
-        // Lists header section
+
+        // Lists header section with LazyRow
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -63,12 +63,15 @@ fun ListsScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(lists) { list ->
+            items(
+                items = lists,
+                key = { it.id }
+            ) { list ->
                 ListChip(
                     name = list.name,
                     isSelected = list.id == selectedListId,
                     onSelected = { viewModel.selectList(list.id) },
-                    onEdit = { /* Show edit dialog */ }
+                    onEdit = { showEditDialog = list }
                 )
             }
 
@@ -92,87 +95,61 @@ fun ListsScreen(
             }
         }
 
-        showEditDialog?.let { list ->
-            EditListDialog(
-                initialName = list.name,
-                onConfirm = { newName ->
-                    viewModel.updateListName(list.id, newName)
-                    showEditDialog = null
-                },
-                onDismiss = { showEditDialog = null }
-            )
-        }
-    }
+        // Books grid for selected list
+        selectedListId?.let { listId ->
+            val booksInList = viewModel.loadBooksForList(listId).collectAsState(initial = emptyList()).value
 
-        when {
-            isLoading -> {
+            if (booksInList.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFF8E42FF))
-                }
-            }
-
-            error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = error ?: "An error occurred",
-                        color = Color.Red,
-                        modifier = Modifier.padding(16.dp)
+                        text = "No books in this list yet",
+                        color = Color.Gray,
+                        fontFamily = alinsaFont
                     )
                 }
-            }
-
-            else -> {
-                // Books grid for selected list
-                selectedListId?.let { listId ->
-                    val booksInList by viewModel.loadBooksForList(listId)
-                        .collectAsState(initial = emptyList())
-
-                    if (booksInList.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No books in this list yet",
-                                color = Color.Gray,
-                                fontFamily = alinsaFont
-                            )
-                        }
-                    } else {
-                        LazyVerticalStaggeredGrid(
-                            columns = StaggeredGridCells.Fixed(2),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalItemSpacing = 10.dp
-                        ) {
-                            items(
-                                items = booksInList,
-                                key = { it.key }
-                            ) { book ->
-                                BookCard(
-                                    book = book,
-                                    onLongPress = { /* Handle long press */ },
-                                    onClick = { /* Handle click */ },
-                                    isLiked = true,
-                                    onLikeToggle = {
-                                        viewModel.toggleBookInList(book.key, listId)
-                                    }
-                                )
+            } else {
+                LazyVerticalStaggeredGrid(
+                    columns = StaggeredGridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalItemSpacing = 10.dp
+                ) {
+                    items(
+                        count = booksInList.size,
+                        key = { index -> booksInList[index].key }
+                    ) { index ->
+                        val book = booksInList[index]
+                        BookCard(
+                            book = book,
+                            onLongPress = { /* Handle long press */ },
+                            onClick = { onBookClick(book) },
+                            isLiked = true,
+                            onLikeToggle = {
+                                viewModel.toggleBookInList(book.key, listId)
                             }
-                        }
+                        )
                     }
                 }
             }
         }
+    }
+
+    // Edit dialog
+    showEditDialog?.let { list ->
+        EditListDialog(
+            initialName = list.name,
+            onConfirm = { newName ->
+                viewModel.updateListName(list.id, newName)
+                showEditDialog = null
+            },
+            onDismiss = { showEditDialog = null }
+        )
     }
 }
 

@@ -34,7 +34,7 @@ import com.example.naivety.viewmodels.BookViewModel
 fun MainScreen(
     viewModel: BookViewModel,
     onPdfSelect: () -> Unit,
-    onNavigateToRead: (Uri) -> Unit,
+    onNavigateToRead: (String) -> Unit,
     onSortBooks: (SortOrder) -> Unit,
     navController: NavHostController,
     defaultSection: String = "Home"
@@ -111,7 +111,7 @@ fun MainScreen(
                                 HomeSection(
                                     viewModel = viewModel,
                                     searchQuery = searchQuery,
-                                    onNavigateToRead = onNavigateToRead
+                                    onNavigateToRead = { uri -> onNavigateToRead(uri.toString()) }
                                 )
                             }
                             "Lists" -> {

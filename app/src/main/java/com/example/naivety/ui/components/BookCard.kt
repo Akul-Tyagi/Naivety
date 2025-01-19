@@ -20,6 +20,10 @@ import coil.compose.AsyncImage
 import com.example.naivety.models.OpenLibraryBook
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import com.example.naivety.ui.components.ListSelectionDialog
+
 // app/src/main/java/com/example/naivety/ui/components/BookCard.kt
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

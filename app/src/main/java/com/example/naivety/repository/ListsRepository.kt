@@ -1,17 +1,14 @@
 package com.example.naivety.repository
 
 import com.example.naivety.data.AppDatabase
-import com.example.naivety.data.List
 import com.example.naivety.data.BookListCrossRef
 import com.example.naivety.data.SavedBook
 import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.network.OpenLibraryApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.example.naivety.data.List as UserList
 
 @Singleton
 class ListsRepository @Inject constructor(
@@ -22,17 +19,17 @@ class ListsRepository @Inject constructor(
     private val bookListDao = database.bookListDao()
     private val savedBookDao = database.savedBookDao()
 
-    fun getAllLists(): Flow<List<List>> = listDao.getAllLists()
+    fun getAllLists(): Flow<kotlin.collections.List<UserList>> = listDao.getAllLists()
 
     suspend fun getListCount(): Int = listDao.getListCount()
 
-    suspend fun insertList(list: List) = listDao.insertList(list)
+    suspend fun insertList(list: UserList) = listDao.insertList(list)
 
-    suspend fun updateList(list: List) = listDao.updateList(list)
+    suspend fun updateList(list: UserList) = listDao.updateList(list)
 
-    suspend fun deleteList(list: List) = listDao.deleteList(list)
+    suspend fun deleteList(list: UserList) = listDao.deleteList(list)
 
-    suspend fun updateListOrder(lists: kotlin.collections.List<List>) {
+    suspend fun updateListOrder(lists: kotlin.collections.List<UserList>) {
         listDao.updateListOrder(lists)
     }
 
@@ -41,7 +38,6 @@ class ListsRepository @Inject constructor(
 
     suspend fun addBookToList(crossRef: BookListCrossRef) {
         bookListDao.addBookToList(crossRef)
-        // Ensure book details are saved
         ensureBookIsSaved(crossRef.bookKey)
     }
     private suspend fun ensureBookIsSaved(bookKey: String) {

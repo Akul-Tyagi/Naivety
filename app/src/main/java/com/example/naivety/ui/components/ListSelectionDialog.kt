@@ -25,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.naivety.R
 import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.viewmodels.ListsViewModel
+import com.example.naivety.data.List as UserList
 
 @Composable
 fun ListSelectionDialog(
@@ -32,8 +33,8 @@ fun ListSelectionDialog(
     onDismiss: () -> Unit,
     viewModel: ListsViewModel = hiltViewModel()
 ) {
-    val lists by viewModel.lists.collectAsState()
-    val selectedListId by viewModel.selectedListId.collectAsState()
+    val lists = viewModel.lists.collectAsState().value
+    val selectedListId = viewModel.selectedListId.collectAsState().value
     val alinsaFont = FontFamily(Font(R.font.alinsa))
 
     Dialog(onDismissRequest = onDismiss) {
@@ -47,8 +48,7 @@ fun ListSelectionDialog(
             )
         ) {
             Column(
-                modifier = Modifier
-                    .padding(16.dp)
+                modifier = Modifier.padding(16.dp)
             ) {
                 // Header
                 Row(
@@ -80,15 +80,15 @@ fun ListSelectionDialog(
                         .heightIn(max = 300.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(lists) { list ->
+                    items(lists) { userList ->
                         ListSelectionItem(
-                            listName = list.name,
-                            isSelected = list.id == selectedListId,
+                            listName = userList.name,
+                            isSelected = userList.id == selectedListId,
                             onToggle = {
-                                if (list.id == selectedListId) {
-                                    viewModel.removeBookFromList(book.key, list.id)
+                                if (userList.id == selectedListId) {
+                                    viewModel.removeBookFromList(book.key, userList.id)
                                 } else {
-                                    viewModel.addBookToList(book.key, list.id)
+                                    viewModel.addBookToList(book.key, userList.id)
                                 }
                             }
                         )
@@ -97,9 +97,7 @@ fun ListSelectionDialog(
 
                 // Add New List Button
                 TextButton(
-                    onClick = {
-                        viewModel.createNewList()
-                    },
+                    onClick = { viewModel.createNewList() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 16.dp),

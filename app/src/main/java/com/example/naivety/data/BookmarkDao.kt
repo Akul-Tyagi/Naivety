@@ -2,6 +2,7 @@ package com.example.naivety.data
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
+import com.example.naivety.data.List as UserList
 
 @Dao
 interface BookmarkDao {

@@ -79,7 +79,7 @@ fun NavGraph(
                     // Navigate to PDF viewer with the URI
                     mainViewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
                         val intent = Intent(context, PdfViewerActivity::class.java).apply {
-                            data = uri
+                            data = Uri.parse(uri)
                             putExtra("BOOK_ID", book.id)
                         }
                         context.startActivity(intent)
