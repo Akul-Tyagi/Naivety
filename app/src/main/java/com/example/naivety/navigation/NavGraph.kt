@@ -9,6 +9,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,30 +20,61 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.naivety.*
 import com.example.naivety.ui.screens.*
+import com.example.naivety.utils.PreferencesManager
 import com.example.naivety.viewmodels.BookViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
+import io.github.jan.supabase.BuildConfig
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.createSupabaseClient
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    auth: FirebaseAuth,
-    googleSignInClient: GoogleSignInClient,
     startDestination: String
 ) {
 
     val context = LocalContext.current
     val mainViewModel: BookViewModel = hiltViewModel()
+    val supabaseClient = remember {
+        createSupabaseClient(
+            supabaseUrl = BuildConfig.SUPABASE_URL,
+            supabaseKey = BuildConfig.SUPABASE_ANON_KEY
+        ) {
+            install(Auth)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        // Check auth state before deciding navigation
+        supabaseClient.auth.sessionStatus.collect { status ->
+            when (status) {
+                is SessionStatus.Authenticated -> {
+                    if (PreferencesManager.isFirstTime(context)) {
+                        navController.navigate(Destinations.Walkthrough.route)
+                    } else {
+                        navController.navigate(Destinations.Main.route)
+                    }
+                }
+                is SessionStatus.NotAuthenticated -> {
+                    navController.navigate(Destinations.Auth.route)
+                }
+                else -> {} // Handle other states
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
-        composable(Destinations.Walkthrough.route) {
-            WalkthroughScreen(
-                onFinish = {
-                    navController.navigate(Destinations.Auth.route) {
-                        popUpTo(Destinations.Walkthrough.route) { inclusive = true }
+        composable(Destinations.Auth.route) {
+            AuthMainScreen(
+                onAuthSuccess = {
+                    navController.navigate(Destinations.Main.route) {
+                        popUpTo(Destinations.Auth.route) { inclusive = true }
                     }
                 }
             )

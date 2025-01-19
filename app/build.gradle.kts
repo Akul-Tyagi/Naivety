@@ -40,7 +40,7 @@ android {
     }
     buildFeatures {
         compose = true
-        dataBinding= true
+        buildConfig = true
     }
 
     viewBinding {
@@ -114,6 +114,22 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
+
+    //supabase
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+
+    // Supabase
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
+    implementation(libs.supabase.gotrue)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.auth)
+
+    implementation("com.mikepenz:iconics-core:5.4.0")
+    implementation("com.mikepenz:google-material-typeface:4.0.0.2-kotlin@aar")
+    implementation("com.mikepenz:fontawesome-typeface:5.9.0.2-kotlin@aar")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

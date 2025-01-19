@@ -2,11 +2,13 @@ package com.example.naivety.ui.screens
 
 import BookCard
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -36,8 +38,6 @@ fun ListsScreen(
 ) {
     val lists = viewModel.lists.collectAsState().value
     val selectedListId = viewModel.selectedListId.collectAsState().value
-    val isLoading = viewModel.isLoading.collectAsState().value
-    val error = viewModel.error.collectAsState().value
     var showEditDialog by remember { mutableStateOf<UserList?>(null) }
     val alinsaFont = FontFamily(Font(R.font.alinsa))
 
@@ -46,16 +46,6 @@ fun ListsScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        ReorderableLists(
-            lists = lists,
-            selectedListId = selectedListId,
-            onListSelect = { viewModel.selectList(it) },
-            onListReorder = { viewModel.reorderLists(it) },
-            onEditList = { showEditDialog = it },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Lists header section with LazyRow
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -63,10 +53,7 @@ fun ListsScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(
-                items = lists,
-                key = { it.id }
-            ) { list ->
+            items(lists) { list ->
                 ListChip(
                     name = list.name,
                     isSelected = list.id == selectedListId,
@@ -158,36 +145,36 @@ private fun ListChip(
     name: String,
     isSelected: Boolean,
     onSelected: () -> Unit,
-    onEdit: () -> Unit,
-    modifier: Modifier = Modifier
+    onEdit: () -> Unit
 ) {
-    ElevatedCard(
-        modifier = modifier
-            .height(40.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = if (isSelected) Color(0xFF8E42FF) else Color(0xFF1A1A1A)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = name,
-                color = Color.White,
-                fontSize = 14.sp
+    Row(
+        modifier = Modifier
+            .height(40.dp)
+            .clickable(onClick = onSelected)
+            .background(
+                if (isSelected) Color(0xFF8E42FF) else Color(0xFF1A1A1A),
+                RoundedCornerShape(20.dp)
             )
-            IconButton(
-                onClick = onEdit,
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit list name",
-                    tint = Color.White
-                )
-            }
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = name,
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        IconButton(
+            onClick = onEdit,
+            modifier = Modifier.size(20.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit list name",
+                tint = Color.White,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }

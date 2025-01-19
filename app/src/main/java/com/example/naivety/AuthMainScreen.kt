@@ -19,25 +19,33 @@ import androidx.compose.ui.unit.sp
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.naivety.navigation.Destinations
+import com.example.naivety.viewmodels.AuthState
+import com.example.naivety.viewmodels.AuthViewModel
+import io.github.jan.supabase.auth.SessionManager
+import io.github.jan.supabase.auth.providers.Github
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.OAuthProvider
 
 @Composable
 fun AuthMainScreen(
-    auth: FirebaseAuth,
-    googleSignInClient: GoogleSignInClient,
-    signInWithGoogle: () -> Unit,
-    navigateToMainScreen: () -> Unit
+    viewModel: AuthViewModel = hiltViewModel(),
+    onAuthSuccess: () -> Unit
 ) {
     var isSignIn by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf("") }
 
-    LaunchedEffect(auth.currentUser) {
-        if (auth.currentUser != null) {
-            navigateToMainScreen()
+    val authState by viewModel.authState.collectAsState()
+
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onAuthSuccess()
         }
     }
 
@@ -49,227 +57,175 @@ fun AuthMainScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Title
         Text(
             text = if (isSignIn) "Sign In" else "Sign Up",
             style = MaterialTheme.typography.headlineMedium.copy(
                 color = Color(0xFF8E42FF),
-                fontFamily = FontFamily(Font(R.font.sonder, FontWeight.Normal)),
-            ),
-            modifier = Modifier.padding(bottom = 16.dp)
+                fontFamily = FontFamily(Font(R.font.sonder))
+            )
         )
 
-        if (!isSignIn) {
-            AuthTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = "Username",
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
+        Spacer(modifier = Modifier.height(32.dp))
 
+        // Email & Password Fields
         AuthTextField(
             value = email,
             onValueChange = { email = it },
             label = "Email",
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         AuthTextField(
             value = password,
             onValueChange = { password = it },
             label = "Password",
-            modifier = Modifier.fillMaxWidth(),
-            isPassword = true
+            isPassword = true,
+            modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(16.dp))
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Sign In/Up Button
         Button(
             onClick = {
-                if (email.isNotEmpty() && password.isNotEmpty()) {
-                    if (isSignIn) {
-                        signIn(auth, email, password) { result ->
-                            message = result
-                            if (result == "Sign in successful") {
-                                navigateToMainScreen()
-                            }
-                        }
-                    } else {
-                        signUp(auth, email, password) { result ->
-                            message = result
-                            if (result == "Sign up successful") {
-                                navigateToMainScreen()
-                            }
-                        }
-                    }
+                if (isSignIn) {
+                    viewModel.signInWithEmail(email, password)
                 } else {
-                    message = "Email and Password cannot be empty"
+                    viewModel.signUpWithEmail(email, password)
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF111111),
-                contentColor = Color(0xFF8E42FF)
-            ),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Text(
-                text = if (isSignIn) "Sign In" else "Sign Up",
-                fontSize = 16.sp,
-                fontFamily = FontFamily(Font(R.font.alinsa))
+                containerColor = Color(0xFF8E42FF)
             )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Google Sign In Button
-        Button(
-            onClick = signInWithGoogle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
-                contentColor = Color.Black
-            ),
-            shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, Color.LightGray)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_google_logo),
-                    contentDescription = "Google Logo",
-                    modifier = Modifier.size(24.dp),
-                    tint = Color.Unspecified
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Sign in with Google",
-                    color = Color.Black,
-                    fontSize = 16.sp,
-                    fontFamily = FontFamily(Font(R.font.alinsa))
-                )
-            }
+            Text(if (isSignIn) "Sign In" else "Sign Up")
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // OAuth Providers
+        Text(
+            text = "Or continue with",
+            color = Color.Gray,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
+
+        // OAuth Buttons
+        OAuthButtonsRow(
+            onProviderClick = { provider ->
+                viewModel.signInWithProvider(provider)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Toggle Sign In/Up
         TextButton(
-            onClick = { isSignIn = !isSignIn },
-            modifier = Modifier.fillMaxWidth()
+            onClick = { isSignIn = !isSignIn }
         ) {
             Text(
-                text = if (isSignIn) "Don't have an account? Sign Up" else "Already have an account? Sign In",
-                color = Color(0xFF8E42FF),
-                fontFamily = FontFamily(Font(R.font.alinsa))
+                text = if (isSignIn) "Need an account? Sign Up" else "Have an account? Sign In",
+                color = Color(0xFF8E42FF)
             )
         }
 
-        if (message.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
+        // Error Message
+        if (authState is AuthState.Error) {
             Text(
-                text = message,
+                text = (authState as AuthState.Error).message,
                 color = Color.Red,
-                fontSize = 14.sp,
-                fontFamily = FontFamily(Font(R.font.alinsa))
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
 }
 
 @Composable
-private fun AuthTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier,
-    isPassword: Boolean = false
+private fun SocialAuthButtons(
+    onProviderClick: (OAuthProvider) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
+    Column(
         modifier = modifier,
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        colors = TextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            disabledTextColor = Color.Gray,
-            errorTextColor = Color.Red,
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            errorContainerColor = Color.Transparent,
-            cursorColor = Color.White,
-            errorCursorColor = Color.Red,
-            selectionColors = TextSelectionColors(
-                handleColor = Color.White,
-                backgroundColor = Color.Gray.copy(alpha = 0.4f)
-            ),
-            focusedIndicatorColor = Color.White,
-            unfocusedIndicatorColor = Color.DarkGray,
-            disabledIndicatorColor = Color.Gray,
-            errorIndicatorColor = Color.Red,
-            focusedLeadingIconColor = Color.White,
-            unfocusedLeadingIconColor = Color.DarkGray,
-            disabledLeadingIconColor = Color.Gray,
-            errorLeadingIconColor = Color.Red,
-            focusedTrailingIconColor = Color.White,
-            unfocusedTrailingIconColor = Color.DarkGray,
-            disabledTrailingIconColor = Color.Gray,
-            errorTrailingIconColor = Color.Red,
-            focusedLabelColor = Color.White,
-            unfocusedLabelColor = Color.DarkGray,
-            disabledLabelColor = Color.Gray,
-            errorLabelColor = Color.Red,
-            focusedPlaceholderColor = Color.White,
-            unfocusedPlaceholderColor = Color.DarkGray,
-            disabledPlaceholderColor = Color.Gray,
-            errorPlaceholderColor = Color.Red,
-            focusedSupportingTextColor = Color.White,
-            unfocusedSupportingTextColor = Color.DarkGray,
-            disabledSupportingTextColor = Color.Gray,
-            errorSupportingTextColor = Color.Red,
-            focusedPrefixColor = Color.White,
-            unfocusedPrefixColor = Color.DarkGray,
-            disabledPrefixColor = Color.Gray,
-            errorPrefixColor = Color.Red,
-            focusedSuffixColor = Color.White,
-            unfocusedSuffixColor = Color.DarkGray,
-            disabledSuffixColor = Color.Gray,
-            errorSuffixColor = Color.Red
-        ),
-        singleLine = true
-    )
-}
-
-fun signIn(auth: FirebaseAuth, email: String, password: String, onResult: (String) -> Unit) {
-    auth.signInWithEmailAndPassword(email, password)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                onResult("Sign in successful")
-            } else {
-                onResult("Sign in failed: ${task.exception?.message}")
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SocialAuthProviders.providers.forEach { provider ->
+            Button(
+                onClick = { onProviderClick(provider.provider) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = provider.backgroundColor,
+                    contentColor = provider.contentColor
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = provider.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Continue with ${provider.name}",
+                        fontFamily = FontFamily(Font(R.font.alinsa))
+                    )
+                }
             }
         }
+    }
 }
 
-fun signUp(auth: FirebaseAuth, email: String, password: String, onResult: (String) -> Unit) {
-    auth.createUserWithEmailAndPassword(email, password)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                onResult("Sign up successful")
-            } else {
-                onResult("Sign up failed: ${task.exception?.message}")
+@Composable
+private fun OAuthButtonsRow(
+    onProviderClick: (OAuthProvider) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        OAuthProviderButton(
+            icon = Icons.Default.Google,
+            provider = Google,
+            onClick = onProviderClick
+        )
+        OAuthProviderButton(
+            icon = Icons.Default.GitHub,
+            provider = Github,
+            onClick = onProviderClick
+        )
+        // Add other provider buttons similarly
+    }
+}
+
+@Composable
+fun AuthRequiredScreen(
+    content: @Composable () -> Unit
+) {
+    val navController = LocalNavController.current
+    val sessionManager = remember { SessionManager }
+    var isAuthenticated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isAuthenticated = sessionManager.isAuthenticated()
+        if (!isAuthenticated) {
+            navController.navigate(Destinations.Auth.route) {
+                popUpTo(navController.graph.id) { inclusive = true }
             }
         }
+    }
+
+    if (isAuthenticated) {
+        content()
+    }
 }

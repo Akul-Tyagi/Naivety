@@ -3,9 +3,11 @@ package com.example.naivety
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.runtime.*
 import androidx.core.view.WindowCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -18,111 +20,73 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.example.naivety.auth.SupabaseAuth
 import com.example.naivety.navigation.Destinations
 import com.example.naivety.navigation.NavGraph
 import com.example.naivety.ui.screens.MainScreen
 import com.example.naivety.ui.theme.TransparentSystemBars
 import com.example.naivety.utils.PreferencesManager
+import com.example.naivety.viewmodels.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class AuthActivity : ComponentActivity() {
-    private lateinit var auth: FirebaseAuth
-    private lateinit var googleSignInClient: GoogleSignInClient
+    private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // Initialize Firebase Auth
-        auth = FirebaseAuth.getInstance()
-
-        // Initialize Google Sign In
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
-            .requestEmail()
-            .build()
-
-        // Initialize googleSignInClient before using it
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
-
-        // Check if user is already signed in
-        if (auth.currentUser != null && !PreferencesManager.isFirstTime(this)) {
-            navigateToMainScreen()
-            return
-        }
 
         setContent {
             NaivetyTheme {
                 TransparentSystemBars()
                 val navController = rememberNavController()
 
-                // Determine start destination based on auth state
                 val startDestination = when {
                     PreferencesManager.isFirstTime(this) -> Destinations.Walkthrough.route
-                    auth.currentUser == null -> Destinations.Auth.route
-                    else -> Destinations.Main.route
+                    else -> Destinations.Auth.route
                 }
 
                 NavGraph(
                     navController = navController,
-                    auth = auth,
-                    googleSignInClient = googleSignInClient,
                     startDestination = startDestination
                 )
             }
         }
+
+        // Handle OAuth deep links
+        handleIntent(intent)
     }
 
-
-    private val googleSignInLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result?.data)
-        try {
-            val account = task.getResult(ApiException::class.java)
-            if (account != null) {
-                Log.d("AuthActivity", "Google sign-in successful")
-                firebaseAuthWithGoogle(account)
-            } else {
-                Log.d("AuthActivity", "Google sign-in failed: account is null")
-            }
-        } catch (e: ApiException) {
-            Log.e("AuthActivity", "Google sign-in failed", e)
-        }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
     }
 
-    private fun firebaseAuthWithGoogle(account: GoogleSignInAccount) {
-        val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    Log.d("AuthActivity", "Firebase authentication successful")
-                    PreferencesManager.setFirstTimeDone(this)
-                    navigateToMainScreen()
-                } else {
-                    Log.e("AuthActivity", "Firebase authentication failed", task.exception)
+    private fun handleIntent(intent: Intent) {
+        if (intent.action == Intent.ACTION_VIEW) {
+            val uri = intent.data
+            if (uri != null) {
+                lifecycleScope.launch {
+                    try {
+                        // Let Supabase handle the OAuth response
+                        SupabaseAuth.client.auth.handleDeeplink(uri)
+                        // Navigate to main screen on success
+                        startActivity(Intent(this@AuthActivity, MainScreenActivity::class.java))
+                        finish()
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            this@AuthActivity,
+                            "Authentication failed: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
+        }
     }
-
-    fun signInWithGoogle() {
-        val signInIntent = googleSignInClient.signInIntent
-        googleSignInLauncher.launch(signInIntent)
-    }
-
-    private fun navigateToMainScreen() {
-        startActivity(Intent(this, MainScreenActivity::class.java))
-        finish()
-    }
-}
-
-@Composable
-fun SetSystemBarsColor() {
-    val systemUiController = rememberSystemUiController()
-    systemUiController.setSystemBarsColor(
-        color = Color.Black,
-        darkIcons = false
-    )
 }

@@ -1,5 +1,6 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -29,24 +30,18 @@ import com.example.naivety.ui.components.ListSelectionDialog
 @Composable
 fun BookCard(
     book: OpenLibraryBook,
-    onLongPress: () -> Unit,
     onClick: () -> Unit,
     isLiked: Boolean = false,
     onLikeToggle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showListsDialog by remember { mutableStateOf(false) }
-    var isLongPressActive by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = modifier
-    ) {
+    Box(modifier = modifier) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(
-                    onClick = onClick
-                ),
+                .clickable(onClick = onClick),
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
@@ -67,13 +62,7 @@ fun BookCard(
                 .padding(8.dp)
                 .size(32.dp)
                 .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                .combinedClickable(
-                    onClick = onLikeToggle,
-                    onLongClick = {
-                        showListsDialog = true
-                        isLongPressActive = true
-                    }
-                ),
+                .clickable { onLikeToggle() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -89,12 +78,6 @@ fun BookCard(
                 book = book,
                 onDismiss = { showListsDialog = false }
             )
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            isLongPressActive = false
         }
     }
 }
