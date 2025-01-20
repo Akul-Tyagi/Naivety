@@ -2,47 +2,61 @@ package com.example.naivety
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.*
 import androidx.core.view.WindowCompat
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
-import com.example.naivety.ui.theme.NaivetyTheme
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import androidx.compose.ui.graphics.Color
-import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.naivety.auth.AuthState
 import com.example.naivety.navigation.Destinations
-import com.example.naivety.navigation.NavGraph
-import com.example.naivety.ui.screens.MainScreen
-import com.example.naivety.ui.theme.TransparentSystemBars
+import com.google.android.gms.auth.api.identity.BeginSignInRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.auth.api.identity.SignInClient
+import com.example.naivety.ui.theme.NaivetyTheme
 import com.example.naivety.utils.PreferencesManager
 import com.example.naivety.viewmodels.AuthViewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
 
 @AndroidEntryPoint
 class AuthActivity : ComponentActivity() {
     private val viewModel: AuthViewModel by viewModels()
+    private lateinit var oneTapClient: SignInClient
+    private lateinit var signInRequest: BeginSignInRequest
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        // Initialize Google Sign In
+        oneTapClient = Identity.getSignInClient(this)
+        signInRequest = BeginSignInRequest.builder()
+            .setGoogleIdTokenRequestOptions(
+                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                    .setSupported(true)
+                    .setServerClientId(getString(R.string.default_web_client_id))
+                    .setFilterByAuthorizedAccounts(false)
+                    .build()
+            )
+            .build()
+
+        // Initialize Google Sign In in ViewModel
+        viewModel.initGoogleSignIn(this)
+
+        // Check if user is already authenticated
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            startActivity(Intent(this, MainScreenActivity::class.java))
+            finish()
+            return
+        }
+
         setContent {
             NaivetyTheme {
-                TransparentSystemBars()
                 val navController = rememberNavController()
                 val authState by viewModel.authState.collectAsState()
 
@@ -50,7 +64,7 @@ class AuthActivity : ComponentActivity() {
                 LaunchedEffect(authState) {
                     when (authState) {
                         is AuthState.Success -> {
-                            // Navigate to main screen
+                            PreferencesManager.setFirstTimeLoginDone(this@AuthActivity)
                             startActivity(Intent(this@AuthActivity, MainScreenActivity::class.java))
                             finish()
                         }
@@ -65,14 +79,31 @@ class AuthActivity : ComponentActivity() {
                     }
                 }
 
-                NavGraph(
+                NavHost(
                     navController = navController,
                     startDestination = if (PreferencesManager.isFirstTime(this@AuthActivity)) {
                         Destinations.Walkthrough.route
                     } else {
                         Destinations.Auth.route
                     }
-                )
+                ) {
+                    composable(Destinations.Walkthrough.route) {
+                        WalkthroughScreen(
+                            onFinish = {
+                                PreferencesManager.setFirstTimeDone(this@AuthActivity)
+                                navController.navigate(Destinations.Auth.route) {
+                                    popUpTo(Destinations.Walkthrough.route) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+                    composable(Destinations.Auth.route) {
+                        AuthMainScreen(
+                            viewModel = viewModel,
+                            activity = this@AuthActivity
+                        )
+                    }
+                }
             }
         }
     }

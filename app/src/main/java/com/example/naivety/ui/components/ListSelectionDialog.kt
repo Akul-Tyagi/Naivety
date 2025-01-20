@@ -1,6 +1,5 @@
 package com.example.naivety.ui.components
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +25,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.naivety.R
 import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.viewmodels.ListsViewModel
-import com.example.naivety.data.List as UserList
 
 @Composable
 fun ListSelectionDialog(
@@ -33,9 +32,15 @@ fun ListSelectionDialog(
     onDismiss: () -> Unit,
     viewModel: ListsViewModel = hiltViewModel()
 ) {
-    val lists = viewModel.lists.collectAsState().value
-    val selectedListId = viewModel.selectedListId.collectAsState().value
+    val lists by viewModel.lists.collectAsState()
+    val selectedListId by viewModel.selectedListId.collectAsState()
     val alinsaFont = FontFamily(Font(R.font.alinsa))
+
+    if (lists.isEmpty()) {
+        LaunchedEffect(Unit) {
+            viewModel.createNewList() // Create default list if none exists
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -90,7 +95,8 @@ fun ListSelectionDialog(
                                 } else {
                                     viewModel.addBookToList(book.key, userList.id)
                                 }
-                            }
+                            },
+                            onDelete = {} // Empty implementation since we don't want delete functionality here
                         )
                     }
                 }
@@ -116,10 +122,11 @@ fun ListSelectionDialog(
 }
 
 @Composable
-private fun ListSelectionItem(
+fun ListSelectionItem(
     listName: String,
     isSelected: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onDelete: () -> Unit  // Add this parameter
 ) {
     Row(
         modifier = Modifier
@@ -135,12 +142,21 @@ private fun ListSelectionItem(
             text = listName,
             color = Color.White
         )
-        if (isSelected) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = "Selected",
-                tint = Color.White
-            )
+        Row {
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Selected",
+                    tint = Color.White
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete list",
+                    tint = Color.Red
+                )
+            }
         }
     }
 }

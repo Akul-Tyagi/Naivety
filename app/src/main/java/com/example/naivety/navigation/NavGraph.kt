@@ -46,11 +46,8 @@ fun NavGraph(
         }
         composable(Destinations.Auth.route) {
             AuthMainScreen(
-                onAuthSuccess = {
-                    navController.navigate(Destinations.Main.route) {
-                        popUpTo(Destinations.Auth.route) { inclusive = true }
-                    }
-                }
+                viewModel = hiltViewModel(),
+                activity = LocalContext.current as Activity
             )
         }
 

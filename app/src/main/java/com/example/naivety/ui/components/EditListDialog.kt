@@ -22,9 +22,11 @@ import androidx.compose.ui.text.TextStyle
 fun EditListDialog(
     initialName: String,
     onConfirm: (String) -> Unit,
+    onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(initialName) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -59,25 +61,58 @@ fun EditListDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = Color.Gray)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            if (name.isNotBlank()) onConfirm(name)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8E42FF)
+                    // Delete button
+                    TextButton(
+                        onClick = { showDeleteConfirmation = true },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color.Red
                         )
                     ) {
-                        Text("Save")
+                        Text("Delete List")
+                    }
+
+                    Row {
+                        TextButton(onClick = onDismiss) {
+                            Text("Cancel", color = Color.Gray)
+                        }
+                        Button(
+                            onClick = { if (name.isNotBlank()) onConfirm(name) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF8E42FF)
+                            )
+                        ) {
+                            Text("Save")
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Delete List?", color = Color.White) },
+            text = { Text("This action cannot be undone.", color = Color.White) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteConfirmation = false
+                        onDismiss()
+                    }
+                ) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel", color = Color.White)
+                }
+            },
+            containerColor = Color(0xFF1A1A1A)
+        )
     }
 }

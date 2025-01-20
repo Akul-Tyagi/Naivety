@@ -8,7 +8,7 @@ import android.content.SharedPreferences
 object PreferencesManager {
     private const val PREF_NAME = "NaivetyPrefs"
     private const val KEY_FIRST_TIME = "isFirstTime"
-    private const val KEY_IS_LOGGED_IN = "isLoggedIn"
+    private const val KEY_FIRST_TIME_LOGIN = "isFirstTimeLogin"
 
     private fun getPreferences(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -20,5 +20,13 @@ object PreferencesManager {
 
     fun setFirstTimeDone(context: Context) {
         getPreferences(context).edit().putBoolean(KEY_FIRST_TIME, false).apply()
+    }
+
+    fun setFirstTimeLoginDone(context: Context) {
+        getPreferences(context).edit().putBoolean(KEY_FIRST_TIME_LOGIN, false).apply()
+    }
+
+    fun isFirstTimeLogin(context: Context): Boolean {
+        return getPreferences(context).getBoolean(KEY_FIRST_TIME_LOGIN, true)
     }
 }

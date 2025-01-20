@@ -55,14 +55,17 @@ fun BookCard(
             )
         }
 
-        // Add like button overlay with long press functionality
+        // Modified like button overlay to show dialog
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(8.dp)
                 .size(32.dp)
                 .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                .clickable { onLikeToggle() },
+                .clickable {
+                    showListsDialog = true  // Show dialog on click
+                    onLikeToggle()
+                },
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -72,12 +75,13 @@ fun BookCard(
                 modifier = Modifier.size(20.dp)
             )
         }
+    }
 
-        if (showListsDialog) {
-            ListSelectionDialog(
-                book = book,
-                onDismiss = { showListsDialog = false }
-            )
-        }
+    // Move dialog outside of Box
+    if (showListsDialog) {
+        ListSelectionDialog(
+            book = book,
+            onDismiss = { showListsDialog = false }
+        )
     }
 }

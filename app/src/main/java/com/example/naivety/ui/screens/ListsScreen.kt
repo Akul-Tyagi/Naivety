@@ -84,7 +84,8 @@ fun ListsScreen(
 
         // Books grid for selected list
         selectedListId?.let { listId ->
-            val booksInList = viewModel.loadBooksForList(listId).collectAsState(initial = emptyList()).value
+            val booksInList =
+                viewModel.loadBooksForList(listId).collectAsState(initial = emptyList()).value
 
             if (booksInList.isEmpty()) {
                 Box(
@@ -132,6 +133,10 @@ fun ListsScreen(
             initialName = list.name,
             onConfirm = { newName ->
                 viewModel.updateListName(list.id, newName)
+                showEditDialog = null
+            },
+            onDelete = {  // Add this line
+                viewModel.deleteList(list.id)
                 showEditDialog = null
             },
             onDismiss = { showEditDialog = null }

@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.naivety.ui.theme.TransparentSystemBars
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -32,6 +33,8 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
         "Keep Your Favorite Novels, Romances, And Adventures At Your Fingertips, Always Waiting Right Where You Left Them.",
         "No Clutter, No Distractions—Just You And The Words That Matter. Ready To Dive In?"
     )
+
+    TransparentSystemBars()
 
     var currentSlide by remember { mutableIntStateOf(0) }
     var shouldShowSubheading by remember { mutableStateOf(false) }
