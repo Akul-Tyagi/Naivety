@@ -22,7 +22,6 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.example.naivety.auth.SupabaseAuth
 import com.example.naivety.auth.SupabaseClient
 import com.example.naivety.navigation.Destinations
 import com.example.naivety.navigation.NavGraph
