@@ -15,6 +15,10 @@ import com.example.naivety.data.List as UserList
 class ListsViewModel @Inject constructor(
     private val repository: ListsRepository
 ) : ViewModel() {
+    fun clearSelectedList() {
+        _selectedListId.value = null
+    }
+
     private val _lists = MutableStateFlow<kotlin.collections.List<UserList>>(emptyList())
     val lists = _lists.asStateFlow()
 
@@ -124,6 +128,10 @@ class ListsViewModel @Inject constructor(
 
     fun clearError() {
         _error.value = null
+    }
+
+    fun getListsForBook(bookKey: String): Flow<List<String>> {
+        return repository.getListsForBook(bookKey)
     }
 
     fun refreshLists() {

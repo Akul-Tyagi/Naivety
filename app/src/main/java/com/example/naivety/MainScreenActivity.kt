@@ -168,7 +168,6 @@ class MainScreenActivity : ComponentActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("MainScreenActivity", "Error handling PDF selection", e)
                 Toast.makeText(
                     this@MainScreenActivity,
                     "Error adding PDF: ${e.message}",

@@ -27,10 +27,6 @@ fun SearchResultsScreen(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    // Add this logging
-    LaunchedEffect(books) {
-        Log.d("SearchResultsScreen", "Received ${books.size} books")
-    }
 
     Box(
         modifier = modifier

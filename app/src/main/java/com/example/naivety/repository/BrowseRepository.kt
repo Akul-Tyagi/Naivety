@@ -21,14 +21,13 @@ class BrowseRepository @Inject constructor(
 ) {
     companion object {
         const val PAGE_SIZE = 20
-        private const val DEFAULT_COVER_URL = ""
     }
 
     fun getRecommendedBooks(query: String = ""): Flow<PagingData<OpenLibraryBook>> {
         return Pager(
             config = PagingConfig(
                 pageSize = PAGE_SIZE,
-                enablePlaceholders = false,
+                enablePlaceholders = true,
                 prefetchDistance = 2,
                 initialLoadSize = PAGE_SIZE,
             )
@@ -56,18 +55,15 @@ class BrowseRepository @Inject constructor(
                     number_of_pages = pageCount ?: 0
                 )
             } catch (e: Exception) {
-                Log.e(TAG, "Error getting additional book data for $bookKey: ${e.message}")
                 details
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting book details for $bookKey: ${e.message}")
             throw e
         }
     }
 
     suspend fun searchBooks(query: String): List<OpenLibraryBook> {
         return try {
-            Log.d(TAG, "Searching books with query: $query")
             val response = api.searchBooks(
                 query = query,
                 page = 1,
@@ -81,25 +77,22 @@ class BrowseRepository @Inject constructor(
                         title = doc.title ?: return@mapNotNull null,
                         coverUrl = doc.cover_i?.let {
                             "https://covers.openlibrary.org/b/id/$it-L.jpg"
-                        } ?: DEFAULT_COVER_URL,
+                        } ?: "",
                         author = doc.author_name?.firstOrNull() ?: "Unknown Author",
                         publishedYear = doc.first_publish_year ?: 0,
                         description = ""
                     )
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error mapping book doc: ${e.message}")
                     null
                 }
             } ?: emptyList()
         } catch (e: Exception) {
-            Log.e(TAG, "Error searching books: ${e.message}")
             emptyList()
         }
     }
 
     suspend fun getTrendingBooks(page: Int = 1): List<OpenLibraryBook> {
         return try {
-            Log.d(TAG, "Getting trending books page: $page")
             val response = api.getTrendingBooks(
                 page = page,
                 limit = PAGE_SIZE
@@ -112,30 +105,21 @@ class BrowseRepository @Inject constructor(
                         title = work.title ?: return@mapNotNull null,
                         coverUrl = work.cover_i?.let {
                             "https://covers.openlibrary.org/b/id/$it-L.jpg"
-                        } ?: DEFAULT_COVER_URL,
+                        } ?: "",
                         author = work.author_name?.firstOrNull() ?: "Unknown Author",
                         publishedYear = work.first_publish_year ?: 0,
                         description = ""
                     )
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error mapping trending book: ${e.message}")
                     null
                 }
             } ?: emptyList()
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting trending books: ${e.message}")
             emptyList()
         }
     }
 
     private fun handleApiError(e: Exception, operation: String): Nothing {
-        Log.e(TAG, "Error during $operation: ${e.message}")
         throw e
-    }
-
-    private fun createCoverUrl(coverId: Long?): String {
-        return coverId?.let {
-            "https://covers.openlibrary.org/b/id/$it-L.jpg"
-        } ?: DEFAULT_COVER_URL
     }
 }

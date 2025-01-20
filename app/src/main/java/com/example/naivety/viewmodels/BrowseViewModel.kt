@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
 class BrowseViewModel @Inject constructor(
     private val repository: BrowseRepository
 ) : ViewModel() {
+    private val bookCache = mutableMapOf<String, OpenLibraryBook>()
+
     private val _selectedBook = MutableStateFlow<OpenLibraryBook?>(null)
     val selectedBook = _selectedBook.asStateFlow()
 
@@ -30,6 +32,17 @@ class BrowseViewModel @Inject constructor(
     val searchResults = _searchResults.asStateFlow()
 
     private val _currentQuery = MutableStateFlow("")
+
+    init {
+        viewModelScope.launch {
+            // Prefetch some books
+            repository.getTrendingBooks().forEach { book ->
+                bookCache[book.key] = book
+            }
+        }
+    }
+
+    fun getBookFromCache(key: String): OpenLibraryBook? = bookCache[key]
 
     val books = _currentQuery
         .flatMapLatest { query ->

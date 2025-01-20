@@ -30,7 +30,8 @@ interface OpenLibraryApi {
     suspend fun getTrendingBooks(
         @Query("page") page: Int,
         @Query("limit") limit: Int = 20,
-        @Query("fields") fields: String = "key,title,cover_i,author_name,first_publish_year"
+        // Only request minimal fields needed for the grid view
+        @Query("fields") fields: String = "key,title,cover_i,author_name"
     ): OpenLibraryResponse
 
         @GET("works/{workId}/ratings.json")

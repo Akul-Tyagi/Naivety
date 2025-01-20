@@ -83,6 +83,7 @@ dependencies {
     // Replace the existing PDF viewer dependency with this
     implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
     //Browse Section
     // Paging 3 with Compose support
     implementation("androidx.paging:paging-compose:3.3.5")

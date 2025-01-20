@@ -160,7 +160,6 @@ class PdfViewerViewModel @Inject constructor(
                 _bookmarks.value = bookmarkDao.getBookmarks(bookId)
                 _isCurrentPageBookmarked.value = true
             } catch (e: Exception) {
-                Log.e("PdfViewModel", "Error adding bookmark", e)
             }
         }
     }
@@ -176,7 +175,6 @@ class PdfViewerViewModel @Inject constructor(
                     _isCurrentPageBookmarked.value = false
                 }
             } catch (e: Exception) {
-                Log.e("PdfViewModel", "Error removing bookmark", e)
             }
         }
     }
@@ -193,7 +191,6 @@ class PdfViewerViewModel @Inject constructor(
                     updateCurrentPageBookmarkStatus(bookId, currentPage)
                 }
             } catch (e: Exception) {
-                Log.e("PdfViewModel", "Error loading bookmarks", e)
             }
         }
     }

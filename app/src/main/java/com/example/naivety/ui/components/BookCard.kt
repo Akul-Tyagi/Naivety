@@ -23,6 +23,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.ui.platform.LocalContext
+import coil.request.ImageRequest
 import com.example.naivety.ui.components.ListSelectionDialog
 
 // app/src/main/java/com/example/naivety/ui/components/BookCard.kt
@@ -46,7 +48,10 @@ fun BookCard(
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             AsyncImage(
-                model = book.coverUrl,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(book.coverUrl)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = book.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

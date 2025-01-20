@@ -28,9 +28,7 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             _searchState.value = SearchState.Searching
             try {
-                Log.d("SearchViewModel", "Searching for: $query")
                 val results = repository.searchBooks(query)
-                Log.d("SearchViewModel", "Found ${results.size} results")
 
                 _searchResults.value = results
                 _searchState.value = if (results.isEmpty()) {
@@ -39,7 +37,6 @@ class SearchViewModel @Inject constructor(
                     SearchState.Success(query)
                 }
             } catch (e: Exception) {
-                Log.e("SearchViewModel", "Search error: ${e.message}")
                 _searchState.value = SearchState.Error
                 _searchResults.value = emptyList()
             }
