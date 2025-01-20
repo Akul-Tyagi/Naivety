@@ -20,15 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.naivety.*
 import com.example.naivety.ui.screens.*
-import com.example.naivety.utils.PreferencesManager
 import com.example.naivety.viewmodels.BookViewModel
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.firebase.auth.FirebaseAuth
-import io.github.jan.supabase.BuildConfig
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.status.SessionStatus
-import io.github.jan.supabase.createSupabaseClient
 
 @Composable
 fun NavGraph(

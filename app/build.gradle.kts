@@ -60,7 +60,6 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation ("androidx.compose.ui:ui:1.7.6")
-    implementation ("androidx.compose.runtime:runtime-livedata:1.7.6")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -99,7 +98,6 @@ dependencies {
     // Additional Compose dependencies for animations and effects
     implementation("androidx.compose.animation:animation:1.7.6")
     implementation("androidx.compose.foundation:foundation:1.7.6")
-    implementation ("androidx.core:core-splashscreen:1.0.1")
     // For blur effects and other UI utilities
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("com.google.accompanist:accompanist-placeholder:0.32.0")
@@ -113,23 +111,7 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
-
-    //supabase
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.android)
-    implementation(libs.ktor.client.content.negotiation)
-
-    // Supabase
-    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
-    implementation(libs.supabase.postgrest)
-    implementation(libs.supabase.auth)
-
-    implementation("com.mikepenz:iconics-core:5.4.0")
-    implementation("com.mikepenz:iconics-compose:5.4.0")
-    implementation("com.mikepenz:google-material-typeface:4.0.0.2-kotlin@aar")
-    implementation("com.mikepenz:fontawesome-typeface:5.9.0.2-kotlin@aar")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

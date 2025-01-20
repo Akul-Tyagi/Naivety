@@ -22,7 +22,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.example.naivety.auth.SupabaseClient
+import com.example.naivety.auth.AuthState
 import com.example.naivety.navigation.Destinations
 import com.example.naivety.navigation.NavGraph
 import com.example.naivety.ui.screens.MainScreen
@@ -30,7 +30,6 @@ import com.example.naivety.ui.theme.TransparentSystemBars
 import com.example.naivety.utils.PreferencesManager
 import com.example.naivety.viewmodels.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -45,43 +44,45 @@ class AuthActivity : ComponentActivity() {
             NaivetyTheme {
                 TransparentSystemBars()
                 val navController = rememberNavController()
+                val authState by viewModel.authState.collectAsState()
 
-                val startDestination = when {
-                    PreferencesManager.isFirstTime(this) -> Destinations.Walkthrough
-                    else -> Destinations.Auth
-                }.route
+                // Handle authentication state
+                LaunchedEffect(authState) {
+                    when (authState) {
+                        is AuthState.Success -> {
+                            // Navigate to main screen
+                            startActivity(Intent(this@AuthActivity, MainScreenActivity::class.java))
+                            finish()
+                        }
+                        is AuthState.Error -> {
+                            Toast.makeText(
+                                this@AuthActivity,
+                                (authState as AuthState.Error).message,
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        else -> {}
+                    }
+                }
 
                 NavGraph(
                     navController = navController,
-                    startDestination = startDestination
+                    startDestination = if (PreferencesManager.isFirstTime(this@AuthActivity)) {
+                        Destinations.Walkthrough.route
+                    } else {
+                        Destinations.Auth.route
+                    }
                 )
             }
         }
-
-        handleIntent(intent)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleIntent(intent)
-    }
-
-    private fun handleIntent(intent: Intent) {
-        if (intent.action == Intent.ACTION_VIEW) {
-            intent.data?.let { uri ->
-                lifecycleScope.launch {
-                    try {
-                        startActivity(Intent(this@AuthActivity, MainScreenActivity::class.java))
-                        finish()
-                    } catch (e: Exception) {
-                        Toast.makeText(
-                            this@AuthActivity,
-                            "Authentication failed: ${e.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            }
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == AuthViewModel.RC_SIGN_IN) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            viewModel.handleGoogleSignInResult(task)
         }
     }
 }
