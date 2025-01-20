@@ -93,7 +93,6 @@ fun SearchResultsScreen(
                     ) { book ->
                         BookCard(
                             book = book,
-                            onLongPress = { /* Handle long press if needed */ },
                             onClick = { onBookClick(book) },
                             modifier = Modifier.animateItemPlacement()
                         )

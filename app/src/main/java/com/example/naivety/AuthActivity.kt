@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.example.naivety.auth.SupabaseAuth
+import com.example.naivety.auth.SupabaseClient
 import com.example.naivety.navigation.Destinations
 import com.example.naivety.navigation.NavGraph
 import com.example.naivety.ui.screens.MainScreen
@@ -47,9 +48,9 @@ class AuthActivity : ComponentActivity() {
                 val navController = rememberNavController()
 
                 val startDestination = when {
-                    PreferencesManager.isFirstTime(this) -> Destinations.Walkthrough.route
-                    else -> Destinations.Auth.route
-                }
+                    PreferencesManager.isFirstTime(this) -> Destinations.Walkthrough
+                    else -> Destinations.Auth
+                }.route
 
                 NavGraph(
                     navController = navController,
@@ -58,7 +59,6 @@ class AuthActivity : ComponentActivity() {
             }
         }
 
-        // Handle OAuth deep links
         handleIntent(intent)
     }
 
@@ -69,13 +69,9 @@ class AuthActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent) {
         if (intent.action == Intent.ACTION_VIEW) {
-            val uri = intent.data
-            if (uri != null) {
+            intent.data?.let { uri ->
                 lifecycleScope.launch {
                     try {
-                        // Let Supabase handle the OAuth response
-                        SupabaseAuth.client.auth.handleDeeplink(uri)
-                        // Navigate to main screen on success
                         startActivity(Intent(this@AuthActivity, MainScreenActivity::class.java))
                         finish()
                     } catch (e: Exception) {

@@ -38,59 +38,26 @@ fun NavGraph(
 
     val context = LocalContext.current
     val mainViewModel: BookViewModel = hiltViewModel()
-    val supabaseClient = remember {
-        createSupabaseClient(
-            supabaseUrl = BuildConfig.SUPABASE_URL,
-            supabaseKey = BuildConfig.SUPABASE_ANON_KEY
-        ) {
-            install(Auth)
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        // Check auth state before deciding navigation
-        supabaseClient.auth.sessionStatus.collect { status ->
-            when (status) {
-                is SessionStatus.Authenticated -> {
-                    if (PreferencesManager.isFirstTime(context)) {
-                        navController.navigate(Destinations.Walkthrough.route)
-                    } else {
-                        navController.navigate(Destinations.Main.route)
-                    }
-                }
-                is SessionStatus.NotAuthenticated -> {
-                    navController.navigate(Destinations.Auth.route)
-                }
-                else -> {} // Handle other states
-            }
-        }
-    }
 
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+        composable(Destinations.Walkthrough.route) {
+            WalkthroughScreen(
+                onFinish = {
+                    navController.navigate(Destinations.Auth.route) {
+                        popUpTo(Destinations.Walkthrough.route) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(Destinations.Auth.route) {
             AuthMainScreen(
                 onAuthSuccess = {
                     navController.navigate(Destinations.Main.route) {
                         popUpTo(Destinations.Auth.route) { inclusive = true }
                     }
-                }
-            )
-        }
-
-        // Auth Screen
-        composable(Destinations.Auth.route) {
-            AuthMain(
-                auth = auth,
-                googleSignInClient = googleSignInClient,
-                signInWithGoogle = {
-                    (context as? AuthActivity)?.signInWithGoogle()
-                },
-                navigateToMainScreen = {
-                    context.startActivity(Intent(context, MainScreenActivity::class.java))
-                    (context as? Activity)?.finish()
                 }
             )
         }

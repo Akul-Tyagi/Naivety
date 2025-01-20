@@ -1,17 +1,18 @@
-import com.example.naivety.auth.SupabaseAuth
-import io.github.jan.supabase.auth.auth
-
-// app/src/main/java/com/example/naivety/auth/SessionManager.kt
-object SessionManager {
-    private val supabase = SupabaseAuth.client
-
-    suspend fun getCurrentSession() = supabase.auth.currentSession
-
-    suspend fun getCurrentUser() = supabase.auth.currentUser
-
-    suspend fun isAuthenticated() = supabase.auth.currentSession != null
-
-    suspend fun signOut() = supabase.auth.signOut()
-
-    fun observeAuthState() = supabase.auth.sessionStatus
-}
+//package com.example.naivety.auth
+//
+//import io.github.jan.supabase.auth.auth
+//import io.github.jan.supabase.gotrue.SessionStatus
+//
+//object SessionManager {
+//    private val supabase = SupabaseClient.client
+//
+//    suspend fun getSession() = supabase.auth.getSession()
+//
+//    suspend fun getUser() = supabase.auth.getUser()
+//
+//    suspend fun isAuthenticated() = getSession() != null
+//
+//    suspend fun signOut() = supabase.auth.signOut()
+//
+//    fun observeAuthState() = supabase.auth.sessionStatus
+//}

@@ -122,11 +122,11 @@ dependencies {
 
     // Supabase
     implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
-    implementation(libs.supabase.gotrue)
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.auth)
 
     implementation("com.mikepenz:iconics-core:5.4.0")
+    implementation("com.mikepenz:iconics-compose:5.4.0")
     implementation("com.mikepenz:google-material-typeface:4.0.0.2-kotlin@aar")
     implementation("com.mikepenz:fontawesome-typeface:5.9.0.2-kotlin@aar")
 

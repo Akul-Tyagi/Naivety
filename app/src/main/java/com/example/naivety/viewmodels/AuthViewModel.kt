@@ -4,10 +4,8 @@ package com.example.naivety.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.naivety.auth.SupabaseAuth
+import com.example.naivety.auth.SupabaseClient
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.admin.AdminUserBuilder
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.*
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -21,26 +19,11 @@ class AuthViewModel @Inject constructor() : ViewModel() {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Initial)
     val authState = _authState.asStateFlow()
 
-    fun signInWithEmail(email: String, password: String) {
-        viewModelScope.launch {
-            try {
-                _authState.value = AuthState.Loading
-                SupabaseAuth.client.auth.signInWith(Email) {
-                    this.email = email
-                    this.password = password
-                }
-                _authState.value = AuthState.Success
-            } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "Sign in failed")
-            }
-        }
-    }
-
     fun signUpWithEmail(email: String, password: String) {
         viewModelScope.launch {
             try {
                 _authState.value = AuthState.Loading
-                SupabaseAuth.client.auth.signUpWith(Email) {
+                SupabaseClient.client.auth.signInWith(Email) {
                     this.email = email
                     this.password = password
                 }
@@ -51,14 +34,29 @@ class AuthViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun signInWithProvider(provider: OAuthProvider) {
+    fun signInWithEmail(email: String, password: String) {
         viewModelScope.launch {
             try {
                 _authState.value = AuthState.Loading
-                SupabaseAuth.client.auth.signInWith(provider)
+                SupabaseClient.client.auth.signInWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "OAuth sign in failed")
+                _authState.value = AuthState.Error(e.message ?: "Sign in failed")
+            }
+        }
+    }
+
+    fun signInWithGoogle() {
+        viewModelScope.launch {
+            try {
+                _authState.value = AuthState.Loading
+                SupabaseClient.client.auth.signInWith(Google) {}
+                _authState.value = AuthState.Success
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Google sign in failed")
             }
         }
     }
@@ -66,10 +64,22 @@ class AuthViewModel @Inject constructor() : ViewModel() {
     fun signOut() {
         viewModelScope.launch {
             try {
-                SupabaseAuth.client.auth.signOut()
+                SupabaseClient.client.auth.signOut()
                 _authState.value = AuthState.SignedOut
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Sign out failed")
+            }
+        }
+    }
+
+    fun resetPassword(email: String) {
+        viewModelScope.launch {
+            try {
+                _authState.value = AuthState.Loading
+                SupabaseClient.client.auth.resetPasswordForEmail(email)
+                _authState.value = AuthState.Success
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Password reset failed")
             }
         }
     }

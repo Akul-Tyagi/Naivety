@@ -365,9 +365,6 @@ class PdfViewerActivity : ComponentActivity() {
                                                             viewModel.addBookmark(id, currentPage)
                                                         }
                                                     }
-                                                },
-                                                onLongPress = {
-                                                    showBookmarksList.value = true
                                                 }
                                             )
                                         }

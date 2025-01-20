@@ -114,7 +114,6 @@ fun ListsScreen(
                         val book = booksInList[index]
                         BookCard(
                             book = book,
-                            onLongPress = { /* Handle long press */ },
                             onClick = { onBookClick(book) },
                             isLiked = true,
                             onLikeToggle = {

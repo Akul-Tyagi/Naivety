@@ -1,5 +1,6 @@
 package com.example.naivety
 
+import ResetPasswordDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -40,6 +41,7 @@ fun AuthMainScreen(
     var isSignIn by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var showResetPassword by remember { mutableStateOf(false) }
 
     val authState by viewModel.authState.collectAsState()
 
@@ -57,38 +59,50 @@ fun AuthMainScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Title
         Text(
             text = if (isSignIn) "Sign In" else "Sign Up",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                color = Color(0xFF8E42FF),
-                fontFamily = FontFamily(Font(R.font.sonder))
-            )
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color(0xFF8E42FF)
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Email & Password Fields
-        AuthTextField(
+        OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = "Email",
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("Email") },
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        AuthTextField(
+        OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = "Password",
-            isPassword = true,
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White
+            )
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        if (isSignIn) {
+            TextButton(onClick = { showResetPassword = true }) {
+                Text(
+                    "Forgot Password?",
+                    color = Color(0xFF8E42FF)
+                )
+            }
+        }
 
-        // Sign In/Up Button
+        Spacer(modifier = Modifier.height(32.dp))
+
         Button(
             onClick = {
                 if (isSignIn) {
@@ -105,37 +119,39 @@ fun AuthMainScreen(
             Text(if (isSignIn) "Sign In" else "Sign Up")
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // OAuth Providers
-        Text(
-            text = "Or continue with",
-            color = Color.Gray,
-            style = MaterialTheme.typography.bodyMedium
-        )
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // OAuth Buttons
-        OAuthButtonsRow(
-            onProviderClick = { provider ->
-                viewModel.signInWithProvider(provider)
+        Button(
+            onClick = { viewModel.signInWithGoogle() },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White,
+                contentColor = Color.Black
+            )
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_google_logo),
+                    contentDescription = "Google",
+                    tint = Color.Unspecified
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Continue with Google")
             }
-        )
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Toggle Sign In/Up
         TextButton(
             onClick = { isSignIn = !isSignIn }
         ) {
             Text(
-                text = if (isSignIn) "Need an account? Sign Up" else "Have an account? Sign In",
+                if (isSignIn) "Need an account? Sign Up" else "Have an account? Sign In",
                 color = Color(0xFF8E42FF)
             )
         }
 
-        // Error Message
         if (authState is AuthState.Error) {
             Text(
                 text = (authState as AuthState.Error).message,
@@ -144,88 +160,14 @@ fun AuthMainScreen(
             )
         }
     }
-}
 
-@Composable
-private fun SocialAuthButtons(
-    onProviderClick: (OAuthProvider) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        SocialAuthProviders.providers.forEach { provider ->
-            Button(
-                onClick = { onProviderClick(provider.provider) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = provider.backgroundColor,
-                    contentColor = provider.contentColor
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = provider.icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = "Continue with ${provider.name}",
-                        fontFamily = FontFamily(Font(R.font.alinsa))
-                    )
-                }
+    if (showResetPassword) {
+        ResetPasswordDialog(
+            onDismiss = { showResetPassword = false },
+            onSubmit = { email ->
+                viewModel.resetPassword(email)
+                showResetPassword = false
             }
-        }
-    }
-}
-
-@Composable
-private fun OAuthButtonsRow(
-    onProviderClick: (OAuthProvider) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        OAuthProviderButton(
-            icon = Icons.Default.Google,
-            provider = Google,
-            onClick = onProviderClick
         )
-        OAuthProviderButton(
-            icon = Icons.Default.GitHub,
-            provider = Github,
-            onClick = onProviderClick
-        )
-        // Add other provider buttons similarly
-    }
-}
-
-@Composable
-fun AuthRequiredScreen(
-    content: @Composable () -> Unit
-) {
-    val navController = LocalNavController.current
-    val sessionManager = remember { SessionManager }
-    var isAuthenticated by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        isAuthenticated = sessionManager.isAuthenticated()
-        if (!isAuthenticated) {
-            navController.navigate(Destinations.Auth.route) {
-                popUpTo(navController.graph.id) { inclusive = true }
-            }
-        }
-    }
-
-    if (isAuthenticated) {
-        content()
     }
 }

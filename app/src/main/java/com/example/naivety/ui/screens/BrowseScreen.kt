@@ -142,7 +142,6 @@ fun BrowseScreen(
                                 if (book != null) {
                                     BookCard(
                                         book = book,
-                                        onLongPress = { viewModel.onBookLongPressed(book) },
                                         onClick = { onBookClick(book) },
                                         modifier = Modifier
                                             .animateItemPlacement()
