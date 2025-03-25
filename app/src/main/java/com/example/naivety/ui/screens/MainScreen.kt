@@ -22,11 +22,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.naivety.R
+import com.example.naivety.models.Book
 import com.example.naivety.models.SortOrder
 import com.example.naivety.navigation.Destinations
 import com.example.naivety.ui.components.SearchBar
 import com.example.naivety.ui.components.SortDropdownMenu
 import com.example.naivety.ui.components.BookGrid
+import com.example.naivety.ui.components.DeleteConfirmationDialog
 import com.example.naivety.viewmodels.BookViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -235,6 +237,7 @@ private fun HomeSection(
     val books by viewModel.books.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val fsFont = FontFamily(Font(R.font.fsb))
+    var bookToDelete by remember { mutableStateOf<Book?>(null) }
 
     val filteredBooks = remember(books, searchQuery) {
         if (searchQuery.isEmpty()) {
@@ -277,11 +280,25 @@ private fun HomeSection(
                     onBookClick = { book ->
                         onNavigateToRead(Uri.parse(book.filePath))
                     },
+                    onLongPress = { book ->
+                        bookToDelete = book
+                    },
                     viewModel = viewModel,
                     modifier = Modifier.fillMaxSize()
                 )
             }
         }
+    }
+
+    bookToDelete?.let { book ->
+        DeleteConfirmationDialog(
+            book = book,
+            onDismiss = { bookToDelete = null },
+            onConfirm = {
+                viewModel.deleteBook(book)
+                bookToDelete = null
+            }
+        )
     }
 }
 

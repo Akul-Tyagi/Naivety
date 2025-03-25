@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/naivety/data/BookPagingSource.kt
 package com.example.naivety.data
 
 import android.util.Log
@@ -19,46 +18,66 @@ class BookPagingSource(
             val page = params.key ?: 1
 
             // Use withContext to ensure network call is on IO thread
-            val response = withContext(Dispatchers.IO) {
+            val books = withContext(Dispatchers.IO) {
                 if (query.isBlank()) {
-                    api.getTrendingBooks(page, params.loadSize)
-                } else {
-                    api.searchBooks(query, page, params.loadSize)
-                }
-            }
-
-            // Log the response for debugging
-
-            val books = when {
-                query.isBlank() && response.works != null -> {
-                    response.works.mapNotNull { work ->
-                        try {
-                            OpenLibraryBook(
-                                key = work.key ?: return@mapNotNull null,
-                                title = work.title ?: return@mapNotNull null,
-                                coverUrl = work.cover_i?.let {
-                                    "https://covers.openlibrary.org/b/id/$it-L.jpg"
-                                } ?: "",
-                                author = work.author_name?.firstOrNull() ?: "Unknown Author",
-                                publishedYear = work.first_publish_year ?: 0,
-                                description = ""
-                            )
-                        } catch (e: Exception) {
-                            null
+                    // For trending, pagination is not supported by API, so we get all and page locally
+                    val response = api.getTrendingBooks()
+                    if (response.isSuccessful && response.body() != null) {
+                        response.body()!!.works.mapNotNull { work ->
+                            if (work.key != null && work.title != null) {
+                                OpenLibraryBook(
+                                    key = work.key,
+                                    title = work.title,
+                                    author = work.author_name?.firstOrNull() ?: "Unknown",
+                                    publishedYear = work.first_publish_year ?: 0,
+                                    coverUrl = work.cover_i?.let {
+                                        "https://covers.openlibrary.org/b/id/$it-L.jpg"
+                                    } ?: "",
+                                    description = ""
+                                )
+                            } else null
                         }
-                    }
+                    } else emptyList()
+                } else {
+                    // For search, pagination is supported
+                    val response = api.searchBooks(query, params.loadSize, page)
+                    if (response.isSuccessful && response.body() != null) {
+                        response.body()!!.docs.mapNotNull { doc ->
+                            if (doc.key != null && doc.title != null) {
+                                OpenLibraryBook(
+                                    key = doc.key,
+                                    title = doc.title,
+                                    author = doc.author_name?.firstOrNull() ?: "Unknown",
+                                    publishedYear = doc.first_publish_year ?: 0,
+                                    coverUrl = doc.cover_i?.let {
+                                        "https://covers.openlibrary.org/b/id/$it-L.jpg"
+                                    } ?: "",
+                                    description = ""
+                                )
+                            } else null
+                        }
+                    } else emptyList()
                 }
-                else -> emptyList()
             }
 
-            // Log the results
+            // Calculate paging for client-side pagination
+            val pageSize = params.loadSize
+            val startPos = (page - 1) * pageSize
+            val endPos = minOf(startPos + pageSize, books.size)
+
+            val pageData = if (books.isEmpty() || startPos >= books.size) {
+                emptyList()
+            } else {
+                books.subList(startPos, endPos)
+            }
 
             LoadResult.Page(
-                data = books,
+                data = pageData,
                 prevKey = if (page == 1) null else page - 1,
-                nextKey = if (books.isEmpty()) null else page + 1
+                nextKey = if (pageData.isEmpty() || endPos >= books.size) null else page + 1
             )
         } catch (e: Exception) {
+            Log.e("BookPagingSource", "Error loading books", e)
             LoadResult.Error(e)
         }
     }

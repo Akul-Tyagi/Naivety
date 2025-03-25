@@ -1,10 +1,12 @@
-// TopBar.kt
+// Modified TopBar.kt
 package com.example.naivety.ui.components.pdf
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import com.example.naivety.ui.theme.NaivetyPurple
 fun TopBar(
     pdfName: String,
     isVisible: Boolean,
+    onEditClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -39,18 +42,31 @@ fun TopBar(
             shape = RoundedCornerShape(28.dp),
             shadowElevation = 8.dp
         ) {
-            Box(
+            Row(
                 modifier = Modifier
                     .padding(vertical = 10.dp, horizontal = 14.dp),
-                contentAlignment = Alignment.Center
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = pdfName,
                     color = NaivetyPurple,
                     fontFamily = FontFamily(Font(R.font.guyongazebor)),
                     fontSize = 25.sp,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
                 )
+
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit name",
+                        tint = NaivetyPurple
+                    )
+                }
             }
         }
     }

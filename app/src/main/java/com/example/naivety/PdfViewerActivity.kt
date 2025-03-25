@@ -54,8 +54,11 @@ import dagger.hilt.android.AndroidEntryPoint
 class PdfViewerActivity : ComponentActivity() {
     private val viewModel: PdfViewerViewModel by viewModels()
     private var bookId: String? = null
+    private var pdfName: String = "PDF"
     private lateinit var pdfView: PDFView
-    private val PREFS_NAME = "PDFViewerPrefs"
+    companion object {
+        private const val PREFS_NAME = "pdf_viewer_prefs"
+    }
     private val LocalViewModel = compositionLocalOf<PdfViewerViewModel> {
         error("No ViewModel provided")
     }
@@ -127,10 +130,16 @@ class PdfViewerActivity : ComponentActivity() {
             val currentBookmarks by viewModel.bookmarks.collectAsState()
             val systemUiController = rememberSystemUiController()
             val backgroundColor = Color(viewerState.value.settings.backgroundColor)
-            val pdfName = remember(intent.data) {
-                intent.data?.let { uri ->
-                    extractPdfName(uri, context)
-                } ?: "PDF"
+            var showEditName by remember { mutableStateOf(false) }
+            var localPdfName by remember {
+                mutableStateOf(
+                    getSavedBookName(bookId) ?:
+                    intent.data?.let { uri -> extractPdfName(uri, context) } ?: "PDF"
+                )
+            }
+
+            LaunchedEffect(localPdfName) {
+                pdfName = localPdfName
             }
 
             LaunchedEffect(bookId) {
@@ -270,8 +279,9 @@ class PdfViewerActivity : ComponentActivity() {
                 }
 
                 TopBar(
-                    pdfName = pdfName,
+                    pdfName = localPdfName,
                     isVisible = viewerState.value.isControlsVisible,
+                    onEditClick = { showEditName = true },
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
 
@@ -353,6 +363,10 @@ class PdfViewerActivity : ComponentActivity() {
                                         .size(28.dp)
                                         .pointerInput(Unit) {
                                             detectTapGestures(
+                                                onLongPress = {
+                                                    // Show bookmarks list on long press
+                                                    showBookmarksList.value = true
+                                                },
                                                 onTap = {
                                                     bookId?.let { id ->
                                                         val currentPage = pdfView.currentPage
@@ -409,6 +423,19 @@ class PdfViewerActivity : ComponentActivity() {
                     }
                 }
 
+                // Edit Book Name Dialog
+                // Replace the existing EditBookNameDialog usage
+                if (showEditName) {
+                    EditBookNameDialog(
+                        currentName = localPdfName,
+                        onNameChange = { newName ->
+                            localPdfName = newName
+                            saveBookName(newName)
+                            showEditName = false
+                        },
+                        onDismiss = { showEditName = false }
+                    )
+                }
                 // Modal Sheets
                 if (showSettings.value) {
                     MainSettingsSheet(
@@ -607,6 +634,22 @@ class PdfViewerActivity : ComponentActivity() {
         }
     }
 
+    // Add the function to extract the PDF name from URI
+    private fun extractPdfName(uri: Uri, context: Context): String {
+        return try {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (displayNameIndex != -1) {
+                        cursor.getString(displayNameIndex)?.removeSuffix(".pdf") ?: "Unknown Book"
+                    } else "Unknown Book"
+                } else "Unknown Book"
+            } ?: "Unknown Book"
+        } catch (e: Exception) {
+            "Unknown Book"
+        }
+    }
+
     private fun setupWindow() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -641,11 +684,29 @@ class PdfViewerActivity : ComponentActivity() {
         viewModel.saveSettings(bookId)
     }
 
+    // Keep only one implementation of saveViewerSettings
     private fun saveViewerSettings() {
         bookId?.let { id ->
+            applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putInt("${id}_last_page", pdfView.currentPage)
+                .putString("${id}_reading_mode", viewModel.viewerState.value.readingMode.name)
+                .putString("${id}_book_name", pdfName)
+                .apply()
+        }
+    }
+
+    private fun getSavedBookName(bookId: String?): String? {
+        return bookId?.let { id ->
+            getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getString("${id}_book_name", null)
+        }
+    }
+
+    private fun saveBookName(name: String) {
+        bookId?.let { id ->
             getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().apply {
-                putInt("${id}_last_page", pdfView.currentPage)
-                putString("${id}_reading_mode", viewModel.viewerState.value.readingMode.name)
+                putString("${id}_book_name", name)
                 apply()
             }
         }
@@ -776,7 +837,6 @@ private fun extractPdfName(uri: Uri, context: Context): String {
         "PDF"
     }
 }
-
 
 private val PDFView.pageSnap: Boolean
     get() = true  // Default to true since we can't actually access this property

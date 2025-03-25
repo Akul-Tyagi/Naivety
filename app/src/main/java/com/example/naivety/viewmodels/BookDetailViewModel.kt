@@ -32,18 +32,40 @@ class BookDetailViewModel @Inject constructor(
     private val _bookComments = MutableStateFlow<List<BookComment>>(emptyList())
     val bookComments: StateFlow<List<BookComment>> = _bookComments.asStateFlow()
 
+    private val _averageRating = MutableStateFlow<Float>(0f)
+    val averageRating: StateFlow<Float> = _averageRating.asStateFlow()
+
+    private val _ratingsCount = MutableStateFlow<Int>(0)
+    val ratingsCount: StateFlow<Int> = _ratingsCount.asStateFlow()
+
+    private fun loadUserRating(bookKey: String) {
+        viewModelScope.launch {
+            try {
+                // In a real app, this would load from local database or API
+                // For now, we're just setting a default value
+                _userRating.value = 0f
+            } catch (e: Exception) {
+                // Silently fail, we'll just show 0 stars
+            }
+        }
+    }
+
     fun loadBookDetails(bookKey: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             try {
                 val cleanBookKey = bookKey.removePrefix("/works/")
-                println("Fetching details for book key: $cleanBookKey")
                 val details = repository.getBookDetails(cleanBookKey)
-                println("Received book details: $details")
                 _bookDetails.value = details
+
+                // Ensure ratings are properly set
+                _averageRating.value = details.averageRating ?: 0f
+                _ratingsCount.value = details.ratings_count ?: 0
+
+                // Load user rating if available
+                loadUserRating(cleanBookKey)
             } catch (e: Exception) {
-                println("Error loading book details: ${e.message}")
                 _error.value = e.message ?: "Failed to load book details"
             } finally {
                 _isLoading.value = false
@@ -62,42 +84,6 @@ class BookDetailViewModel @Inject constructor(
             }
         }
     }
-
-    fun addComment(comment: String) {
-        viewModelScope.launch {
-            try {
-                val currentComments = _bookComments.value.toMutableList()
-                currentComments.add(
-                    BookComment(
-                        id = System.currentTimeMillis().toString(),
-                        text = comment,
-                        timestamp = System.currentTimeMillis(),
-                        userId = "current_user" // Replace with actual user ID
-                    )
-                )
-                _bookComments.value = currentComments
-                // Here you would typically make an API call to save the comment
-                // repository.saveComment(bookDetails.value?.key ?: "", comment)
-            } catch (e: Exception) {
-                _error.value = "Failed to add comment"
-            }
-        }
-    }
-
-    fun deleteComment(commentId: String) {
-        viewModelScope.launch {
-            try {
-                val currentComments = _bookComments.value.toMutableList()
-                currentComments.removeAll { it.id == commentId }
-                _bookComments.value = currentComments
-                // Here you would typically make an API call to delete the comment
-                // repository.deleteComment(bookDetails.value?.key ?: "", commentId)
-            } catch (e: Exception) {
-                _error.value = "Failed to delete comment"
-            }
-        }
-    }
-
     fun clearError() {
         _error.value = null
     }

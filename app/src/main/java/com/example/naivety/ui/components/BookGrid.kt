@@ -22,7 +22,8 @@ fun BookGrid(
     onBookClick: (Book) -> Unit,
     viewModel: BookViewModel,
     isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLongPress: (Book) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         when {
@@ -43,37 +44,19 @@ fun BookGrid(
                 )
             }
             else -> {
-                val chunkedBooks = books.chunked(2) // Split books into pairs for 2 columns
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    chunkedBooks.forEach { rowBooks ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            rowBooks.forEach { book ->
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                ) {
-                                    BookItem(
-                                        book = book,
-                                        onClick = { onBookClick(book) },
-                                        viewModel = viewModel
-                                    )
-                                }
-                            }
-
-                            // If odd number of books, add empty space to maintain grid
-                            if (rowBooks.size == 1) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+                    items(books) { book ->
+                        BookItem(
+                            book = book,
+                            onClick = { onBookClick(book) },
+                            onLongPress = { onLongPress(book) },
+                            viewModel = viewModel
+                        )
                     }
                 }
             }

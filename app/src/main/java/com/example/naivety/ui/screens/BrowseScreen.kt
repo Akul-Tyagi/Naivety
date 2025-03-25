@@ -50,6 +50,7 @@ import com.example.naivety.R
 import com.example.naivety.viewmodels.BrowseViewModel
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -64,6 +65,27 @@ fun BrowseScreen(
     val fsFont = FontFamily(Font(R.font.fsultralit))
     var showSearchResults by remember { mutableStateOf(false) }
     val searchResults by viewModel.searchResults.collectAsState()
+    val isInitialLoading by viewModel.isInitialLoading.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val gridState = rememberLazyStaggeredGridState()
+
+    // Detect when we're near the end of the list and load more books
+    LaunchedEffect(gridState) {
+        snapshotFlow {
+            val lastIndex = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+            if (lastIndex != null) lastIndex else -1
+        }
+            .distinctUntilChanged()
+            .collect { lastVisibleIndex ->
+                if (lastVisibleIndex > 0 && books.itemCount > 0) {
+                    val threshold = books.itemCount - 5
+                    if (lastVisibleIndex >= threshold) {
+                        // We're near the end, load more
+                        viewModel.loadMoreBooks()
+                    }
+                }
+            }
+    }
 
     if (showSearchResults) {
         SearchResultsScreen(
@@ -128,88 +150,30 @@ fun BrowseScreen(
                             contentPadding = PaddingValues(10.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalItemSpacing = 10.dp,
-                            state = rememberLazyStaggeredGridState()
+                            state = gridState
                         ) {
-                            items(
-                                count = books.itemCount,
-                                key = { index ->
-                                    // Create a truly unique key combining index and book key
-                                    val book = books[index]
-                                    "${index}_${book?.key ?: System.nanoTime()}"
-                                }
-                            ) { index ->
-                                val book = books[index]
-                                if (book != null) {
+                            items(books.itemCount) { index ->
+                                books[index]?.let { book ->
                                     BookCard(
                                         book = book,
-                                        onClick = { onBookClick(book) },
-                                        modifier = Modifier
-                                            .animateItemPlacement()
-                                            .blur(if (selectedBook?.key == book.key) 0.dp else if (selectedBook != null) 8.dp else 0.dp)
+                                        onClick = { onBookClick(book) }
                                     )
-                                } else {
-                                    // Placeholder while loading
-                                    PlaceholderBookCard()
                                 }
                             }
 
-                            // Add loading state at the bottom with correct span type
-                            when (books.loadState.append) {
-                                is LoadState.Loading -> {
-                                    item(span = StaggeredGridItemSpan.FullLine) {
-                                        LoadingIndicator()
+                            // Loading indicator at the bottom
+                            item(span = StaggeredGridItemSpan.FullLine) {
+                                if (isLoadingMore) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(color = Color(0xFF8E42FF))
                                     }
                                 }
-
-                                is LoadState.Error -> {
-                                    item(span = StaggeredGridItemSpan.FullLine) {
-                                        ErrorItem { books.retry() }
-                                    }
-                                }
-
-                                else -> {}
                             }
-                        }
-                    }
-                }
-            }
-
-
-            selectedBook?.let { book ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable { viewModel.clearSelectedBook() }
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .align(Alignment.Center)
-                            .width(280.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A))
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = book.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = book.author,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = book.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
                         }
                     }
                 }
@@ -217,6 +181,7 @@ fun BrowseScreen(
         }
     }
 }
+
 @Composable
 private fun PlaceholderBookCard() {
     Card(

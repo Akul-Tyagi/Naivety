@@ -67,6 +67,7 @@ import coil.compose.AsyncImage
 import com.example.naivety.R
 import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.navigation.Destinations
+import com.example.naivety.ui.components.BookRatingSection
 import com.example.naivety.viewmodels.BookComment
 import com.example.naivety.viewmodels.BookDetailViewModel
 
@@ -276,20 +277,18 @@ fun BookDetailScreen(
                         )
 
                         // Rating Section
+                        // Replace the current Rating Section in BookDetailScreen.kt (around line 313)
                         SectionTitle(text = "Rating", customFont = customFont)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "Average Rating: ${String.format("%.1f", bookDetails?.ratings_average ?: 0f)} Out Of ${bookDetails?.ratings_count ?: 0} ratings",
-                                style = MaterialTheme.typography.titleMedium.copy(fontFamily = customFonttttt),
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            RatingBar(
-                                rating = userRating,
-                                onRatingChanged = viewModel::updateRating
+                            // Replace this Text and RatingBar with BookRatingSection
+                            BookRatingSection(
+                                averageRating = bookDetails?.averageRating ?: 0f,
+                                ratingsCount = bookDetails?.ratings_count ?: 0,
+                                onRatingChanged = viewModel::updateRating,
+                                interactive = true
                             )
                         }
 
@@ -297,7 +296,6 @@ fun BookDetailScreen(
                         SectionTitle(text = "Comments", customFont = customFont)
                         CommentsList(
                             comments = bookComments,
-                            onDeleteComment = viewModel::deleteComment,
                             customFont = customFont
                         )
 
@@ -399,7 +397,6 @@ private fun RatingBar(
 @Composable
 private fun CommentsList(
     comments: List<BookComment>,
-    onDeleteComment: (String) -> Unit,
     customFont: FontFamily
 ) {
     if (comments.isEmpty()) {
@@ -421,7 +418,6 @@ private fun CommentsList(
             items(comments) { comment ->
                 CommentItem(
                     comment = comment,
-                    onDelete = { onDeleteComment(comment.id) },
                     customFont = customFont
                 )
             }
@@ -432,7 +428,6 @@ private fun CommentsList(
 @Composable
 private fun CommentItem(
     comment: BookComment,
-    onDelete: () -> Unit,
     customFont: FontFamily
 ) {
     Card(
@@ -458,13 +453,6 @@ private fun CommentItem(
                     style = MaterialTheme.typography.labelLarge.copy(fontFamily = customFont),
                     color = Color.White
                 )
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Delete comment",
-                        tint = Color.Gray
-                    )
-                }
             }
             Text(
                 text = comment.text,

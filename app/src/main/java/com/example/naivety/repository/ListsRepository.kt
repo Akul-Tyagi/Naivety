@@ -43,19 +43,23 @@ class ListsRepository @Inject constructor(
     private suspend fun ensureBookIsSaved(bookKey: String) {
         if (savedBookDao.getBookByKey(bookKey) == null) {
             try {
-                val bookDetails = api.getBookDetails(bookKey.removePrefix("/works/"))
-                savedBookDao.insertBook(SavedBook(
-                    bookKey = bookKey,
-                    title = bookDetails.title,
-                    author = bookDetails.authors?.firstOrNull()?.name ?: "Unknown Author",
-                    coverUrl = bookDetails.covers?.firstOrNull()?.let {
-                        "https://covers.openlibrary.org/b/id/$it-L.jpg"
-                    } ?: "",
-                    publishedYear = bookDetails.first_publish_year ?: 0,
-                    description = bookDetails.getDescription()
-                ))
+                val response = api.getBookDetails(bookKey.removePrefix("/works/"))
+                if (response.isSuccessful) {
+                    val bookDetails = response.body()
+                    if (bookDetails != null) {
+                        savedBookDao.insertBook(SavedBook(
+                            bookKey = bookKey,
+                            title = bookDetails.title,
+                            author = bookDetails.authors?.firstOrNull()?.name ?: "Unknown Author",
+                            coverUrl = bookDetails.covers?.firstOrNull()?.let {
+                                "https://covers.openlibrary.org/b/id/$it-L.jpg"
+                            } ?: "",
+                            publishedYear = bookDetails.first_publish_year ?: 0,
+                            description = bookDetails.getDescription()
+                        ))
+                    }
+                }
             } catch (e: Exception) {
-                // Handle error
                 e.printStackTrace()
             }
         }

@@ -1,7 +1,8 @@
 // BookItem.kt
 package com.example.naivety.ui.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,16 +19,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.naivety.R
 import com.example.naivety.ui.theme.NaivetyPurple
 import com.example.naivety.viewmodels.BookViewModel
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BookItem(
     book: Book,
     onClick: () -> Unit,
+    onLongPress: () -> Unit = {},
     viewModel: BookViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -36,7 +38,10 @@ fun BookItem(
             .fillMaxWidth()
             .aspectRatio(0.7f)
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongPress
+            )
     ) {
         // Book thumbnail
         AsyncImage(

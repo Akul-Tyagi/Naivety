@@ -4,7 +4,9 @@ package com.example.naivety.di
 import com.example.naivety.data.AppDatabase
 import com.example.naivety.network.OpenLibraryApi
 import com.example.naivety.repository.BrowseRepository
+import com.example.naivety.repository.BrowseRepositoryImpl
 import com.example.naivety.repository.ListsRepository
+import com.example.naivety.utils.BookCache
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -52,14 +54,14 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOpenLibraryApi(retrofit: Retrofit): OpenLibraryApi {
-        return retrofit.create(OpenLibraryApi::class.java)
+    fun provideOpenLibraryApi(): OpenLibraryApi {
+        return OpenLibraryApi.create()
     }
 
     @Provides
     @Singleton
-    fun provideBrowseRepository(api: OpenLibraryApi): BrowseRepository {
-        return BrowseRepository(api)
+    fun provideBrowseRepository(api: OpenLibraryApi, bookCache: BookCache): BrowseRepository {
+        return BrowseRepositoryImpl(api, bookCache)
     }
 
     @Provides

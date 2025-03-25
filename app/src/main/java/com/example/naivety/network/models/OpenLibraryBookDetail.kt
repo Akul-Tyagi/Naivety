@@ -9,7 +9,7 @@ data class OpenLibraryBookDetail(
     val authors: List<OpenLibraryAuthor>?,
     val first_publish_year: Int?,
     val covers: List<Long>?,
-    val ratings_average: Float? = null,
+    val averageRating: Float? = null,
     val ratings_count: Int? = null,
     val subjects: List<String>? = null
 ) {
@@ -24,7 +24,7 @@ data class OpenLibraryBookDetail(
         return when (description) {
             is String -> description
             is Map<*, *> -> (description as Map<*, *>)["value"] as? String ?: ""
-            else -> ""
+            else -> "No description available"
         }
     }
 }
