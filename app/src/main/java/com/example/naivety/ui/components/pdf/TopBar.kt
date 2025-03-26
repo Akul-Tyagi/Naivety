@@ -38,7 +38,7 @@ fun TopBar(
                 .fillMaxWidth(0.88f)
                 .padding(16.dp)
                 .padding(top = 16.dp),
-            color = Color.Black.copy(alpha = 0.91f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.91f),
             shape = RoundedCornerShape(28.dp),
             shadowElevation = 8.dp
         ) {
@@ -59,7 +59,7 @@ fun TopBar(
 
                 IconButton(
                     onClick = onEditClick,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(21.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,

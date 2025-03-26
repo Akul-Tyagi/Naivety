@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +29,7 @@ fun SearchBar(
 ) {
     Row(
         modifier = Modifier
-            .background(Color(0xFF1A1A1A), RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
             .width(200.dp)
             .height(40.dp)
             .padding(horizontal = 8.dp),
@@ -38,9 +39,9 @@ fun SearchBar(
             value = searchQuery,
             onValueChange = onSearchQueryChange,
             singleLine = true,
-            cursorBrush = SolidColor(Color(0xFF8E42FF)),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             textStyle = TextStyle(
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 fontFamily = alinsaFont
             ),
@@ -56,7 +57,7 @@ fun SearchBar(
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Close search",
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onBackground
             )
         }
     }

@@ -102,32 +102,23 @@ fun BookDetailScreen(
         isContentVisible = true
     }
 
-    val customFont = FontFamily(
-        Font(R.font.fsb)
-    )
     val customFontt = FontFamily(
         Font(R.font.sonder)
-    )
-    val customFonttt = FontFamily(
-        Font(R.font.fsbcd)
     )
     val customFontttt = FontFamily(
         Font(R.font.eubergine)
     )
-    val customFonttttt = FontFamily(
-        Font(R.font.montserratblackitalic)
-    )
     val customFontttttt = FontFamily(
         Font(R.font.montserratblack)
     )
-    val customFonttttttt = FontFamily(
+    val customFont = FontFamily(
         Font(R.font.montserratextrabold)
     )
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Blurred Background
         Box(
@@ -187,7 +178,7 @@ fun BookDetailScreen(
                     Text(
                         text = book.title,
                         style = MaterialTheme.typography.headlineMedium.copy(fontFamily = customFont),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .animateContentSize(),
@@ -212,13 +203,13 @@ fun BookDetailScreen(
                     ) {
                         Text(
                             text = "Published: ${book.publishedYear}",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontFamily = customFonttttttt),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontFamily = customFont),
                             color = Color.Gray
                         )
                         Spacer(modifier = Modifier.width(26.dp))
                         Text(
                             text = "${bookDetails?.pageCount ?: "Pages unavailable"}",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontFamily = customFonttttttt),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontFamily = customFont),
                             color = Color.Gray
                         )
                     }
@@ -250,7 +241,7 @@ fun BookDetailScreen(
                                     Card(
                                         modifier = Modifier.padding(4.dp),
                                         colors = CardDefaults.cardColors(
-                                            containerColor = Color(0xFF1A1A1A)
+                                            containerColor = MaterialTheme.colorScheme.surface
                                         ),
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
@@ -258,7 +249,7 @@ fun BookDetailScreen(
                                             text = genre,
                                             modifier = Modifier.padding(8.dp),
                                             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = customFontttttt),
-                                            color = Color.White
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 }
@@ -269,7 +260,7 @@ fun BookDetailScreen(
                         Text(
                             text = bookDetails?.getDescription() ?: "No description available",
                             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = customFontttt),
-                            color = Color.White.copy(alpha = 0.82f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.82f),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(vertical = 8.dp),
                             lineHeight = 20.sp,
@@ -277,7 +268,6 @@ fun BookDetailScreen(
                         )
 
                         // Rating Section
-                        // Replace the current Rating Section in BookDetailScreen.kt (around line 313)
                         SectionTitle(text = "Rating", customFont = customFont)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -317,7 +307,7 @@ fun BookDetailScreen(
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
 
@@ -329,7 +319,7 @@ fun BookDetailScreen(
                     Icon(
                         imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                         contentDescription = if (isLiked) "Unlike" else "Like",
-                        tint = if (isLiked) Color.Red else Color.White
+                        tint = if (isLiked) Color.Red else MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
@@ -350,7 +340,7 @@ fun BookDetailScreen(
                 modifier = Modifier
                     .size(48.dp)
                     .align(Alignment.Center),
-                color = Color(0xFF8E42FF)
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -361,37 +351,12 @@ private fun SectionTitle(text: String, customFont: FontFamily) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleLarge.copy(fontFamily = customFont),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.onBackground,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp)
     )
-}
-
-@Composable
-private fun RatingBar(
-    rating: Float,
-    onRatingChanged: (Float) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        repeat(5) { index ->
-            IconButton(
-                onClick = { onRatingChanged(index + 1f) },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = if (index < rating) Icons.Default.Star else Icons.Default.StarOutline,
-                    contentDescription = "Rate ${index + 1}",
-                    tint = Color(0xFF8E42FF)
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -401,9 +366,9 @@ private fun CommentsList(
 ) {
     if (comments.isEmpty()) {
         Text(
-            text = "No comments yet. Be the first to share your thoughts!",
+            text = "No comments yet. Be the first to share your thoughts! (Soon)",
             style = MaterialTheme.typography.bodyMedium.copy(fontFamily = customFont),
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 16.dp)
         )
@@ -435,7 +400,7 @@ private fun CommentItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1A1A1A)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -451,13 +416,13 @@ private fun CommentItem(
                 Text(
                     text = "User ${comment.userId}",
                     style = MaterialTheme.typography.labelLarge.copy(fontFamily = customFont),
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Text(
                 text = comment.text,
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = customFont),
-                color = Color.White.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 4.dp)
             )

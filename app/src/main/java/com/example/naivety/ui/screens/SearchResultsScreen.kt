@@ -15,7 +15,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import com.example.naivety.R
 import com.example.naivety.models.OpenLibraryBook
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -31,7 +33,7 @@ fun SearchResultsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column {
             // Header with back button
@@ -45,14 +47,15 @@ fun SearchResultsScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
                 Text(
                     text = "Search Results",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    modifier = Modifier.padding(start = 16.dp)
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(start = 16.dp),
+                    fontStyle = FontStyle(R.font.montserratblack)
                 )
             }
 
@@ -62,7 +65,7 @@ fun SearchResultsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color(0xFF8E42FF))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (books.isEmpty()) {
                 Box(
@@ -71,7 +74,7 @@ fun SearchResultsScreen(
                 ) {
                     Text(
                         text = "No results found",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }

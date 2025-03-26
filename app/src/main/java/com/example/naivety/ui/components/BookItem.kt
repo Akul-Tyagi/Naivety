@@ -65,7 +65,7 @@ fun BookItem(
             ) {
                 Text(
                     text = "${viewModel.getPagesRemaining(book)}",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 10.sp,
                     fontFamily = FontFamily(Font(R.font.alinsa)),
                     maxLines = 1
@@ -82,7 +82,7 @@ fun BookItem(
                     .fillMaxWidth()
                     .height(4.dp),
                 color = NaivetyPurple,
-                trackColor = Color.Black.copy(alpha = 0.5f)
+                trackColor = MaterialTheme.colorScheme.background.copy(alpha = 0.5f)
             )
         }
     }

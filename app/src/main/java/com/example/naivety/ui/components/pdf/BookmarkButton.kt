@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import com.example.naivety.ui.theme.NaivetyPurple
@@ -19,7 +20,7 @@ fun BookmarkButton(
     onBookmarkChange: (Boolean) -> Unit
 ) {
     val iconTint by animateColorAsState(
-        targetValue = if (isBookmarked) NaivetyPurple else Color.White,
+        targetValue = if (isBookmarked) NaivetyPurple else MaterialTheme.colorScheme.onBackground,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow

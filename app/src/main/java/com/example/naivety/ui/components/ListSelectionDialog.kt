@@ -74,13 +74,13 @@ fun ListSelectionDialog(
                         text = "Add to Lists",
                         fontFamily = alinsaFont,
                         fontSize = 24.sp,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -97,14 +97,14 @@ fun ListSelectionDialog(
                     Icon(
                         imageVector = Icons.Outlined.List,
                         contentDescription = null,
-                        tint = Color(0xFF8E42FF),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
                             text = book.title,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 16.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -163,12 +163,12 @@ fun ListSelectionDialog(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            tint = Color(0xFF8E42FF)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Create New List",
-                            color = Color(0xFF8E42FF),
+                            color = MaterialTheme.colorScheme.primary,
                             fontFamily = alinsaFont
                         )
                     }
@@ -200,7 +200,7 @@ private fun ListItem(
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onToggle)
             .background(
-                if (isSelected) Color(0xFF8E42FF).copy(alpha = 0.2f)
+                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                 else Color(0xFF222222)
             ),
         color = Color.Transparent
@@ -213,7 +213,7 @@ private fun ListItem(
         ) {
             Text(
                 text = name,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp
             )
             AnimatedVisibility(
@@ -223,7 +223,7 @@ private fun ListItem(
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = Color(0xFF8E42FF)
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -251,7 +251,7 @@ private fun CreateNewListDialog(
             ) {
                 Text(
                     text = "Create New List",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 20.sp
                 )
 
@@ -261,8 +261,8 @@ private fun CreateNewListDialog(
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFF222222),
                         unfocusedContainerColor = Color(0xFF222222),
-                        focusedIndicatorColor = Color(0xFF8E42FF),
-                        cursorColor = Color(0xFF8E42FF)
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary
                     ),
                     placeholder = { Text("List name", color = Color.Gray) },
                     shape = RoundedCornerShape(12.dp),
@@ -286,7 +286,7 @@ private fun CreateNewListDialog(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8E42FF)
+                            containerColor = MaterialTheme.colorScheme.primary
                         ),
                         enabled = listName.isNotBlank()
                     ) {

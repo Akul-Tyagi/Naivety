@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -28,6 +29,7 @@ import com.example.naivety.viewmodels.ListsViewModel
 import androidx.compose.runtime.getValue
 import com.example.naivety.ui.components.EditListDialog
 import com.example.naivety.ui.components.ReorderableLists
+import com.example.naivety.ui.theme.NaivetyPurple
 import com.example.naivety.data.List as UserList
 
 @Composable
@@ -44,41 +46,54 @@ fun ListsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        LazyRow(
+        Text(
+            text = "My Lists",
+            style = MaterialTheme.typography.headlineSmall,
+            fontFamily = alinsaFont,
+            modifier = Modifier.padding(bottom = 8.dp, start = 16.dp),
+            color = NaivetyPurple
+        )
+
+        // Improved Lists Row
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp)
+                .padding(bottom = 8.dp)
         ) {
-            items(lists) { list ->
-                ListChip(
-                    name = list.name,
-                    isSelected = list.id == selectedListId,
-                    onSelected = { viewModel.selectList(list.id) },
-                    onEdit = { showEditDialog = list }
-                )
-            }
-
-            // Add new list button
-            item {
-                IconButton(
-                    onClick = { viewModel.createNewList() },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            color = Color(0xFF1A1A1A),
-                            shape = MaterialTheme.shapes.small
-                        )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add new list",
-                        tint = Color(0xFF8E42FF)
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 70.dp), // Space for floating add button
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items(lists) { list ->
+                    ElegantListCard(
+                        name = list.name,
+                        isSelected = list.id == selectedListId,
+                        onSelected = { viewModel.selectList(list.id) },
+                        onEdit = { showEditDialog = list }
                     )
                 }
+            }
+
+            // Floating add button
+            FloatingActionButton(
+                onClick = { viewModel.createNewList() },
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 16.dp)
+                    .size(16.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add new list",
+                )
             }
         }
 
@@ -96,7 +111,7 @@ fun ListsScreen(
                 ) {
                     Text(
                         text = "No books in this list yet",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontFamily = alinsaFont
                     )
                 }
@@ -145,40 +160,59 @@ fun ListsScreen(
 }
 
 @Composable
-private fun ListChip(
+private fun ElegantListCard(
     name: String,
     isSelected: Boolean,
     onSelected: () -> Unit,
     onEdit: () -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
-            .height(40.dp)
-            .clickable(onClick = onSelected)
-            .background(
-                if (isSelected) Color(0xFF8E42FF) else Color(0xFF1A1A1A),
-                RoundedCornerShape(20.dp)
-            )
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = name,
-            color = Color.White,
-            style = MaterialTheme.typography.bodyMedium
+            .height(48.dp)
+            .widthIn(min = 90.dp)
+            .clickable(onClick = onSelected),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            else
+                MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 1.dp
         )
-
-        IconButton(
-            onClick = onEdit,
-            modifier = Modifier.size(20.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = "Edit list name",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
+            Text(
+                text = name,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.onSurface
+                else
+                    MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1
             )
+
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit list name",
+                    tint = if (isSelected)
+                        MaterialTheme.colorScheme.onSurface
+                    else
+                        MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(10.dp)
+                )
+            }
         }
     }
 }

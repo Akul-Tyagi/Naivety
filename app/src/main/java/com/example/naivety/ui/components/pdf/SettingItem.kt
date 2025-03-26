@@ -45,7 +45,7 @@ fun SettingItem(
                 )
                 Text(
                     text = title,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontFamily = fontFamily,
                     style = MaterialTheme.typography.titleSmall
                 )

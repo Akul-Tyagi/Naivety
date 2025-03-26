@@ -34,7 +34,7 @@ fun EditListDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF1A1A1A)
+            color = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -43,7 +43,7 @@ fun EditListDialog(
                 Text(
                     text = "Edit List Name",
                     style = MaterialTheme.typography.titleLarge,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(
@@ -52,11 +52,11 @@ fun EditListDialog(
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFF222222),
                         unfocusedContainerColor = Color(0xFF222222),
-                        focusedIndicatorColor = Color(0xFF8E42FF),
-                        cursorColor = Color(0xFF8E42FF)
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        cursorColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    textStyle = TextStyle(color = Color.White)
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.surface)
                 )
 
                 Row(
@@ -80,7 +80,7 @@ fun EditListDialog(
                         Button(
                             onClick = { if (name.isNotBlank()) onConfirm(name) },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF8E42FF)
+                                containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
                             Text("Save")
@@ -94,8 +94,8 @@ fun EditListDialog(
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Delete List?", color = Color.White) },
-            text = { Text("This action cannot be undone.", color = Color.White) },
+            title = { Text("Delete List?", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("This action cannot be undone.", color = MaterialTheme.colorScheme.onSurface) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -109,10 +109,10 @@ fun EditListDialog(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancel", color = Color.White)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
                 }
             },
-            containerColor = Color(0xFF1A1A1A)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }

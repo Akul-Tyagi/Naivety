@@ -8,6 +8,8 @@ sealed class Destinations(val route: String) {
     object Main : Destinations("main")
     object Browse : Destinations("browse")
     object Lists : Destinations("lists")
+    object ThemeSettings : Destinations("theme_settings")
+    object Achievements : Destinations("achievements")
 
     object BookDetail : Destinations(
         "bookDetail/{bookKey}/{title}/{author}/{year}/{coverUrl}"

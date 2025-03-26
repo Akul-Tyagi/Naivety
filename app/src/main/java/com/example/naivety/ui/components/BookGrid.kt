@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.naivety.models.Book
@@ -30,7 +31,7 @@ fun BookGrid(
             isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF8E42FF)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             books.isEmpty() -> {

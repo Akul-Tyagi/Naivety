@@ -33,7 +33,7 @@ fun MainSettingsSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.surface
 
     ) {
         Column(
@@ -66,7 +66,7 @@ fun MainSettingsSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Divider(color = Color.White.copy(alpha = 0.1f))
+            Divider(color = MaterialTheme.colorScheme.surface.copy(alpha = 0.1f))
             Spacer(modifier = Modifier.height(16.dp))
 
             // Scale Type Section
@@ -84,7 +84,7 @@ fun MainSettingsSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Divider(color = Color.White.copy(alpha = 0.1f))
+            Divider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
             Spacer(modifier = Modifier.height(16.dp))
 
             // Toggles Section
@@ -216,7 +216,7 @@ private fun ScaleTypeSelector(
                 },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = NaivetyPurple,
-                    selectedLabelColor = Color.White
+                    selectedLabelColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -255,7 +255,7 @@ private fun ToggleSetting(
                 Text(
                     text = title,
                     fontFamily = FontFamily(Font(R.font.fsb)),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.bodyLarge
                 )
             }

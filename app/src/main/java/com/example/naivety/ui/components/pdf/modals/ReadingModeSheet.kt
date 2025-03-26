@@ -25,7 +25,7 @@ fun ReadingModeSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier
@@ -104,7 +104,7 @@ private fun ReadingModeOption(
             Text(
                 text = title,
                 fontFamily = FontFamily(Font(R.font.fsb)),
-                color = Color.White
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }

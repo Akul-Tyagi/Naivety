@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.example.naivety.ui.theme.NaivetyPurple
+import androidx.compose.material3.MaterialTheme
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -65,7 +66,7 @@ fun PdfLoadingAnimation(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Loading PDF...",
-            color = Color.White
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }

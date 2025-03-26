@@ -27,7 +27,7 @@ fun RatingBar(
     rating: Float,
     modifier: Modifier = Modifier,
     starSize: Int = 24,
-    tint: Color = Color(0xFF8E42FF)
+    tint: Color = MaterialTheme.colorScheme.primary
 ) {
     Row(
         modifier = modifier,
@@ -68,7 +68,7 @@ fun RatingSection(
     onRatingChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
     interactive: Boolean = true,
-    tint: Color = Color(0xFF8E42FF),
+    tint: Color = MaterialTheme.colorScheme.primary,
     starSize: Int = 24
 ) {
     Row(
@@ -125,7 +125,7 @@ fun BookRatingSection(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF222222)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp
@@ -140,7 +140,7 @@ fun BookRatingSection(
             if (ratingsCount > 0) {
                 Text(
                     text = if (interactive) "Rate This Book (Soon)" else "Book Rating",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -150,14 +150,7 @@ fun BookRatingSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF2D2D2D),
-                                    Color(0xFF1A1A1A)
-                                )
-                            )
-                        )
+                        .background( color = MaterialTheme.colorScheme.surface)
                         .padding(vertical = 12.dp)
                 ) {
                     Column(
@@ -169,19 +162,19 @@ fun BookRatingSection(
                                 rating = averageRating,
                                 onRatingChanged = onRatingChanged,
                                 starSize = 30,
-                                tint = Color(0xFF8E42FF)
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         } else {
                             RatingBar(
                                 rating = averageRating,
                                 starSize = 26,
-                                tint = Color(0xFF8E42FF)
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
 
                         Text(
                             text = "$averageRating ($ratingsCount ${if (ratingsCount == 1) "rating" else "ratings"})",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = 16.sp
@@ -191,7 +184,7 @@ fun BookRatingSection(
             } else {
                 Text(
                     text = if (interactive) "Be the First to Rate" else "No Ratings Yet",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -202,28 +195,21 @@ fun BookRatingSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color(0xFF2D2D2D),
-                                        Color(0xFF1A1A1A)
-                                    )
-                                )
-                            )
+                            .background( color = MaterialTheme.colorScheme.onSurface)
                             .padding(vertical = 12.dp)
                     ) {
                         RatingSection(
                             rating = 0f,
                             onRatingChanged = onRatingChanged,
                             starSize = 30,
-                            tint = Color(0xFF8E42FF),
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
                 } else {
                     Text(
                         text = "No ratings available yet",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,28 +17,29 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
-import com.example.naivety.navigation.NavGraph
 import com.example.naivety.ui.screens.MainScreen
 import com.example.naivety.ui.theme.NaivetyTheme
 import com.example.naivety.ui.theme.TransparentSystemBars
 import com.example.naivety.viewmodels.BookViewModel
 import kotlinx.coroutines.launch
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.naivety.models.OpenLibraryBook
 import com.example.naivety.navigation.Destinations
+import com.example.naivety.ui.screens.AchievementsScreen
 import com.example.naivety.ui.screens.BrowseScreen
+import com.example.naivety.ui.screens.ReadingHeatmapScreen
+import com.example.naivety.ui.screens.ThemeSettingsScreen
+import com.example.naivety.repository.UserPreferencesRepository
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainScreenActivity : ComponentActivity() {
@@ -55,13 +55,20 @@ class MainScreenActivity : ComponentActivity() {
         pdfLauncher.launch(arrayOf("application/pdf"))
     }
 
+    private val userPreferencesRepository by lazy {
+        (application as NaivetyApplication).userPreferencesRepository
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            NaivetyTheme {
-                TransparentSystemBars()
+
+            val isDarkTheme = userPreferencesRepository.isDarkTheme.collectAsState().value
+
+            NaivetyTheme(darkTheme = isDarkTheme) {
+                TransparentSystemBars(darkTheme = isDarkTheme)
 
                 Box(
                     modifier = Modifier
@@ -141,6 +148,33 @@ class MainScreenActivity : ComponentActivity() {
                                     navController.navigateUp()
                                 },
                                 navController = navController
+                            )
+                        }
+                        composable("achievements") {
+                            val fsFont = FontFamily(Font(R.font.montserratblack))
+                            AchievementsScreen(
+                                customFont = fsFont,
+                                onBackPressed = { navController.navigateUp() }
+                            )
+                        }
+                        composable("reading_heatmap") {
+                            val fsFont = FontFamily(Font(R.font.montserratblack))
+                            ReadingHeatmapScreen(
+                                customFont = fsFont,
+                                onBackPressed = { navController.popBackStack() }
+                            )
+                        }
+                        composable(Destinations.ThemeSettings.route) {
+                            val fsFont = FontFamily(Font(R.font.montserratblack))
+                            ThemeSettingsScreen(
+                                isDarkTheme = userPreferencesRepository.isDarkTheme.collectAsState().value,
+                                onThemeChange = { isDark ->
+                                    lifecycleScope.launch {
+                                        userPreferencesRepository.setDarkTheme(this@MainScreenActivity, isDark)
+                                    }
+                                },
+                                customFont = fsFont,
+                                onBackPressed = { navController.navigateUp() }
                             )
                         }
                     }

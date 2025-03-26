@@ -28,7 +28,7 @@ fun BookmarksList(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -39,7 +39,7 @@ fun BookmarksList(
                 text = "Bookmarks",
                 style = MaterialTheme.typography.titleLarge,
                 fontFamily = FontFamily(Font(R.font.alinsa)),
-                color = Color(0xFF8E42FF),
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -53,7 +53,7 @@ fun BookmarksList(
                     Text(
                         text = "No bookmarks yet",
                         fontFamily = FontFamily(Font(R.font.fsb)),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -88,7 +88,7 @@ private fun BookmarkItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.Black.copy(alpha = 0.5f)
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
         )
     ) {
         Row(
@@ -105,14 +105,14 @@ private fun BookmarkItem(
                 Icon(
                     imageVector = Icons.Default.Bookmark,
                     contentDescription = null,
-                    tint = Color(0xFF8E42FF),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Page ${bookmark.page + 1}",
                     fontFamily = FontFamily(Font(R.font.fsb)),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyLarge
                 )
             }

@@ -18,7 +18,7 @@ fun CommentSection(
         Text(
             text = "Comments",
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(vertical = 16.dp)
         )
 

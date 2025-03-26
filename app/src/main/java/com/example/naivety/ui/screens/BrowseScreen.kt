@@ -4,6 +4,7 @@ package com.example.naivety.ui.screens
 
 import BookCard
 import BookPreviewModal
+import CustomSearchBar
 import SearchResultsScreen
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -101,7 +102,7 @@ fun BrowseScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             CustomSearchBar(
                 searchQuery = searchQuery,
@@ -117,20 +118,20 @@ fun BrowseScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black)
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 when (searchState) {
                     is SearchState.Searching -> {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
-                            color = Color(0xFF8E42FF)
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 
                     is SearchState.NoResults -> {
                         Text(
                             text = "No results found",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
@@ -170,7 +171,7 @@ fun BrowseScreen(
                                             .padding(16.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        CircularProgressIndicator(color = Color(0xFF8E42FF))
+                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             }
@@ -208,7 +209,7 @@ private fun LoadingIndicator() {
         contentAlignment = Alignment.Center
     ) {
         CircularProgressIndicator(
-            color = Color(0xFF8E42FF),
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(32.dp)
         )
     }
@@ -224,12 +225,12 @@ private fun ErrorItem(onRetry: () -> Unit) {
     ) {
         Text(
             text = "Error loading books",
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Button(
             onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8E42FF))
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
             Text("Retry")
         }
@@ -250,72 +251,3 @@ fun Modifier.shimmerBackground(): Modifier = composed {
     background(Color.Gray.copy(alpha = alpha))
 }
 
-@Composable
-private fun CustomSearchBar(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    onSearchSubmit: (String) -> Unit,
-    fsFont: FontFamily
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(43.dp)
-            .background(Color(0xFF1A1A1A), RoundedCornerShape(25.dp))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                singleLine = true,
-                cursorBrush = SolidColor(Color(0xFF8E42FF)),
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontFamily = fsFont
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Search
-                ),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        onSearchSubmit(searchQuery)
-                    }
-                ),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (searchQuery.isEmpty()) {
-                            Text(
-                                text = "Find a story worth staying up for...",
-                                color = Color.Gray,
-                                fontSize = 16.sp,
-                                fontFamily = fsFont
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
-            )
-            IconButton(
-                onClick = { onSearchSubmit(searchQuery) },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = Color(0xFF8E42FF),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-    }
-}

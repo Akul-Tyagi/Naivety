@@ -53,7 +53,7 @@ fun QuickNavScroll(
                 .width(280.dp) // Make it shorter than nav bar
                 .height(25.dp)
                 .padding(horizontal = 16.dp),
-            color = Color.Black.copy(alpha = 0.79f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.79f),
             shape = RoundedCornerShape(28.dp),
             shadowElevation = 8.dp
         ) {

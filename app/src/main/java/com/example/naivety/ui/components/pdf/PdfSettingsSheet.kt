@@ -15,7 +15,7 @@ fun PdfSettingsSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         // Settings content
         // Implementation follows...

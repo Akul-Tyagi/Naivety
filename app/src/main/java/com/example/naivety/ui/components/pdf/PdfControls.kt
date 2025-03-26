@@ -30,7 +30,7 @@ fun PdfControls(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.Black.copy(alpha = 0.8f))
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f))
                 .padding(16.dp),
             color = Color.Transparent
         ) {

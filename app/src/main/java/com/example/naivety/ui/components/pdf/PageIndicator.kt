@@ -5,6 +5,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,7 +31,7 @@ fun PageIndicator(
         Box(
             modifier = Modifier
                 .background(
-                    color = Color.Black.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
                     shape = RoundedCornerShape(16.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 6.dp),
@@ -38,7 +39,7 @@ fun PageIndicator(
         ) {
             Text(
                 text = "${currentPage + 1}/$totalPages",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )

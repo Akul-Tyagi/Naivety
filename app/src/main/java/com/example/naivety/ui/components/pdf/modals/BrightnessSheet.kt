@@ -24,11 +24,11 @@ fun BrightnessSheet(
     onSettingsChange: (BrightnessSettings) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val purple = Color(0xFF8E42FF)
+    val purple = MaterialTheme.colorScheme.primary
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -93,14 +93,14 @@ private fun SwitchOption(
         Text(
             text = title,
             fontFamily = FontFamily(Font(R.font.fsb)),
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
         )
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color(0xFF8E42FF),
-                checkedTrackColor = Color(0xFF8E42FF).copy(alpha = 0.5f)
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
             )
         )
     }
@@ -118,16 +118,16 @@ private fun SliderOption(
         Text(
             text = title,
             fontFamily= FontFamily(Font(R.font.fsb)),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 4.dp)
         )
         Slider(
             value = value,
             onValueChange = onValueChange,
             colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF8E42FF),
-                activeTrackColor = Color(0xFF8E42FF).copy(alpha = 0.7f),
-                inactiveTrackColor = Color(0xFF8E42FF).copy(alpha = 0.3f)
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
             )
         )
     }

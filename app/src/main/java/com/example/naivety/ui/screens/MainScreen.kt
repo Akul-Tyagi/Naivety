@@ -1,6 +1,7 @@
 package com.example.naivety.ui.screens
 
 import android.net.Uri
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -55,7 +56,7 @@ fun MainScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.Black)
+                            .background(MaterialTheme.colorScheme.background)
                     ) {
                         // App Title
                         Box(
@@ -69,7 +70,7 @@ fun MainScreen(
                                     .padding(top = 28.dp),
                                 fontFamily = sonderFont,
                                 fontSize = 24.sp,
-                                color = Color(0xFF8E42FF),
+                                color = MaterialTheme.colorScheme.primary,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -101,7 +102,7 @@ fun MainScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .background(Color.Black)
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
                     // Crossfade animation between sections
                     Crossfade(
@@ -148,8 +149,17 @@ fun MainScreen(
                                 )
                             }
 
-                            else -> {
-                                ComingSoonSection(alinsaFont = alinsaFont)
+                            "More" -> {
+                                MoreScreen(
+                                    viewModel = hiltViewModel(),
+                                    navController = navController,
+                                    onNavigateToAchievements = {
+                                        navController.navigate("achievements")
+                                    },
+                                    onNavigateToThemeSettings = {
+                                        navController.navigate(Destinations.ThemeSettings.route)
+                                    }
+                                )
                             }
                         }
                     }
@@ -166,9 +176,9 @@ private fun NavigationBarWithAnimation(
 ) {
     NavigationBar(
         modifier = Modifier
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
             .animateContentSize(),
-        containerColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         val items = listOf(
             Triple(Icons.Default.Home, "Home", "Home"),
@@ -192,16 +202,16 @@ private fun NavigationBarWithAnimation(
                         Text(
                             text = label,
                             fontFamily = alinsaFont,
-                            color = Color(0xFF8E42FF)
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 } else null,
                 selected = selectedSection == section,
                 onClick = if (label == "Add") onPdfSelect else { -> onSectionSelected(section) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFF8E42FF),
-                    unselectedIconColor = Color.White,
-                    indicatorColor = Color(0xFF222222)
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurface,
+                    indicatorColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -220,7 +230,7 @@ private fun ComingSoonSection(alinsaFont: FontFamily) {
         ) {
             Text(
                 text = "Coming Soon",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontFamily = alinsaFont,
                 fontSize = 20.sp
             )
@@ -259,7 +269,7 @@ private fun HomeSection(
             isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF8E42FF)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             books.isEmpty() -> {
@@ -324,7 +334,7 @@ private fun HomeTopBar(
         Text(
             text = "Library",
             fontFamily = alinsaFont,
-            color = Color(0xFF8E42FF),
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 19.sp
         )
 
@@ -334,7 +344,7 @@ private fun HomeTopBar(
                     Icon(
                         imageVector = Icons.Default.Sort,
                         contentDescription = "Sort",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
 
@@ -352,7 +362,7 @@ private fun HomeTopBar(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 } else {

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.naivety.ui.theme.TransparentSystemBars
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -34,7 +35,13 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
         "No Clutter, No Distractions—Just You And The Words That Matter. Ready To Dive In?"
     )
 
-    TransparentSystemBars()
+    val context = LocalContext.current
+    val userPreferencesRepository = remember {
+        (context.applicationContext as NaivetyApplication).userPreferencesRepository
+    }
+    val isDarkTheme = userPreferencesRepository.isDarkTheme.collectAsState().value
+
+    TransparentSystemBars(darkTheme = isDarkTheme)
 
     var currentSlide by remember { mutableIntStateOf(0) }
     var shouldShowSubheading by remember { mutableStateOf(false) }
@@ -68,7 +75,7 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
     val mainFontFamily = FontFamily(Font(R.font.carmila, FontWeight.Bold))
     val secondaryFontFamily = FontFamily(Font(R.font.fsultralit, FontWeight.Normal))
 
-    Box(modifier = Modifier.background(Color.Black)) {
+    Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -90,7 +97,7 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                     text = mainHeadings[currentSlide],
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontSize = 69.sp,
-                        color = Color(0xFF8E42FF),
+                        color = MaterialTheme.colorScheme.primary,
                         fontFamily = mainFontFamily,
                         lineHeight = 52.sp,
                         textAlign = TextAlign.Start
@@ -122,7 +129,7 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                             fontSize = 43.sp,
                             lineHeight = 35.sp,
                             textAlign = TextAlign.End,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontFamily = secondaryFontFamily,
                         ),
                     )
@@ -147,11 +154,11 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                 },
                 modifier = Modifier
                     .padding(16.dp)
-                    .border(1.dp, Color(0xFF8E42FF), MaterialTheme.shapes.extraLarge)
+                    .border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraLarge)
                     .alpha(mainHeadingProgress.value),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF111111),
-                    contentColor = Color.White
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 shape = MaterialTheme.shapes.extraLarge
             ) {

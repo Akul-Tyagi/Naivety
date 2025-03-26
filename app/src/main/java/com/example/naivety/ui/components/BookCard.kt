@@ -66,7 +66,7 @@ fun BookCard(
                 .align(Alignment.TopEnd)
                 .padding(8.dp)
                 .size(32.dp)
-                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f), CircleShape)
                 .clickable {
                     showListsDialog = true  // Show dialog on click
                     onLikeToggle()
@@ -76,7 +76,7 @@ fun BookCard(
             Icon(
                 imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                 contentDescription = "Like",
-                tint = if (isLiked) Color.Red else Color.White,
+                tint = if (isLiked) Color.Red else MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.size(20.dp)
             )
         }

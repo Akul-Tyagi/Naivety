@@ -36,7 +36,7 @@ fun BookPreviewModal(
                 Text(
                     text = book.title,
                     style = MaterialTheme.typography.titleLarge,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

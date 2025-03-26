@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,7 +27,7 @@ fun SortDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
         modifier = Modifier
-            .background(Color(0xFF121212))
+            .background(MaterialTheme.colorScheme.background)
             .width(180.dp),
         offset = DpOffset(x = (-120).dp, y = 8.dp),
         shape = RoundedCornerShape(10.dp)
@@ -35,7 +36,7 @@ fun SortDropdownMenu(
             text = {
                 Text(
                     "Recently Added",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontFamily = alinsaFont
                 )
             },
@@ -48,7 +49,7 @@ fun SortDropdownMenu(
             text = {
                 Text(
                     "Title: A to Z",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontFamily = alinsaFont
                 )
             },
@@ -61,7 +62,7 @@ fun SortDropdownMenu(
             text = {
                 Text(
                     "Progress",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontFamily = alinsaFont
                 )
             },
@@ -74,7 +75,7 @@ fun SortDropdownMenu(
             text = {
                 Text(
                     "Author",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontFamily = alinsaFont
                 )
             },

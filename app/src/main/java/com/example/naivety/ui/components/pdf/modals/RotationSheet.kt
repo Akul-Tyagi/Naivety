@@ -24,7 +24,7 @@ fun RotationSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -91,7 +91,7 @@ private fun RotationModeList(
                         tint = NaivetyPurple
                     )
                     Text(text = title,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = FontFamily(Font(R.font.fsb)),
                     )
                 }

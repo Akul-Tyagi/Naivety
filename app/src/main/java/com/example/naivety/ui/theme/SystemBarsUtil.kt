@@ -6,13 +6,13 @@ import androidx.compose.ui.graphics.Color
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 @Composable
-fun TransparentSystemBars() {
+fun TransparentSystemBars(darkTheme: Boolean) {
     val systemUiController = rememberSystemUiController()
 
-    DisposableEffect(systemUiController) {
+    DisposableEffect(systemUiController, darkTheme) {
         systemUiController.setSystemBarsColor(
             color = Color.Transparent,
-            darkIcons = false,
+            darkIcons = !darkTheme,
             isNavigationBarContrastEnforced = false
         )
 

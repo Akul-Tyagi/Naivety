@@ -122,7 +122,7 @@ private fun ListChip(
         modifier = modifier
             .height(40.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = if (isSelected) Color(0xFF8E42FF) else Color(0xFF1A1A1A)
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF1A1A1A)
         )
     ) {
         Row(
@@ -131,7 +131,7 @@ private fun ListChip(
         ) {
             Text(
                 text = list.name,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium
             )
             IconButton(
@@ -141,7 +141,7 @@ private fun ListChip(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit list",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }

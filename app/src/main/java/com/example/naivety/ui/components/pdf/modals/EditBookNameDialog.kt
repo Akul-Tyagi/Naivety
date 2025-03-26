@@ -30,7 +30,7 @@ fun EditBookNameDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.medium,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -53,16 +53,16 @@ fun EditBookNameDialog(
                         Text(
                             "Book Name",
                             fontFamily = FontFamily(Font(R.font.fsb)),
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedIndicatorColor = NaivetyPurple,
                         focusedContainerColor = NaivetyPurple,
-                        unfocusedContainerColor  = Color.White.copy(alpha = 0.5f)
+                        unfocusedContainerColor  = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = {
@@ -82,7 +82,7 @@ fun EditBookNameDialog(
                     TextButton(
                         onClick = onDismiss,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color.White
+                            contentColor = MaterialTheme.colorScheme.onBackground
                         )
                     ) {
                         Text(

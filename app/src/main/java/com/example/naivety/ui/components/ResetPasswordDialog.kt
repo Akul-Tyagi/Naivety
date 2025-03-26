@@ -1,4 +1,5 @@
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,7 +25,7 @@ fun ResetPasswordDialog(
         title = {
             Text(
                 "Reset Password",
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
         },
         text = {
@@ -34,14 +35,14 @@ fun ResetPasswordDialog(
                 label = { Text("Email") },
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
         confirmButton = {
             TextButton(onClick = { onSubmit(email) }) {
-                Text("Reset", color = Color(0xFF8E42FF))
+                Text("Reset", color = MaterialTheme.colorScheme.primary)
             }
         },
         dismissButton = {
@@ -50,6 +51,6 @@ fun ResetPasswordDialog(
             }
         },
         containerColor = Color(0xFF1A1A1A),
-        textContentColor = Color.White
+        textContentColor = MaterialTheme.colorScheme.onBackground
     )
 }

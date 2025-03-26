@@ -31,7 +31,13 @@ fun AuthMainScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     activity: Activity
 ) {
-    TransparentSystemBars() // Add transparent system bars
+    val context = LocalContext.current
+    val userPreferencesRepository = remember {
+        (context.applicationContext as NaivetyApplication).userPreferencesRepository
+    }
+    val isDarkTheme = userPreferencesRepository.isDarkTheme.collectAsState().value
+
+    TransparentSystemBars(darkTheme = isDarkTheme) // Add transparent system bars
 
     var isSignIn by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
@@ -55,7 +61,7 @@ fun AuthMainScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -68,7 +74,7 @@ fun AuthMainScreen(
                 text = if (isSignIn) "Welcome Back" else "Create Account",
                 style = MaterialTheme.typography.headlineLarge,
                 fontFamily = alinsaFont,
-                color = Color(0xFF8E42FF),
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 42.dp)
             )
 
@@ -87,13 +93,13 @@ fun AuthMainScreen(
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF8E42FF),
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedLabelColor = Color(0xFF8E42FF),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
                     unfocusedLabelColor = Color.Gray,
-                    cursorColor = Color(0xFF8E42FF)
+                    cursorColor = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -135,12 +141,12 @@ fun AuthMainScreen(
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF8E42FF),
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = Color.Gray,
                     errorBorderColor = Color.Red,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedLabelColor = Color(0xFF8E42FF),
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
                     unfocusedLabelColor = Color.Gray
                 ),
                 modifier = Modifier
@@ -181,8 +187,8 @@ fun AuthMainScreen(
                     .fillMaxWidth()
                     .animateContentSize(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF8E42FF),
-                    disabledContainerColor = Color(0xFF8E42FF).copy(alpha = 0.5f)
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -199,7 +205,7 @@ fun AuthMainScreen(
                 onClick = { viewModel.signInWithGoogle(activity) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -216,7 +222,7 @@ fun AuthMainScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Continue with Google",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = alinsaFont
                     )
                 }
@@ -230,7 +236,7 @@ fun AuthMainScreen(
             ) {
                 Text(
                     text = if (isSignIn) "Don't have an account? Sign Up" else "Already have an account? Sign In",
-                    color = Color(0xFF8E42FF),
+                    color = MaterialTheme.colorScheme.primary,
                     fontFamily = alinsaFont,
                     textAlign = TextAlign.Center
                 )
@@ -242,11 +248,11 @@ fun AuthMainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f)),
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(
-                    color = Color(0xFF8E42FF),
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(48.dp)
                 )
             }

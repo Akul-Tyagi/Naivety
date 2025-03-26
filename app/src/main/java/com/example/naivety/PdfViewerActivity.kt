@@ -116,7 +116,14 @@ class PdfViewerActivity : ComponentActivity() {
         onFinish: () -> Unit,
         onSaveProgress: (Int) -> Unit
     ) {
-        TransparentSystemBars()
+        val context = LocalContext.current
+        val userPreferencesRepository = remember {
+            (context.applicationContext as NaivetyApplication).userPreferencesRepository
+        }
+        val isDarkTheme = userPreferencesRepository.isDarkTheme.collectAsState().value
+
+        TransparentSystemBars(darkTheme = isDarkTheme)
+
         CompositionLocalProvider(LocalViewModel provides viewModel) {
             val showSettings = remember { mutableStateOf(false) }
             val showReadingMode = remember { mutableStateOf(false) }
@@ -266,12 +273,12 @@ class PdfViewerActivity : ComponentActivity() {
                         .padding(bottom = 16.dp)
                 ) {
                     Surface(
-                        color = Color.Black.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                         shape = RoundedCornerShape(20.dp)
                     ) {
                         Text(
                             text = "${viewerState.value.currentPage + 1}/${viewerState.value.totalPages}",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
@@ -319,7 +326,7 @@ class PdfViewerActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth(0.91f) // Make the bar 85% of screen width
                                 .padding(horizontal = 16.dp), // Add horizontal padding
-                            color = Color.Black.copy(alpha = 0.90f), // Slightly transparent
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f), // Slightly transparent
                             shape = RoundedCornerShape(28.dp), // Round all corners
                             shadowElevation = 8.dp // Add elevation for floating effect
                         ) {
@@ -340,7 +347,7 @@ class PdfViewerActivity : ComponentActivity() {
                                     Icon(
                                         imageVector = Icons.Default.Book,
                                         contentDescription = "Reading Mode",
-                                        tint = Color(0xFF8E42FF)
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
 
@@ -352,7 +359,7 @@ class PdfViewerActivity : ComponentActivity() {
                                     Icon(
                                         imageVector = Icons.Default.BrightnessHigh,
                                         contentDescription = "Brightness",
-                                        tint = Color(0xFF8E42FF)
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
 
@@ -391,7 +398,7 @@ class PdfViewerActivity : ComponentActivity() {
                                             Icons.Default.BookmarkBorder
                                         },
                                         contentDescription = "Bookmark",
-                                        tint = Color(0xFF8E42FF)
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
 
@@ -403,7 +410,7 @@ class PdfViewerActivity : ComponentActivity() {
                                     Icon(
                                         imageVector = Icons.Default.ScreenRotation,
                                         contentDescription = "Screen Rotation",
-                                        tint = Color(0xFF8E42FF)
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
 
@@ -415,7 +422,7 @@ class PdfViewerActivity : ComponentActivity() {
                                     Icon(
                                         imageVector = Icons.Default.Settings,
                                         contentDescription = "Settings",
-                                        tint = Color(0xFF8E42FF)
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
