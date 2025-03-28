@@ -49,28 +49,34 @@ class MoreViewModel @Inject constructor(
             }
         }
 
+        // Collect current streak
         viewModelScope.launch {
-            readingStatsRepository.getCurrentStreak().collectLatest {
+            readingStatsRepository.currentStreak.collectLatest {
                 _currentStreak.value = it
             }
         }
 
+        // Collect achievements
         viewModelScope.launch {
             readingStatsRepository.achievements.collectLatest {
                 _achievements.value = it
             }
         }
 
+        // Collect longest streak
         viewModelScope.launch {
-            readingStatsRepository.getLongestStreak().collectLatest {
+            readingStatsRepository.longestStreak.collectLatest {
                 _longestStreak.value = it
             }
         }
-
     }
 
     fun updateStreakGoal(goal: Int) {
         readingStatsRepository.updateStreakGoal(goal)
+    }
+
+    fun shareAchievements() {
+        readingStatsRepository.shareAchievements()
     }
 
     fun shareApp() {

@@ -3,6 +3,7 @@ package com.example.naivety.di
 
 import android.content.Context
 import com.example.naivety.data.AppDatabase
+import com.example.naivety.data.ReadingDayDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,4 +20,10 @@ object DatabaseModule {
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return AppDatabase.getDatabase(context)
     }
+
+    @Provides
+    fun provideReadingDayDao(database: AppDatabase): ReadingDayDao {
+        return database.readingDayDao()
+    }
+
 }

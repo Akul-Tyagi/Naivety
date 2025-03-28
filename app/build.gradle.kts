@@ -83,6 +83,9 @@ dependencies {
     // Replace the existing PDF viewer dependency with this
     implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 
+    //admob
+    implementation("com.google.android.gms:play-services-ads:24.1.0")
+
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     //Browse Section
     // Paging 3 with Compose support

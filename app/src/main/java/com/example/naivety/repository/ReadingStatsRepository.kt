@@ -1,43 +1,86 @@
-// app/src/main/java/com/example/naivety/repository/ReadingStatsRepository.kt
 package com.example.naivety.repository
 
 import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
 import com.example.naivety.data.Achievement
+import com.example.naivety.data.ReadingDay
+import com.example.naivety.data.ReadingDayDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import android.content.SharedPreferences
+import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Singleton
 class ReadingStatsRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val readingDayDao: ReadingDayDao
 ) {
-    private val preferences: SharedPreferences =
-        context.getSharedPreferences("reading_stats_prefs", Context.MODE_PRIVATE)
+    // State flows for UI
+    private val _selectedYear = MutableStateFlow(LocalDate.now().year)
+    val selectedYear: StateFlow<Int> = _selectedYear
 
-    private val _streakGoal = MutableStateFlow(preferences.getInt("streak_goal", 30))
-    val streakGoal: Flow<Int> = _streakGoal.asStateFlow()
+    private val _availableYears = MutableStateFlow<List<Int>>(emptyList())
+    val availableYears: StateFlow<List<Int>> = _availableYears
 
-    // Add this method to update streak goal
-    fun updateStreakGoal(goal: Int) {
-        preferences.edit().putInt("streak_goal", goal).apply()
-        _streakGoal.value = goal
-    }
+    // Reading days flow from DAO
+    private val _readingDays = MutableStateFlow<List<ReadingDay>>(emptyList())
+    val readingDays: StateFlow<List<ReadingDay>> = _readingDays
+
+    // Current streak
+    private val _currentStreak = MutableStateFlow(0)
+    val currentStreak: StateFlow<Int> = _currentStreak
+
+    // Longest streak
+    private val _longestStreak = MutableStateFlow(0)
+    val longestStreak: StateFlow<Int> = _longestStreak
+
+    // Achievements tracker
+    private val _achievements = MutableStateFlow<List<Achievement>>(emptyList())
+    val achievements: StateFlow<List<Achievement>> = _achievements
+
+    // User streak goal
+    private val _streakGoal = MutableStateFlow(30) // Default: 30 days
+    val streakGoal: StateFlow<Int> = _streakGoal
+
+    // Total reading stats
+    private val _totalPagesRead = MutableStateFlow(0)
+    val totalPagesRead: StateFlow<Int> = _totalPagesRead
+
+    private val _totalTimeSpent = MutableStateFlow(0)
+    val totalTimeSpent: StateFlow<Int> = _totalTimeSpent
+
+    // Tracking for special achievements
+    private val _nightReadingSessions = MutableStateFlow(0)
+    private val _earlyMorningReadingSessions = MutableStateFlow(0)
+    private val _weekendReadingSessions = MutableStateFlow(0)
+    private val _completedBooks = MutableStateFlow(0)
+
+    private val viewModelScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // Initialize with predefined achievements
     private val allAchievements = listOf(
-        // First book achievement (existing)
+        // First book achievement
         Achievement(
             id = "first_book",
             title = "First Step",
             description = "Read your first book",
             iconName = "ic_achievement_book",
-            unlocked = true,
-            dateUnlocked = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000
+            unlocked = false
         ),
 
         // Reading duration achievements
@@ -76,8 +119,7 @@ class ReadingStatsRepository @Inject constructor(
             title = "Weekly Habit",
             description = "Read 7 days in a row",
             iconName = "ic_achievement_fire",
-            unlocked = true,
-            dateUnlocked = System.currentTimeMillis() - 10 * 24 * 60 * 60 * 1000
+            unlocked = false
         ),
         Achievement(
             id = "streak_14",
@@ -192,156 +234,396 @@ class ReadingStatsRepository @Inject constructor(
         )
     )
 
-    private val _achievements = MutableStateFlow(allAchievements)
-    val achievements: Flow<List<Achievement>> = _achievements.asStateFlow()
+    init {
+        // Load saved achievements
+        loadAchievements()
 
-    // Reading Day class
-    data class ReadingDay(
-        val date: Long,
-        val pagesRead: Int,
-        val timeSpentMinutes: Int,
-        val bookIds: List<String>
-    )
+        // Load streak goal from preferences
+        _streakGoal.value = context.getSharedPreferences("reading_stats", Context.MODE_PRIVATE)
+            .getInt("streak_goal", 30)
 
-    // Sample reading days
-    private val sampleReadingDays = listOf(
-        ReadingDay(
-            date = System.currentTimeMillis() - 5 * 24 * 60 * 60 * 1000, // 5 days ago
-            pagesRead = 35,
-            timeSpentMinutes = 60,
-            bookIds = listOf("book1")
-        ),
-        ReadingDay(
-            date = System.currentTimeMillis() - 4 * 24 * 60 * 60 * 1000, // 4 days ago
-            pagesRead = 42,
-            timeSpentMinutes = 75,
-            bookIds = listOf("book2")
-        ),
-        ReadingDay(
-            date = System.currentTimeMillis() - 2 * 24 * 60 * 60 * 1000, // 2 days ago
-            pagesRead = 28,
-            timeSpentMinutes = 45,
-            bookIds = listOf("book1")
-        ),
-        ReadingDay(
-            date = System.currentTimeMillis() - 24 * 60 * 60 * 1000, // yesterday
-            pagesRead = 50,
-            timeSpentMinutes = 90,
-            bookIds = listOf("book3")
-        ),
-        ReadingDay(
-            date = System.currentTimeMillis(), // today
-            pagesRead = 20,
-            timeSpentMinutes = 30,
-            bookIds = listOf("book3")
-        )
-    )
+        // Set up collection from the database for automatic updates
+        viewModelScope.launch {
+            readingDayDao.getAllReadingDaysFlow().collect { days ->
+                _readingDays.value = days
+                updateAllStats(days)
+            }
+        }
+    }
 
-    private val _readingDays = MutableStateFlow(sampleReadingDays)
-    val readingDays: Flow<List<ReadingDay>> = _readingDays.asStateFlow()
+    private fun loadAchievements() {
+        val prefs = context.getSharedPreferences("achievements", Context.MODE_PRIVATE)
+        val savedAchievements = allAchievements.map { achievement ->
+            val unlocked = prefs.getBoolean("${achievement.id}_unlocked", false)
+            val dateUnlocked = prefs.getLong("${achievement.id}_date", 0L)
+            val progress = prefs.getFloat("${achievement.id}_progress", 0f)
 
-    private val _selectedYear = MutableStateFlow(2025)
-    val selectedYear: Flow<Int> = _selectedYear.asStateFlow()
+            achievement.copy(
+                unlocked = unlocked,
+                dateUnlocked = if (unlocked) dateUnlocked else 0L,
+                progress = progress
+            )
+        }
+        _achievements.value = savedAchievements
+    }
 
-    private val _availableYears = MutableStateFlow(listOf(2024, 2025))
-    val availableYears: Flow<List<Int>> = _availableYears.asStateFlow()
+    private fun saveAchievements() {
+        val prefs = context.getSharedPreferences("achievements", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+
+        _achievements.value.forEach { achievement ->
+            editor.putBoolean("${achievement.id}_unlocked", achievement.unlocked)
+            editor.putLong("${achievement.id}_date", achievement.dateUnlocked)
+            editor.putFloat("${achievement.id}_progress", achievement.progress)
+        }
+
+        editor.apply()
+    }
+
+    private fun updateAllStats(readingDays: List<ReadingDay>) {
+        viewModelScope.launch {
+            // Calculate total pages and time
+            val totalPages = readingDays.sumOf { it.pagesRead }
+            val totalMinutes = readingDays.sumOf { it.timeSpentMinutes }
+
+            _totalPagesRead.value = totalPages
+            _totalTimeSpent.value = totalMinutes
+
+            // Update available years for UI selection
+            updateAvailableYearsNonSuspend(readingDays)
+
+            // Calculate streaks
+            calculateStreaks(readingDays)
+
+            // Update achievements based on new data
+            updateAchievements(readingDays)
+        }
+    }
+
+    private fun updateAvailableYearsNonSuspend(readingDays: List<ReadingDay>) {
+        val years = readingDays.map { day ->
+            Instant.ofEpochMilli(day.date)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+                .year
+        }.distinct().sorted()
+
+        if (years.isEmpty()) {
+            _availableYears.value = listOf(LocalDate.now().year)
+        } else {
+            _availableYears.value = years
+        }
+    }
 
     fun selectYear(year: Int) {
         _selectedYear.value = year
     }
 
-    fun getCurrentStreak(): Flow<Int> {
-        return readingDays.map { days ->
-            // Sort days by date (newest first)
-            val sortedDays = days.sortedByDescending { it.date }
+    fun updateStreakGoal(goal: Int) {
+        _streakGoal.value = goal
 
-            if (sortedDays.isEmpty()) {
-                return@map 0
+        // Save to preferences
+        val prefs = context.getSharedPreferences("reading_stats", Context.MODE_PRIVATE)
+        prefs.edit().putInt("streak_goal", goal).apply()
+    }
+
+    private fun calculateStreaks(readingDays: List<ReadingDay>) {
+        if (readingDays.isEmpty()) {
+            _currentStreak.value = 0
+            _longestStreak.value = 0
+            return
+        }
+
+        // Get today and yesterday for streak calculation
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+
+        // Convert reading days to LocalDate objects for easier comparison
+        val dates = readingDays.map { day ->
+            Instant.ofEpochMilli(day.date)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+        }.distinct().sorted()
+
+        // Check if there's a reading entry for today
+        val hasReadingToday = dates.any { it.isEqual(today) }
+
+        // Calculate current streak
+        var streak = 0
+        var checkDate = if (hasReadingToday) today else yesterday
+
+        // Find the most recent continuous streak
+        while (dates.any { it.isEqual(checkDate) }) {
+            streak++
+            checkDate = checkDate.minusDays(1)
+        }
+
+        // Calculate longest streak
+        var longestStreak = 0
+        var currentRun = 0
+        var previousDate: LocalDate? = null
+
+        for (date in dates) {
+            if (previousDate == null) {
+                // First entry
+                currentRun = 1
+            } else {
+                // Check if consecutive day
+                val daysBetween = ChronoUnit.DAYS.between(previousDate, date)
+
+                if (daysBetween == 1L) {
+                    // Consecutive day
+                    currentRun++
+                } else if (daysBetween != 0L) {
+                    // Streak broken (and not the same day)
+                    longestStreak = maxOf(longestStreak, currentRun)
+                    currentRun = 1
+                }
             }
+            previousDate = date
+        }
 
-            // Check if today has reading activity
-            val today = java.time.LocalDate.now()
-            val yesterday = today.minusDays(1)
-            val todayMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val yesterdayMillis =
-                today.minusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        // Check final streak
+        longestStreak = maxOf(longestStreak, currentRun)
 
-            val hasTodayReading = sortedDays.any {
-                it.date >= todayMillis && it.date < todayMillis + 24 * 60 * 60 * 1000
-            }
+        // Update state
+        _currentStreak.value = streak
+        _longestStreak.value = longestStreak
+    }
 
-            val hasYesterdayReading = sortedDays.any {
-                it.date >= yesterdayMillis && it.date < todayMillis
-            }
+    private fun updateAchievements(readingDays: List<ReadingDay>) {
+        if (readingDays.isEmpty()) return
 
-            // If no reading today or yesterday, no active streak
-            if (!hasTodayReading && !hasYesterdayReading) {
-                return@map 0
-            }
+        val totalDaysRead = readingDays.size
+        val totalPagesRead = readingDays.sumOf { it.pagesRead }
+        val totalTimeSpentMinutes = readingDays.sumOf { it.timeSpentMinutes }
 
-            // Count streak by checking consecutive days
-            var streak = if (hasTodayReading) 1 else 0
-            var currentDate = if (hasTodayReading) yesterday else today.minusDays(2)
+        // Create a mutable copy of achievements to update
+        val updatedAchievements = _achievements.value.toMutableList()
+        val now = System.currentTimeMillis()
 
-            while (true) {
-                val currentDateMillis =
-                    currentDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                val nextDateMillis =
-                    currentDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
-                        .toEpochMilli()
-
-                val hasReadingOnDate = sortedDays.any {
-                    it.date >= currentDateMillis && it.date < nextDateMillis
+        // Update each achievement based on its criteria
+        updatedAchievements.forEachIndexed { index, achievement ->
+            when (achievement.id) {
+                // Streak achievements
+                "streak_7" -> {
+                    if (!achievement.unlocked && _currentStreak.value >= 7) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "streak_14" -> {
+                    if (!achievement.unlocked && _currentStreak.value >= 14) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "streak_21" -> {
+                    if (!achievement.unlocked && _currentStreak.value >= 21) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "streak_30" -> {
+                    if (!achievement.unlocked && _currentStreak.value >= 30) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "streak_50" -> {
+                    if (!achievement.unlocked && _currentStreak.value >= 50) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "streak_100" -> {
+                    if (!achievement.unlocked && _currentStreak.value >= 100) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
                 }
 
-                if (!hasReadingOnDate) {
-                    break
+                // Pages read achievements
+                "pages_100" -> {
+                    if (!achievement.unlocked && totalPagesRead >= 100) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "pages_500" -> {
+                    if (!achievement.unlocked && totalPagesRead >= 500) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "pages_1000" -> {
+                    if (!achievement.unlocked && totalPagesRead >= 1000) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "pages_5000" -> {
+                    if (!achievement.unlocked && totalPagesRead >= 5000) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
+                "pages_10000" -> {
+                    if (!achievement.unlocked && totalPagesRead >= 10000) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
                 }
 
-                streak++
-                currentDate = currentDate.minusDays(1)
-            }
+                // First book achievement
+                "first_book" -> {
+                    if (!achievement.unlocked && totalDaysRead > 0) {
+                        updatedAchievements[index] = achievement.copy(
+                            unlocked = true,
+                            dateUnlocked = now
+                        )
+                    }
+                }
 
-            streak
+                // Duration achievements
+                "marathon_reader", "endurance_reader", "reading_machine", "day_devotee" -> {
+                    // Check for single day reading durations
+                    val maxDailyMinutes = readingDays
+                        .groupBy { it.date }
+                        .maxOfOrNull { (_, daysForDate) -> daysForDate.sumOf { it.timeSpentMinutes } } ?: 0
+
+                    val hoursRead = maxDailyMinutes / 60.0
+
+                    when (achievement.id) {
+                        "marathon_reader" -> {
+                            if (!achievement.unlocked && hoursRead >= 3) {
+                                updatedAchievements[index] = achievement.copy(
+                                    unlocked = true,
+                                    dateUnlocked = now
+                                )
+                            }
+                        }
+                        "endurance_reader" -> {
+                            if (!achievement.unlocked && hoursRead >= 6) {
+                                updatedAchievements[index] = achievement.copy(
+                                    unlocked = true,
+                                    dateUnlocked = now
+                                )
+                            }
+                        }
+                        "reading_machine" -> {
+                            if (!achievement.unlocked && hoursRead >= 9) {
+                                updatedAchievements[index] = achievement.copy(
+                                    unlocked = true,
+                                    dateUnlocked = now
+                                )
+                            }
+                        }
+                        "day_devotee" -> {
+                            if (!achievement.unlocked && hoursRead >= 12) {
+                                updatedAchievements[index] = achievement.copy(
+                                    unlocked = true,
+                                    dateUnlocked = now
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update achievements if changed
+        if (updatedAchievements != _achievements.value) {
+            _achievements.value = updatedAchievements
+            saveAchievements() // Save achievements to preferences
         }
     }
-    // Add after getCurrentStreak()
-    fun getLongestStreak(): Flow<Int> {
-        return readingDays.map { days ->
-            if (days.isEmpty()) {
-                return@map 0
-            }
 
-            // Sort days by date (oldest first)
-            val sortedDays = days.sortedBy { it.date }
+    suspend fun logReadingSession(bookId: String, pagesRead: Int, timeSpentMinutes: Int) {
+        // Use today's date at midnight for consistent grouping
+        val today = LocalDate.now()
+        val todayEpochMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            // Group reading days by their calendar date
-            val readingDateSet = sortedDays.map {
-                val instant = java.time.Instant.ofEpochMilli(it.date)
-                val zdt = instant.atZone(ZoneId.systemDefault())
-                // Create a normalized date value (days since epoch)
-                zdt.toLocalDate().toEpochDay()
-            }.toSet()
+        // Check if we already have an entry for today
+        val existingDay = readingDayDao.getReadingDayForDate(todayEpochMillis)
 
-            var currentStreak = 0
-            var maxStreak = 0
-            var lastDay: Long? = null
-
-            // Process all reading days chronologically
-            readingDateSet.sorted().forEach { dayEpoch ->
-                if (lastDay == null || dayEpoch == lastDay!! + 1) {
-                    // Consecutive day
-                    currentStreak++
-                } else {
-                    // Gap detected, reset streak
-                    currentStreak = 1
-                }
-
-                maxStreak = maxOf(maxStreak, currentStreak)
-                lastDay = dayEpoch
-            }
-
-            maxStreak
+        if (existingDay != null) {
+            // Update existing day
+            val updatedDay = existingDay.copy(
+                pagesRead = existingDay.pagesRead + pagesRead,
+                timeSpentMinutes = existingDay.timeSpentMinutes + timeSpentMinutes
+            )
+            readingDayDao.insertReadingDay(updatedDay)
+        } else {
+            // Create new day
+            val newDay = ReadingDay(
+                date = todayEpochMillis,
+                bookId = bookId,
+                pagesRead = pagesRead,
+                timeSpentMinutes = timeSpentMinutes
+            )
+            readingDayDao.insertReadingDay(newDay)
         }
+
+        // No need for explicit refresh - Flow collection will update data
+    }
+
+    // Method to share achievements
+    fun shareAchievements() {
+        val unlockedCount = _achievements.value.count { it.unlocked }
+        val totalCount = _achievements.value.size
+
+        val shareText = "I've unlocked $unlockedCount/$totalCount reading achievements in Naivety! " +
+                "My current reading streak is ${_currentStreak.value} days, and I've read " +
+                "${_totalPagesRead.value} pages overall. Download the app and challenge me!"
+
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            type = "text/plain"
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+        context.startActivity(Intent.createChooser(sendIntent, "Share Achievements"))
+    }
+
+    fun getStats(): Triple<Int, Int, Int> {
+        return Triple(
+            _totalPagesRead.value,
+            _totalTimeSpent.value,
+            _readingDays.value.size
+        )
+    }
+
+    suspend fun getReadingDataForYear(year: Int): List<ReadingDay> {
+        val startDate = LocalDate.of(year, 1, 1)
+            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+        val endDate = LocalDate.of(year, 12, 31)
+            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() + 86400000 // Add one day in millis
+
+        return readingDayDao.getReadingDaysInRange(startDate, endDate)
     }
 }

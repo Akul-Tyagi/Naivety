@@ -21,26 +21,37 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.naivety.repository.ReadingStatsRepository.ReadingDay
+import com.example.naivety.data.ReadingDay
 import com.example.naivety.viewmodels.ReadingStatsViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
 import java.time.ZoneId
 import androidx.compose.foundation.border
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.style.TextAlign
-import java.time.format.DateTimeFormatter
-import java.util.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import java.time.Instant
 
 @Composable
 fun ReadingHeatmapScreen(
-    viewModel: ReadingStatsViewModel = hiltViewModel(),
     customFont: FontFamily,
     onBackPressed: () -> Unit
 ) {
+    val viewModel: ReadingStatsViewModel = hiltViewModel()
     val readingDays by viewModel.readingDays.collectAsState(initial = emptyList())
     val selectedYear by viewModel.selectedYear.collectAsState(initial = LocalDate.now().year)
     val availableYears by viewModel.availableYears.collectAsState(initial = emptyList())
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshReadingData()
+    }
 
     Box(
         modifier = Modifier
@@ -104,7 +115,7 @@ fun ReadingHeatmapScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
             ) {
-                androidx.compose.foundation.rememberScrollState().let { scrollState ->
+                val scrollState = androidx.compose.foundation.rememberScrollState()
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -124,7 +135,6 @@ fun ReadingHeatmapScreen(
             }
         }
     }
-}
 
 @Composable
 fun YearTab(
@@ -157,17 +167,11 @@ fun ReadingHeatmap(
     // Group reading days by month
     val readingDaysByMonth = readingDays
         .filter {
-            val date = LocalDate.ofInstant(
-                java.time.Instant.ofEpochMilli(it.date),
-                ZoneId.systemDefault()
-            )
+            val date = timestampToLocalDate(it.date)
             date.year == selectedYear
         }
         .groupBy {
-            val date = LocalDate.ofInstant(
-                java.time.Instant.ofEpochMilli(it.date),
-                ZoneId.systemDefault()
-            )
+            val date = timestampToLocalDate(it.date)
             date.month
         }
 
@@ -223,9 +227,7 @@ fun ReadingStatsCard(
 ) {
     // Filter reading days for the selected year
     val filteredReadingDays = readingDays.filter { day ->
-        val date = java.time.Instant.ofEpochMilli(day.date)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
+        val date = timestampToLocalDate(day.date)
         date.year == selectedYear
     }
 
@@ -268,9 +270,12 @@ fun ReadingStatsCard(
 
                 val totalMinutes = filteredReadingDays.sumOf { it.timeSpentMinutes }
                 val hours = totalMinutes / 60
+                val minutes = totalMinutes % 60
+                val timeFormatted = String.format("%d:%02d", hours, minutes)
+
                 StatItem(
-                    value = hours.toString(),
-                    label = "Hours",
+                    value = timeFormatted,
+                    label = "Time",
                     customFont = customFont
                 )
             }
@@ -318,6 +323,11 @@ fun MonthGrid(
         val daysInMonth = firstDayOfMonth.lengthOfMonth()
         val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Sunday is 0
 
+        // Create a map of reading days for faster lookup
+        val readingDaysMap = readingDays.associateBy { day ->
+            timestampToLocalDate(day.date)
+        }
+
         // Day of week headers
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -349,25 +359,14 @@ fun MonthGrid(
                     for (dayOfWeek in 0..6) {
                         val day = week * 7 + dayOfWeek + 1 - firstDayOfWeek
                         if (day in 1..daysInMonth) {
-                            // Check if this day has reading activity
+                            // Construct the date for this day
                             val currentDate = LocalDate.of(year, month, day)
-                            val hasReading = readingDays.any {
-                                val readDate = LocalDate.ofInstant(
-                                    java.time.Instant.ofEpochMilli(it.date),
-                                    ZoneId.systemDefault()
-                                )
-                                readDate.isEqual(currentDate)
-                            }
+
+                            // Check if this day has reading activity using the map
+                            val readingDay = readingDaysMap[currentDate]
+                            val hasReading = readingDay != null
 
                             val intensity = if (hasReading) {
-                                val readingDay = readingDays.find {
-                                    val readDate = LocalDate.ofInstant(
-                                        java.time.Instant.ofEpochMilli(it.date),
-                                        ZoneId.systemDefault()
-                                    )
-                                    readDate.isEqual(currentDate)
-                                }
-
                                 val pagesRead = readingDay?.pagesRead ?: 0
                                 when {
                                     pagesRead > 50 -> 1.0f
@@ -377,7 +376,6 @@ fun MonthGrid(
                                 }
                             } else 0.0f
 
-                            // Check if today
                             val isToday = currentDate.isEqual(LocalDate.now())
 
                             Box(
@@ -412,6 +410,13 @@ fun MonthGrid(
             }
         }
     }
+}
+
+// Add this function to the bottom of ReadingHeatmapScreen.kt
+private fun timestampToLocalDate(timestamp: Long): LocalDate {
+    return Instant.ofEpochMilli(timestamp)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
 }
 
 // Helper function to get display name compatible with lower API levels

@@ -1,11 +1,13 @@
-// app/src/main/java/com/example/naivety/data/Achievement.kt
+// In data/Achievement.kt (create this file if it doesn't exist)
 package com.example.naivety.data
 
 data class Achievement(
     val id: String,
     val title: String,
     val description: String,
-    val iconName: String,
     val unlocked: Boolean = false,
-    val dateUnlocked: Long? = null
+    val progress: Float = 0f,
+    val icon: String = "",
+    val iconName: String = "",
+    val dateUnlocked: Long = 0L
 )

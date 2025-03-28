@@ -31,6 +31,9 @@ import com.example.naivety.ui.components.SortDropdownMenu
 import com.example.naivety.ui.components.BookGrid
 import com.example.naivety.ui.components.DeleteConfirmationDialog
 import com.example.naivety.viewmodels.BookViewModel
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
+import com.example.naivety.ads.AdManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -244,6 +247,7 @@ private fun HomeSection(
     searchQuery: String,
     onNavigateToRead: (Uri) -> Unit
 ) {
+    val context = LocalContext.current
     val books by viewModel.books.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val fsFont = FontFamily(Font(R.font.fsb))
@@ -288,7 +292,22 @@ private fun HomeSection(
                 BookGrid(
                     books = filteredBooks,
                     onBookClick = { book ->
-                        onNavigateToRead(Uri.parse(book.filePath))
+                        // Show ad before navigating to read
+                        val activity = (context as? Activity)
+                        if (activity != null) {
+                            AdManager.showRewardedAd(
+                                activity = activity,
+                                onAdClosed = {
+                                    onNavigateToRead(Uri.parse(book.filePath))
+                                },
+                                onAdFailedToShow = {
+                                    onNavigateToRead(Uri.parse(book.filePath))
+                                }
+                            )
+                        } else {
+                            // Fallback if context is not an activity
+                            onNavigateToRead(Uri.parse(book.filePath))
+                        }
                     },
                     onLongPress = { book ->
                         bookToDelete = book

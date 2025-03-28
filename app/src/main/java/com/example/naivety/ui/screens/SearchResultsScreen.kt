@@ -19,6 +19,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.example.naivety.R
 import com.example.naivety.models.OpenLibraryBook
+import android.app.Activity
+import com.example.naivety.ads.AdManager
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -29,6 +32,8 @@ fun SearchResultsScreen(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+
+    val context = LocalContext.current
 
     Box(
         modifier = modifier
@@ -92,7 +97,23 @@ fun SearchResultsScreen(
                     ) { book ->
                         BookCard(
                             book = book,
-                            onClick = { onBookClick(book) },
+                            onClick = {
+                                // Show ad before navigating to book details
+                                val activity = (context as? Activity)
+                                if (activity != null) {
+                                    AdManager.showRewardedAd(
+                                        activity = activity,
+                                        onAdClosed = {
+                                            onBookClick(book)
+                                        },
+                                        onAdFailedToShow = {
+                                            onBookClick(book)
+                                        }
+                                    )
+                                } else {
+                                    onBookClick(book)
+                                }
+                            },
                             modifier = Modifier.animateItemPlacement()
                         )
                     }

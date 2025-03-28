@@ -3,6 +3,7 @@ package com.example.naivety.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.naivety.data.Achievement
+import com.example.naivety.data.ReadingDay
 import com.example.naivety.repository.ReadingStatsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -58,14 +59,21 @@ class ReadingStatsViewModel @Inject constructor(
         return (2024..currentYear).toList()
     }
 
-    fun getReadingDaysForYear(year: Int): Flow<List<ReadingStatsRepository.ReadingDay>> {
-        return readingDays.map { days ->
-            days.filter { day ->
-                val date = java.time.Instant.ofEpochMilli(day.date)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate()
-                date.year == year
-            }
+    // Add to ReadingStatsViewModel class
+    fun refreshReadingData() {
+        viewModelScope.launch {
+            // No need for repository.refreshReadingData() since we're using Flow collection
+            loadAvailableYears()
+        }
+    }
+
+    fun updateReadingProgress(bookId: String, pagesRead: Int, minutesSpent: Int) {
+        viewModelScope.launch {
+            repository.logReadingSession(
+                bookId = bookId,
+                pagesRead = pagesRead,
+                timeSpentMinutes = minutesSpent
+            )
         }
     }
 

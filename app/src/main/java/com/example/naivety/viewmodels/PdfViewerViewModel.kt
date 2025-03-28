@@ -23,11 +23,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.naivety.repository.ReadingStatsRepository
+import com.example.naivety.data.ReadingDay
 
 @HiltViewModel
 class PdfViewerViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val bookRepository: BookRepository
+    private val bookRepository: BookRepository,
+    private val readingStatsRepository: ReadingStatsRepository
 ) : ViewModel() {
     private val bookmarkDao = bookRepository.bookmarkDao
     private val _viewerState = MutableStateFlow(PdfViewerState())
@@ -41,6 +44,33 @@ class PdfViewerViewModel @Inject constructor(
 
     init {
         loadSavedSettings(null)
+    }
+
+    // Add to PdfViewerViewModel
+    private var sessionStartTime: Long = System.currentTimeMillis()
+    private var initialPage: Int = 0
+
+    fun startReadingSession(page: Int) {
+        sessionStartTime = System.currentTimeMillis()
+        initialPage = page
+    }
+
+    // In PdfViewerViewModel, update the endReadingSession method:
+    fun endReadingSession(currentPage: Int, bookId: String) {
+        val sessionTimeMinutes = ((System.currentTimeMillis() - sessionStartTime) / 1000 / 60).toInt()
+        val pagesRead = (currentPage - initialPage).coerceAtLeast(0)
+
+        // Only record if some time was spent or pages read
+        if (sessionTimeMinutes > 0 || pagesRead > 0) {
+            viewModelScope.launch {
+                // Use logReadingSession instead of addReadingDay
+                readingStatsRepository.logReadingSession(
+                    bookId = bookId,
+                    pagesRead = pagesRead,
+                    timeSpentMinutes = sessionTimeMinutes
+                )
+            }
+        }
     }
 
     fun initializePdfViewer() {

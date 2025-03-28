@@ -52,6 +52,9 @@ import com.example.naivety.viewmodels.BrowseViewModel
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.flow.distinctUntilChanged
+import android.app.Activity
+import com.example.naivety.ads.AdManager
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -59,6 +62,7 @@ fun BrowseScreen(
     viewModel: BrowseViewModel = hiltViewModel(),
     onBookClick: (OpenLibraryBook) -> Unit
 ) {
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val books = viewModel.books.collectAsLazyPagingItems()
     val selectedBook by viewModel.selectedBook.collectAsState()
@@ -157,7 +161,23 @@ fun BrowseScreen(
                                 books[index]?.let { book ->
                                     BookCard(
                                         book = book,
-                                        onClick = { onBookClick(book) }
+                                        onClick = {
+                                            // Show ad before navigating to book details
+                                            val activity = (context as? Activity)
+                                            if (activity != null) {
+                                                AdManager.showRewardedAd(
+                                                    activity = activity,
+                                                    onAdClosed = {
+                                                        onBookClick(book)
+                                                    },
+                                                    onAdFailedToShow = {
+                                                        onBookClick(book)
+                                                    }
+                                                )
+                                            } else {
+                                                onBookClick(book)
+                                            }
+                                        }
                                     )
                                 }
                             }

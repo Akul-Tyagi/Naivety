@@ -29,8 +29,11 @@ import java.time.LocalDate
 import java.time.Month
 import java.time.ZoneId
 import androidx.compose.foundation.border
-import com.example.naivety.repository.ReadingStatsRepository.ReadingDay
+import com.example.naivety.data.ReadingDay
 import com.example.naivety.utils.getDisplayNameCompat
+import android.app.Activity
+import com.example.naivety.ads.AdManager
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun MoreScreen(
@@ -39,6 +42,7 @@ fun MoreScreen(
     onNavigateToAchievements: () -> Unit,
     onNavigateToThemeSettings: () -> Unit
 ) {
+    val context = LocalContext.current
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
     val currentStreak by viewModel.currentStreak.collectAsState()
     val longestStreak by viewModel.longestStreak.collectAsState()
@@ -136,7 +140,22 @@ fun MoreScreen(
                     }
 
                     Button(
-                        onClick = onNavigateToAchievements,
+                        onClick = {
+                            val activity = context as? Activity
+                            if (activity != null) {
+                                AdManager.showRewardedAd(
+                                    activity = activity,
+                                    onAdClosed = {
+                                        onNavigateToAchievements()
+                                    },
+                                    onAdFailedToShow = {
+                                        onNavigateToAchievements()
+                                    }
+                                )
+                            } else {
+                                onNavigateToAchievements()
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
@@ -247,6 +266,7 @@ private fun ReadingHeatmapCard(
     onViewDetailedActivity: () -> Unit
 ) {
     // Use current date instead of hardcoded values
+    val context = LocalContext.current
     val currentDate = LocalDate.now()
     val currentYear = currentDate.year
     val currentMonth = currentDate.monthValue
@@ -401,7 +421,22 @@ private fun ReadingHeatmapCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = onViewDetailedActivity,
+                onClick = {
+                    val activity = (context as? Activity)
+                    if (activity != null) {
+                        AdManager.showRewardedAd(
+                            activity = activity,
+                            onAdClosed = {
+                                onViewDetailedActivity()
+                            },
+                            onAdFailedToShow = {
+                                onViewDetailedActivity()
+                            }
+                        )
+                    } else {
+                        onViewDetailedActivity()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),

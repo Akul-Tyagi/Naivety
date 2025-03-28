@@ -689,6 +689,11 @@ class PdfViewerActivity : ComponentActivity() {
         saveReadingProgress(pdfView.currentPage)
         saveViewerSettings()
         viewModel.saveSettings(bookId)
+
+        // Add this code to log the reading session when pausing
+        bookId?.let { id ->
+            viewModel.endReadingSession(pdfView.currentPage, id)
+        }
     }
 
     // Keep only one implementation of saveViewerSettings
@@ -721,6 +726,12 @@ class PdfViewerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        // End reading session before cleanup
+        bookId?.let { id ->
+            viewModel.endReadingSession(pdfView.currentPage, id)
+        }
+
         viewModel.cleanup()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
@@ -818,30 +829,6 @@ private fun PDFView.post(action: () -> Unit) {
         post(action)
     } else {
         action()
-    }
-}
-
-private fun extractPdfName(uri: Uri, context: Context): String {
-    return try {
-        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (displayNameIndex != -1) {
-                    cursor.getString(displayNameIndex)
-                        ?.removeSuffix(".pdf")
-                        ?.split(" ", "-", "_")[0] // Gets only the first word
-                        ?.takeIf { it.isNotBlank() }
-                        ?: "PDF"
-                } else {
-                    "PDF"
-                }
-            } else {
-                "PDF"
-            }
-        } ?: "PDF"
-    } catch (e: Exception) {
-        e.printStackTrace()
-        "PDF"
     }
 }
 

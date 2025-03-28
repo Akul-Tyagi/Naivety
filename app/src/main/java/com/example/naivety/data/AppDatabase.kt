@@ -4,12 +4,14 @@ import android.content.Context
 import androidx.room.*
 import com.example.naivety.models.Book
 import kotlinx.coroutines.flow.Flow
+import com.example.naivety.data.ReadingDayDao
+import com.example.naivety.data.ReadingDay
 import java.sql.Date
 import com.example.naivety.data.List as UserList // Rename to avoid conflict with kotlin.collections.List
 
 @Database(
-    entities = [Book::class, Bookmark::class, UserList::class, BookListCrossRef::class, SavedBook::class],
-    version = 2,
+    entities = [Book::class, Bookmark::class, UserList::class, BookListCrossRef::class, SavedBook::class, ReadingDay::class],
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -19,6 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun listDao(): ListDao
     abstract fun bookListDao(): BookListDao
     abstract fun savedBookDao(): SavedBookDao
+    abstract fun readingDayDao(): ReadingDayDao
 
     companion object {
         @Volatile
