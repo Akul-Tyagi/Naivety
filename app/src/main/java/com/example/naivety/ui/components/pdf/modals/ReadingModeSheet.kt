@@ -88,7 +88,7 @@ private fun ReadingModeOption(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         onClick = { onSelect(mode) },
-        color = if (mode == currentMode) Color(0xFF1A1A1A) else Color.Transparent,
+        color = if (mode == currentMode) MaterialTheme.colorScheme.surface else Color.Transparent,
         shape = MaterialTheme.shapes.medium
     ) {
         Row(
@@ -104,7 +104,7 @@ private fun ReadingModeOption(
             Text(
                 text = title,
                 fontFamily = FontFamily(Font(R.font.fsb)),
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

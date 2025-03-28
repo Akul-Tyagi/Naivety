@@ -12,6 +12,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.GoogleAuthProvider
@@ -79,7 +80,14 @@ class AuthViewModel @Inject constructor() : ViewModel() {
                 auth.signInWithEmailAndPassword(email, password).await()
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "Sign in failed")
+                val errorMessage = when {
+                    e.message?.contains("no user record") == true ->
+                        "No account found with this email"
+                    e.message?.contains("password is invalid") == true ->
+                        "Incorrect password"
+                    else -> "Sign in failed: ${e.message}"
+                }
+                _authState.value = AuthState.Error(errorMessage)
             }
         }
     }
@@ -91,7 +99,14 @@ class AuthViewModel @Inject constructor() : ViewModel() {
                 auth.createUserWithEmailAndPassword(email, password).await()
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "Sign up failed")
+                val errorMessage = when {
+                    e.message?.contains("email address is already in use") == true ->
+                        "Email is already registered"
+                    e.message?.contains("password is invalid") == true ->
+                        "Password must be at least 6 characters"
+                    else -> "Sign up failed: ${e.message}"
+                }
+                _authState.value = AuthState.Error(errorMessage)
             }
         }
     }
@@ -104,8 +119,16 @@ class AuthViewModel @Inject constructor() : ViewModel() {
                 val credential = GoogleAuthProvider.getCredential(account.idToken, null)
                 auth.signInWithCredential(credential).await()
                 _authState.value = AuthState.Success
+            } catch (e: ApiException) {
+                // Handle specific Google Sign-In errors
+                val errorMessage = when(e.statusCode) {
+                    GoogleSignInStatusCodes.SIGN_IN_CANCELLED -> "Sign in was cancelled"
+                    GoogleSignInStatusCodes.NETWORK_ERROR -> "Network error, please try again"
+                    else -> "Google sign in failed: ${e.message}"
+                }
+                _authState.value = AuthState.Error(errorMessage)
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "Google sign in failed")
+                _authState.value = AuthState.Error("Authentication failed: ${e.message}")
             }
         }
     }

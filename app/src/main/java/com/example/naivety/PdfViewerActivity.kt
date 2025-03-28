@@ -91,7 +91,7 @@ class PdfViewerActivity : ComponentActivity() {
         viewModel.loadBookmarks(bookId!!)
 
         setContent {
-            NaivetyTheme {
+            NaivetyTheme(darkTheme = true) {
                 PdfViewerScreen(
                     viewModel = viewModel,
                     bookId = bookId,
@@ -117,12 +117,9 @@ class PdfViewerActivity : ComponentActivity() {
         onSaveProgress: (Int) -> Unit
     ) {
         val context = LocalContext.current
-        val userPreferencesRepository = remember {
-            (context.applicationContext as NaivetyApplication).userPreferencesRepository
-        }
-        val isDarkTheme = userPreferencesRepository.isDarkTheme.collectAsState().value
+        val isDarkTheme = true
 
-        TransparentSystemBars(darkTheme = isDarkTheme)
+        TransparentSystemBars(darkTheme = true)
 
         CompositionLocalProvider(LocalViewModel provides viewModel) {
             val showSettings = remember { mutableStateOf(false) }

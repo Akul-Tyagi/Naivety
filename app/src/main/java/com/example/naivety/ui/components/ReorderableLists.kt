@@ -122,7 +122,7 @@ private fun ListChip(
         modifier = modifier
             .height(40.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF1A1A1A)
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
         )
     ) {
         Row(

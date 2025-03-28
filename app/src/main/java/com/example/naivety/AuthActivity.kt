@@ -56,7 +56,10 @@ class AuthActivity : ComponentActivity() {
         }
 
         setContent {
-            NaivetyTheme {
+            val isDarkTheme by (applicationContext as NaivetyApplication)
+                .userPreferencesRepository.isDarkTheme.collectAsState(initial = true)
+
+            NaivetyTheme(darkTheme = isDarkTheme) {
                 val navController = rememberNavController()
                 val authState by viewModel.authState.collectAsState()
 

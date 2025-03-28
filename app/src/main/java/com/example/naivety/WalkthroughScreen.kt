@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.naivety.ui.theme.TransparentSystemBars
 import androidx.compose.ui.platform.LocalContext
+import com.example.naivety.ui.theme.NaivetyTheme
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -75,98 +76,104 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
     val mainFontFamily = FontFamily(Font(R.font.carmila, FontWeight.Bold))
     val secondaryFontFamily = FontFamily(Font(R.font.fsultralit, FontWeight.Normal))
 
-    Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp)
-                .padding(bottom = 34.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Main Heading with slide and fade animation
-            Box(
+    NaivetyTheme(darkTheme = isDarkTheme) {
+        Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+            Column(
                 modifier = Modifier
-                    .offset(
-                        x = (-(1f - mainHeadingProgress.value) * 200).dp,
-                        y = 0.dp
-                    )
-                    .alpha(mainHeadingProgress.value)
+                    .fillMaxSize()
+                    .padding(20.dp)
+                    .padding(bottom = 34.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = mainHeadings[currentSlide],
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontSize = 69.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontFamily = mainFontFamily,
-                        lineHeight = 52.sp,
-                        textAlign = TextAlign.Start
-                    ),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Subheading with typewriter effect
-            if (shouldShowSubheading) {
+                // Main Heading with slide and fade animation
                 Box(
                     modifier = Modifier
                         .offset(
-                            x = ((1f - typewriterProgress.value) * 200).dp,
+                            x = (-(1f - mainHeadingProgress.value) * 200).dp,
                             y = 0.dp
                         )
-                        .alpha(typewriterProgress.value)
+                        .alpha(mainHeadingProgress.value)
                 ) {
-                    val visibleText = remember(subHeadings[currentSlide], typewriterProgress.value) {
-                        subHeadings[currentSlide].take(
-                            (subHeadings[currentSlide].length * typewriterProgress.value).toInt()
-                        )
-                    }
-
                     Text(
-                        text = visibleText,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 43.sp,
-                            lineHeight = 35.sp,
-                            textAlign = TextAlign.End,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontFamily = secondaryFontFamily,
+                        text = mainHeadings[currentSlide],
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = 69.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = mainFontFamily,
+                            lineHeight = 52.sp,
+                            textAlign = TextAlign.Start
                         ),
                     )
                 }
-            }
-        }
 
-        // Next/Finish button with fade animation
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(34.dp),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Button(
-                onClick = {
-                    if (currentSlide < mainHeadings.size - 1) {
-                        currentSlide++
-                    } else {
-                        onFinish()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Subheading with typewriter effect
+                if (shouldShowSubheading) {
+                    Box(
+                        modifier = Modifier
+                            .offset(
+                                x = ((1f - typewriterProgress.value) * 200).dp,
+                                y = 0.dp
+                            )
+                            .alpha(typewriterProgress.value)
+                    ) {
+                        val visibleText =
+                            remember(subHeadings[currentSlide], typewriterProgress.value) {
+                                subHeadings[currentSlide].take(
+                                    (subHeadings[currentSlide].length * typewriterProgress.value).toInt()
+                                )
+                            }
+
+                        Text(
+                            text = visibleText,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 43.sp,
+                                lineHeight = 35.sp,
+                                textAlign = TextAlign.End,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontFamily = secondaryFontFamily,
+                            ),
+                        )
                     }
-                },
+                }
+            }
+
+            // Next/Finish button with fade animation
+            Box(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraLarge)
-                    .alpha(mainHeadingProgress.value),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF111111),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                shape = MaterialTheme.shapes.extraLarge
+                    .fillMaxSize()
+                    .padding(34.dp),
+                contentAlignment = Alignment.BottomCenter
             ) {
-                Text(text = if (currentSlide < mainHeadings.size - 1) "→" else "Finish")
+                Button(
+                    onClick = {
+                        if (currentSlide < mainHeadings.size - 1) {
+                            currentSlide++
+                        } else {
+                            onFinish()
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.shapes.extraLarge
+                        )
+                        .alpha(mainHeadingProgress.value),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF111111),
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    shape = MaterialTheme.shapes.extraLarge
+                ) {
+                    Text(text = if (currentSlide < mainHeadings.size - 1) "→" else "Finish")
+                }
             }
         }
     }
 }
-
 // Custom easing curve for smooth animation
-private val EaseOutQuart = CubicBezierEasing(0.25f, 1f, 0.5f, 1f)
+    private val EaseOutQuart = CubicBezierEasing(0.25f, 1f, 0.5f, 1f)

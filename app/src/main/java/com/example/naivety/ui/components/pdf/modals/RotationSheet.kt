@@ -64,6 +64,7 @@ private fun RotationModeList(
 
     Column(
         modifier = Modifier.fillMaxWidth()
+
     ) {
         rotationModes.forEach { (mode, title) ->
             Surface(
@@ -71,7 +72,7 @@ private fun RotationModeList(
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
                 onClick = { onModeSelect(mode) },
-                color = if (mode == currentMode) Color(0xFF1A1A1A) else Color.Transparent,
+                color = if (mode == currentMode) MaterialTheme.colorScheme.surface else Color.Transparent,
                 shape = MaterialTheme.shapes.medium
             ) {
                 Row(

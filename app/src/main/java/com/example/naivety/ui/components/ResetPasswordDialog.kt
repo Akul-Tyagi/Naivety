@@ -50,7 +50,7 @@ fun ResetPasswordDialog(
                 Text("Cancel", color = Color.Gray)
             }
         },
-        containerColor = Color(0xFF1A1A1A),
+        containerColor = MaterialTheme.colorScheme.surface,
         textContentColor = MaterialTheme.colorScheme.onBackground
     )
 }

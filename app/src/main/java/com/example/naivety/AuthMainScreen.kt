@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.naivety.auth.AuthState
 import com.example.naivety.ui.theme.TransparentSystemBars
 import com.example.naivety.viewmodels.AuthViewModel
 
@@ -56,6 +57,20 @@ fun AuthMainScreen(
 
     LaunchedEffect(Unit) {
         viewModel.initGoogleSignIn(activity)
+    }
+
+    val authState by viewModel.authState.collectAsState()
+
+    // Reset loading state when authState changes
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Loading -> isLoading = true
+            else -> isLoading = false
+        }
+
+        if (authState is AuthState.Error) {
+            errorMessage = (authState as AuthState.Error).message
+        }
     }
 
     Box(
