@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.naivety"
+    namespace = "com.abundance.naivety"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.naivety"
+        applicationId = "com.abundance.naivety"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

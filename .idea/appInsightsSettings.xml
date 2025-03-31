@@ -9,8 +9,8 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.example.naivety" />
-                  <option name="mobileSdkAppId" value="1:400890375502:android:c9f8ab13473f04604a821f" />
+                  <option name="appId" value="com.abundance.naivety" />
+                  <option name="mobileSdkAppId" value="1:400890375502:android:73028d7290f98d874a821f" />
                   <option name="projectId" value="naivety-7" />
                   <option name="projectNumber" value="400890375502" />
                 </ConnectionSetting>
