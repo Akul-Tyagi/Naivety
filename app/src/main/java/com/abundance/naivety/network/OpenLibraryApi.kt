@@ -4,6 +4,7 @@ import com.abundance.naivety.network.models.OpenLibraryBookDetail
 import com.abundance.naivety.network.models.OpenLibrarySearchResponse
 import com.abundance.naivety.network.models.RatingsResponse
 import com.abundance.naivety.network.models.TrendingBooksResponse
+import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -64,10 +65,14 @@ interface OpenLibraryApi {
                 }
                 .build()
 
+            val gson = GsonBuilder()
+                .setLenient()
+                .create()
+
             return Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .build()
                 .create(OpenLibraryApi::class.java)
         }
