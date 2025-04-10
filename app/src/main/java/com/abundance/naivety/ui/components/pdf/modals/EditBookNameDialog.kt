@@ -59,8 +59,8 @@ fun EditBookNameDialog(
                     colors = TextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedIndicatorColor = NaivetyPurple,
-                        focusedContainerColor = NaivetyPurple,
-                        unfocusedContainerColor  = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor  = MaterialTheme.colorScheme.surface
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = {

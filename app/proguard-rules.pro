@@ -37,16 +37,28 @@
 -keep class com.abundance.naivety.models.** { *; }
 
 # Retrofit rules
--keepattributes Exceptions, InnerClasses
--keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
--keepclassmembers,allowshrinking,allowobfuscation interface * {
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes Exceptions, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keepclasseswithmembers interface * {
     @retrofit2.http.* <methods>;
 }
+-keepclasseswithmembers class retrofit2.Response {
+   public <methods>;
+}
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class retrofit2.Call
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 -dontwarn javax.annotation.**
 -dontwarn kotlin.Unit
 -dontwarn retrofit2.KotlinExtensions
 -dontwarn retrofit2.Platform$Java8
+
+# Keep OpenLibrarySearchResponse and other response models
+-keep class com.abundance.naivety.network.models.** { *; }
+-keep class com.abundance.naivety.network.models.OpenLibrarySearchResponse { *; }
+-keep class com.abundance.naivety.network.models.TrendingBooksResponse { *; }
+-keep class com.abundance.naivety.network.models.OpenLibraryBookDetail { *; }
+-keep class com.abundance.naivety.network.models.RatingsResponse { *; }
 
 # OkHttp rules
 -dontwarn okhttp3.**
@@ -57,6 +69,8 @@
 -keep class com.google.android.gms.** { *; }
 -keep class com.google.android.gms.auth.** { *; }
 -keep class com.google.android.gms.auth.api.signin.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.tasks.** { *; }
 -keepattributes SourceFile,LineNumberTable
 
 # Firebase Auth

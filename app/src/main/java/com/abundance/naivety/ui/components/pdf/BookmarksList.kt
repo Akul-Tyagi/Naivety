@@ -52,7 +52,7 @@ fun BookmarksList(
                 ) {
                     Text(
                         text = "No bookmarks yet",
-                        fontFamily = FontFamily(Font(R.font.fsb)),
+                        fontFamily = FontFamily(Font(R.font.montserratbolditalic)),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -111,7 +111,7 @@ private fun BookmarkItem(
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Page ${bookmark.page + 1}",
-                    fontFamily = FontFamily(Font(R.font.fsb)),
+                    fontFamily = FontFamily(Font(R.font.montserratblack)),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyLarge
                 )
