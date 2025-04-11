@@ -16,11 +16,20 @@ android {
         applicationId = "com.abundance.naivety"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.3"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:\\Users\\Vishesh\\my_release_key.keystore.jks")
+            storePassword = "@Cool2005"
+            keyAlias = "keynaivety"
+            keyPassword = "@Cool2005"
+        }
     }
 
     buildTypes {
@@ -31,6 +40,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
