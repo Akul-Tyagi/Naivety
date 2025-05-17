@@ -41,7 +41,7 @@ fun SearchBar(
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontFamily = alinsaFont
             ),
             modifier = Modifier

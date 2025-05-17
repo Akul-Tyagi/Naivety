@@ -89,6 +89,9 @@ interface BookListDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addBookToList(crossRef: BookListCrossRef)
 
+    @Query("SELECT COUNT(*) FROM book_list_cross_ref WHERE bookKey = :bookKey")
+    fun isBookInAnyList(bookKey: String): Flow<Int>
+
     @Delete
     suspend fun removeBookFromList(crossRef: BookListCrossRef)
 

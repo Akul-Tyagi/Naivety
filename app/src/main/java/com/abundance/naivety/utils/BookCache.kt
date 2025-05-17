@@ -8,12 +8,28 @@ import javax.inject.Singleton
 
 @Singleton
 class BookCache @Inject constructor() {
+    private val maxCacheSize = 500 // Maximum books to cache
     private val bookCache = mutableMapOf<String, OpenLibraryBook>()
+    private val pagedBooksCache = mutableMapOf<String, List<OpenLibraryBook>>()
     private val detailCache = mutableMapOf<String, OpenLibraryBookDetail>()
     private val cacheTimes = mutableMapOf<String, Long>()
     private val cacheTimeout = 10 * 60 * 1000 // 10 minutes
 
-    fun getBook(key: String): OpenLibraryBook? = bookCache[key]
+    fun getPagedBooks(key: String): List<OpenLibraryBook>? {
+        val cacheTime = cacheTimes[key] ?: 0L
+        val now = System.currentTimeMillis()
+        return if (now - cacheTime < cacheTimeout) {
+            pagedBooksCache[key]
+        } else {
+            null
+        }
+    }
+
+    fun cachePagedBooks(key: String, books: List<OpenLibraryBook>) {
+        pagedBooksCache[key] = books
+        cacheTimes[key] = System.currentTimeMillis()
+        books.forEach { cacheBook(it) }
+    }
 
     fun cacheBook(book: OpenLibraryBook) {
         bookCache[book.key] = book
@@ -21,6 +37,22 @@ class BookCache @Inject constructor() {
 
     fun cacheBooks(books: List<OpenLibraryBook>) {
         books.forEach { cacheBook(it) }
+        pruneCache()
+    }
+
+    private fun pruneCache() {
+        if (bookCache.size > maxCacheSize) {
+            val oldestEntries = cacheTimes.entries
+                .sortedBy { it.value }
+                .take(bookCache.size - maxCacheSize / 2)
+                .map { it.key }
+
+            oldestEntries.forEach { key ->
+                bookCache.remove(key)
+                detailCache.remove(key)
+                cacheTimes.remove(key)
+            }
+        }
     }
 
     fun getBookDetail(key: String): OpenLibraryBookDetail? {

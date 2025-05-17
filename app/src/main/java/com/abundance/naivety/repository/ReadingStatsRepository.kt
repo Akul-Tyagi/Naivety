@@ -560,14 +560,25 @@ class ReadingStatsRepository @Inject constructor(
         val today = LocalDate.now()
         val todayEpochMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        // Check if we already have an entry for today
-        val existingDay = readingDayDao.getReadingDayForDate(todayEpochMillis)
+        // Get start and end of today for proper date range matching
+        val endOfDayMillis = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
+
+        // Check if we already have an entry for today by checking date range
+        val existingDays = readingDayDao.getReadingDaysInRange(todayEpochMillis, endOfDayMillis)
+
+        // Get a day for this specific book if it exists
+        val existingDay = existingDays.firstOrNull { it.bookId == bookId }
+
+        // Validate inputs - apply reasonable limits
+        val validPages = if (pagesRead > 1000) 1000 else pagesRead.coerceAtLeast(0)
+        val validTime = if (timeSpentMinutes > 720) 720 else timeSpentMinutes.coerceAtLeast(0)
 
         if (existingDay != null) {
-            // Update existing day
+            // Update existing day - ACCUMULATE values instead of replacing them
             val updatedDay = existingDay.copy(
-                pagesRead = existingDay.pagesRead + pagesRead,
-                timeSpentMinutes = existingDay.timeSpentMinutes + timeSpentMinutes
+                // Add new values to existing values
+                pagesRead = existingDay.pagesRead + validPages,
+                timeSpentMinutes = existingDay.timeSpentMinutes + validTime
             )
             readingDayDao.insertReadingDay(updatedDay)
         } else {
@@ -575,13 +586,11 @@ class ReadingStatsRepository @Inject constructor(
             val newDay = ReadingDay(
                 date = todayEpochMillis,
                 bookId = bookId,
-                pagesRead = pagesRead,
-                timeSpentMinutes = timeSpentMinutes
+                pagesRead = validPages,
+                timeSpentMinutes = validTime
             )
             readingDayDao.insertReadingDay(newDay)
         }
-
-        // No need for explicit refresh - Flow collection will update data
     }
 
     // Method to share achievements

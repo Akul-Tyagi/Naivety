@@ -44,7 +44,7 @@ fun MainScreen(
     defaultSection: String = "Home"
 ) {
     val sonderFont = FontFamily(Font(R.font.sonder))
-    val alinsaFont = FontFamily(Font(R.font.alinsa))
+    val alinsaFont = FontFamily(Font(R.font.nektar))
     val fsFont = FontFamily(Font(R.font.fsb))
     var selectedSection by remember { mutableStateOf(defaultSection) }
     var showSortMenu by remember { mutableStateOf(false) }
@@ -233,7 +233,7 @@ private fun ComingSoonSection(alinsaFont: FontFamily) {
                 text = "Coming Soon",
                 color = MaterialTheme.colorScheme.onBackground,
                 fontFamily = alinsaFont,
-                fontSize = 20.sp
+                fontSize = 24.sp
             )
         }
     }
@@ -249,6 +249,7 @@ private fun HomeSection(
     val books by viewModel.books.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val fsFont = FontFamily(Font(R.font.fsb))
+    val fsFontt = FontFamily(Font(R.font.montserratblack))
     var bookToDelete by remember { mutableStateOf<Book?>(null) }
 
     val filteredBooks = remember(books, searchQuery) {
@@ -276,36 +277,38 @@ private fun HomeSection(
             }
             books.isEmpty() -> {
                 Text(
-                    text = "A library without books is just a room. Time to build your collection.",
+                    text = "A library without books is just a room.\n\n Click on + to start building your collection." ,
                     color = Color.LightGray,
                     textAlign = TextAlign.Center,
-                    fontFamily = fsFont,
-                    lineHeight = 20.sp,
+                    fontFamily = fsFontt,
+                    lineHeight = 16.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(32.dp)
+                        .padding(25.dp)
                 )
             }
             else -> {
                 BookGrid(
                     books = filteredBooks,
                     onBookClick = { book ->
+                        onNavigateToRead(Uri.parse(book.filePath))
                         // Show ad before navigating to read
-                        val activity = (context as? Activity)
-                        if (activity != null) {
-                            AdManager.showRewardedAd(
-                                activity = activity,
-                                onAdClosed = {
-                                    onNavigateToRead(Uri.parse(book.filePath))
-                                },
-                                onAdFailedToShow = {
-                                    onNavigateToRead(Uri.parse(book.filePath))
-                                }
-                            )
-                        } else {
-                            // Fallback if context is not an activity
-                            onNavigateToRead(Uri.parse(book.filePath))
-                        }
+//                        val activity = (context as? Activity)
+//                        if (activity != null) {
+//                            AdManager.showInterstitialAd(
+//                                activity = activity,
+//                                onAdClosed = {
+//                                    onNavigateToRead(Uri.parse(book.filePath))
+//                                },
+//                                onAdFailedToShow = {
+//                                    onNavigateToRead(Uri.parse(book.filePath))
+//                                }
+//                            )
+//                        } else {
+//                            // Fallback if context is not an activity
+//                            onNavigateToRead(Uri.parse(book.filePath))
+//                        }
                     },
                     onLongPress = { book ->
                         bookToDelete = book
@@ -352,7 +355,7 @@ private fun HomeTopBar(
             text = "Library",
             fontFamily = alinsaFont,
             color = MaterialTheme.colorScheme.primary,
-            fontSize = 19.sp
+            fontSize = 21.sp
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {

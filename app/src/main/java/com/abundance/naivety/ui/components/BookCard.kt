@@ -1,3 +1,5 @@
+package com.abundance.naivety.ui.components
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.ui.platform.LocalContext
 import coil.request.ImageRequest
+import com.abundance.naivety.R
 import com.abundance.naivety.ui.components.ListSelectionDialog
+import androidx.compose.runtime.*
 
 // app/src/main/java/com/abundance/naivety/ui/components/BookCard.kt
 @OptIn(ExperimentalFoundationApi::class)
@@ -48,6 +52,11 @@ fun BookCard(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(book.coverUrl)
                     .crossfade(true)
+                    .size(width = 300, height = 450) // Good - you already specify size
+                    .error(R.drawable.book_placeholder)
+                    .crossfade(true)
+                    .memoryCacheKey(book.key)
+                    .diskCacheKey(book.key)
                     .build(),
                 contentDescription = book.title,
                 contentScale = ContentScale.Crop,

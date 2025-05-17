@@ -34,7 +34,7 @@ fun ReadingModeSheet(
         ) {
             Text(
                 "Reading Mode",
-                fontFamily = FontFamily(Font(R.font.alinsa)),
+                fontFamily = FontFamily(Font(R.font.nektar)),
                 style = MaterialTheme.typography.titleLarge,
                 color = NaivetyPurple
             )

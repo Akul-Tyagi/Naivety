@@ -34,7 +34,7 @@ fun RotationSheet(
             Text(
                 "Rotation",
                 style = MaterialTheme.typography.titleLarge,
-                fontFamily = FontFamily(Font(R.font.alinsa)),
+                fontFamily = FontFamily(Font(R.font.nektar)),
                 color = NaivetyPurple
             )
 

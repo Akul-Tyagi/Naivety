@@ -31,6 +31,7 @@ import com.abundance.naivety.R
 import com.abundance.naivety.models.OpenLibraryBook
 import com.abundance.naivety.viewmodels.ListsViewModel
 import kotlinx.coroutines.launch
+import com.abundance.naivety.ui.components.CreateNewListDialog
 
 @Composable
 fun ListSelectionDialog(
@@ -41,9 +42,9 @@ fun ListSelectionDialog(
     val scope = rememberCoroutineScope()
     val lists by viewModel.lists.collectAsState()
     val bookLists by viewModel.getListsForBook(book.key).collectAsState(initial = emptyList())
-    var showNewListDialog by remember { mutableStateOf(false) }
-    val alinsaFont = FontFamily(Font(R.font.alinsa))
+    val alinsaFont = FontFamily(Font(R.font.nektar))
     var selectedListIds by remember { mutableStateOf(bookLists.toSet()) }
+    var showCreateListDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(bookLists) {
         selectedListIds = bookLists.toSet()
@@ -72,7 +73,7 @@ fun ListSelectionDialog(
                     Text(
                         text = "Add to Lists",
                         fontFamily = alinsaFont,
-                        fontSize = 24.sp,
+                        fontSize = 28.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = onDismiss) {
@@ -134,11 +135,15 @@ fun ListSelectionDialog(
                             isSelected = selectedListIds.contains(list.id),
                             onToggle = {
                                 scope.launch {
-                                    viewModel.toggleBookInList(book.key, list.id)
-                                    selectedListIds = if (selectedListIds.contains(list.id)) {
-                                        selectedListIds - list.id
+                                    val isInList = selectedListIds.contains(list.id)
+                                    if (isInList) {
+                                        // Remove book from list (this part is fine)
+                                        viewModel.removeBookFromList(book.key, list.id)
+                                        selectedListIds = selectedListIds - list.id
                                     } else {
-                                        selectedListIds + list.id
+                                        // Add book to list with complete details
+                                        viewModel.addBookWithDetailsToList(book, list.id)
+                                        selectedListIds = selectedListIds + list.id
                                     }
                                 }
                             }
@@ -150,7 +155,7 @@ fun ListSelectionDialog(
 
                 // Create New List Button
                 TextButton(
-                    onClick = { showNewListDialog = true },
+                    onClick = { showCreateListDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
@@ -176,13 +181,13 @@ fun ListSelectionDialog(
         }
     }
 
-    if (showNewListDialog) {
+    if (showCreateListDialog) {
         CreateNewListDialog(
-            onDismiss = { showNewListDialog = false },
             onConfirm = { name ->
-                viewModel.createNewList(name)
-                showNewListDialog = false
-            }
+                viewModel.createNewListWithName(name)
+                showCreateListDialog = false
+            },
+            onDismiss = { showCreateListDialog = false }
         )
     }
 }
@@ -198,10 +203,7 @@ private fun ListItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onToggle)
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                else Color(0xFF222222)
-            ),
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f)),
         color = Color.Transparent
     ) {
         Row(
@@ -224,74 +226,6 @@ private fun ListItem(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CreateNewListDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var listName by remember { mutableStateOf("") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "Create New List",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 20.sp
-                )
-
-                OutlinedTextField(
-                    value = listName,
-                    onValueChange = { listName = it },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF222222),
-                        unfocusedContainerColor = Color(0xFF222222),
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    ),
-                    placeholder = { Text("List name", color = Color.Gray) },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = Color.Gray)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            if (listName.isNotBlank()) {
-                                onConfirm(listName)
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        enabled = listName.isNotBlank()
-                    ) {
-                        Text("Create")
-                    }
-                }
             }
         }
     }

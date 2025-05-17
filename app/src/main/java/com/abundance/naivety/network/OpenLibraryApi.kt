@@ -5,6 +5,7 @@ import com.abundance.naivety.network.models.OpenLibrarySearchResponse
 import com.abundance.naivety.network.models.RatingsResponse
 import com.abundance.naivety.network.models.TrendingBooksResponse
 import com.google.gson.GsonBuilder
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -13,6 +14,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 interface OpenLibraryApi {
@@ -21,7 +23,10 @@ interface OpenLibraryApi {
         @Query("q") query: String,
         @Query("limit") limit: Int = 20,
         @Query("page") page: Int = 1,
-        @Query("fields") fields: String = "key,title,author_name,first_publish_year,cover_i"
+        @Query("fields") fields: String = "key,title,author_name,first_publish_year,cover_i",
+        @Query("mode") mode: String = "bestseller",
+        @Query("has_fulltext") hasFulltext: Boolean = false,
+        @Query("sort") sort: String? = null
     ): Response<OpenLibrarySearchResponse>
 
     @GET("trending/weekly.json")
@@ -46,20 +51,20 @@ interface OpenLibraryApi {
         private const val BASE_URL = "https://openlibrary.org/"
 
         fun create(): OpenLibraryApi {
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            }
+            val cacheSize = 10 * 1024 * 1024 // 10 MB cache
+            val cache = Cache(File(System.getProperty("java.io.tmpdir")), cacheSize.toLong())
 
             val client = OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(20, TimeUnit.SECONDS)
+                .writeTimeout(20, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
-                .addInterceptor(loggingInterceptor)
+                .cache(cache)
                 .addInterceptor { chain ->
                     val request = chain.request().newBuilder()
                         .header("Accept", "application/json")
-                        .header("Cache-Control", "max-age=600")
+                        .header("Cache-Control", "public, max-age=300") // 5 minutes cache
+                        .header("User-Agent", "NaivetyApp/1.0 (naivety.akul@gmail.com)")
                         .build()
                     chain.proceed(request)
                 }

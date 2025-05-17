@@ -33,6 +33,11 @@ import com.abundance.naivety.utils.getDisplayNameCompat
 import android.app.Activity
 import com.abundance.naivety.ads.AdManager
 import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.foundation.border
 
 @Composable
 fun MoreScreen(
@@ -50,7 +55,7 @@ fun MoreScreen(
     val selectedYear by viewModel.selectedYear.collectAsState(initial = LocalDate.now().year)
 
     val sonderFont = FontFamily(Font(R.font.sonder))
-    val alinsaFont = FontFamily(Font(R.font.alinsa))
+    val alinsaFont = FontFamily(Font(R.font.nektar))
     val fsFont = FontFamily(Font(R.font.montserratblack))
 
     Box(
@@ -142,7 +147,7 @@ fun MoreScreen(
                         onClick = {
                             val activity = context as? Activity
                             if (activity != null) {
-                                AdManager.showRewardedAd(
+                                AdManager.showInterstitialAd(
                                     activity = activity,
                                     onAdClosed = {
                                         onNavigateToAchievements()
@@ -182,6 +187,9 @@ fun MoreScreen(
                 customFont = alinsaFont
             )
 
+            // Book Download Resources Section
+            // BookDownloadResourcesSection(customFont = alinsaFont)
+
             SettingsSection(
                 title = "About",
                 options = listOf(
@@ -207,7 +215,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v1.0.3",
+                    text = "Naivety v2.2.0",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -222,25 +230,27 @@ private fun SettingsSection(
     options: List<SettingsOption>,
     customFont: FontFamily
 ) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium.copy(fontFamily = customFont),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            shape = RoundedCornerShape(16.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge.copy(fontFamily = customFont),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
             Column(modifier = Modifier.fillMaxWidth()) {
                 options.forEachIndexed { index, option ->
                     SettingsItem(
@@ -423,7 +433,7 @@ private fun ReadingHeatmapCard(
                 onClick = {
                     val activity = (context as? Activity)
                     if (activity != null) {
-                        AdManager.showRewardedAd(
+                        AdManager.showInterstitialAd(
                             activity = activity,
                             onAdClosed = {
                                 onViewDetailedActivity()
@@ -765,6 +775,116 @@ private fun SettingsItem(
         )
     }
 }
+
+@Composable
+private fun BookDownloadResourcesSection(
+    customFont: FontFamily
+) {
+    val context = LocalContext.current
+    val resources = listOf(
+        DownloadResource("PDF Drive", "https://pdfdrive.com.co/"),
+        DownloadResource("Z-Library", "https://z-library.co/"),
+        DownloadResource("Ocean of PDF", "https://oceanofpdf.com/"),
+        DownloadResource("PDF Room", "https://pdfroom.com/"),
+        DownloadResource("Library Genesis", "https://libgen.gs/index.php")
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Book Download Resources",
+                style = MaterialTheme.typography.titleLarge.copy(fontFamily = customFont),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Resource links
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                resources.forEach { resource ->
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(resource.url))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(12.dp)
+                            ),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Book,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = resource.name,
+                                fontFamily = customFont,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = "Open link",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+                // Disclaimer text
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        text = "DISCLAIMER: These links are provided for convenience only. " +
+                                "Naivety is not affiliated with, does not endorse, and bears no responsibility for the content of these external websites. " +
+                                "Users should comply with applicable copyright laws when downloading materials.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+private data class DownloadResource(
+    val name: String,
+    val url: String
+)
 
 private data class SettingsOption(
     val title: String,

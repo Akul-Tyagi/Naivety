@@ -55,18 +55,33 @@ class ListsViewModel @Inject constructor(
     private fun createDefaultListIfNeeded() {
         viewModelScope.launch {
             if (repository.getListCount() == 0) {
-                createNewList("Custom")
+                createNewListWithName("Custom")
             }
         }
     }
 
-    fun createNewList(name: String = "Custom") {
+    fun isBookInAnyList(bookKey: String): Flow<Boolean> {
+        return repository.isBookInAnyList(bookKey)
+    }
+
+    fun createNewListWithName(name: String) {
         viewModelScope.launch {
-            val count = repository.getListCount()
-            val newListName = if (count > 0) "$name${count + 1}" else name
-            val newList = UserList(name = newListName)
+            val maxOrdinal = lists.value.maxOfOrNull { it.ordinal } ?: -1
+            val newList = UserList(
+                name = name,
+                ordinal = maxOrdinal + 1
+            )
             repository.insertList(newList)
+
+            // Automatically select the new list after creating it
+            selectList(newList.id)
         }
+    }
+
+    // Update the existing method to show this is now deprecated
+    fun createNewList() {
+        // This will be replaced by the named version
+        createNewListWithName("Custom ${System.currentTimeMillis() % 1000}")
     }
 
     fun updateListName(listId: String, newName: String) {
@@ -116,6 +131,13 @@ class ListsViewModel @Inject constructor(
         }
     }
 
+    // In ListsViewModel.kt, add this method
+    fun addBookWithDetailsToList(book: OpenLibraryBook, listId: String) {
+        viewModelScope.launch {
+            repository.addBookWithDetailsToList(book, listId)
+        }
+    }
+
     fun reorderLists(newOrder: kotlin.collections.List<UserList>) {
         viewModelScope.launch {
             try {
@@ -132,6 +154,16 @@ class ListsViewModel @Inject constructor(
 
     fun getListsForBook(bookKey: String): Flow<List<String>> {
         return repository.getListsForBook(bookKey)
+    }
+
+    fun refreshBookData(bookKey: String) {
+        viewModelScope.launch {
+            try {
+                repository.refreshBookData(bookKey)
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
     }
 
     fun refreshLists() {

@@ -12,4 +12,5 @@ interface BrowseRepository {
     suspend fun getTrendingBooks(): List<OpenLibraryBook>
     fun getRecommendedBooks(query: String): Flow<PagingData<OpenLibraryBook>>
     suspend fun getBooksByPage(query: String, page: Int, limit: Int = 20): List<OpenLibraryBook>
+    fun isBookInAnyList(bookKey: String): Flow<Boolean> // Add this method
 }

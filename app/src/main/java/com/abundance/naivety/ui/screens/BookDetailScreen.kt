@@ -60,6 +60,9 @@ import com.abundance.naivety.models.OpenLibraryBook
 import com.abundance.naivety.ui.components.BookRatingSection
 import com.abundance.naivety.viewmodels.BookComment
 import com.abundance.naivety.viewmodels.BookDetailViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.abundance.naivety.ui.components.ListSelectionDialog
+import com.abundance.naivety.viewmodels.ListsViewModel
 
 @Composable
 fun BookDetailScreen(
@@ -76,6 +79,9 @@ fun BookDetailScreen(
     val error by viewModel.error.collectAsState()
     var isLiked by remember { mutableStateOf(false) }
     var selectedSection by remember { mutableStateOf("Browse") }
+    var showListsDialog by remember { mutableStateOf(false) }
+    val listsViewModel: ListsViewModel = hiltViewModel()
+    val isInAnyList by viewModel.isBookInAnyList.collectAsState(initial = false)
 
     BackHandler {
         // Set the flag before navigating back
@@ -175,7 +181,7 @@ fun BookDetailScreen(
                     )
 
                     Text(
-                        text = "by: ${book.author}",
+                        text = "by: ${bookDetails?.authors?.firstOrNull()?.name ?: book.author ?: "Unknown author"}",
                         style = MaterialTheme.typography.titleMedium.copy(fontFamily = customFontt),
                         color = Color.Gray,
                         textAlign = TextAlign.Center,
@@ -302,14 +308,24 @@ fun BookDetailScreen(
                 }
 
                 // Like Button (Right side)
+                var showListsDialog by remember { mutableStateOf(false) }
+                val listsViewModel: ListsViewModel = hiltViewModel()
+                val isInAnyList by listsViewModel.isBookInAnyList(book.key).collectAsState(initial = false)
+
                 IconButton(
-                    onClick = { isLiked = !isLiked },
+                    onClick = { showListsDialog = true },
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(
-                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = if (isLiked) "Unlike" else "Like",
-                        tint = if (isLiked) Color.Red else MaterialTheme.colorScheme.onBackground
+                        imageVector = if (isInAnyList) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Add to list",
+                        tint = if (isInAnyList) Color.Red else MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                if (showListsDialog) {
+                    ListSelectionDialog(
+                        book = book,
+                        onDismiss = { showListsDialog = false }
                     )
                 }
             }
@@ -333,6 +349,12 @@ fun BookDetailScreen(
                 color = MaterialTheme.colorScheme.primary
             )
         }
+    }
+    if (showListsDialog) {
+        ListSelectionDialog(
+            book = book,
+            onDismiss = { showListsDialog = false }
+        )
     }
 }
 

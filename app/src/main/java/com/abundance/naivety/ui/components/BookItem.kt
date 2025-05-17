@@ -65,7 +65,7 @@ fun BookItem(
                     text = "${viewModel.getPagesRemaining(book)}",
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 10.sp,
-                    fontFamily = FontFamily(Font(R.font.alinsa)),
+                    fontFamily = FontFamily(Font(R.font.nektar)),
                     maxLines = 1
                 )
             }

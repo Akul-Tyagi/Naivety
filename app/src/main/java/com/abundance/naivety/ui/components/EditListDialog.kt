@@ -49,7 +49,7 @@ fun EditListDialog(
                         cursorColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    textStyle = TextStyle(color = MaterialTheme.colorScheme.surface)
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface)
                 )
 
                 Row(

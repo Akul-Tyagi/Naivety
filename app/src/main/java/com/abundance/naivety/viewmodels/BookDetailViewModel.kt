@@ -37,6 +37,9 @@ class BookDetailViewModel @Inject constructor(
     private val _ratingsCount = MutableStateFlow<Int>(0)
     val ratingsCount: StateFlow<Int> = _ratingsCount.asStateFlow()
 
+    private val _isBookInAnyList = MutableStateFlow(false)
+    val isBookInAnyList: StateFlow<Boolean> = _isBookInAnyList
+
     private fun loadUserRating(bookKey: String) {
         viewModelScope.launch {
             try {
@@ -50,11 +53,16 @@ class BookDetailViewModel @Inject constructor(
     }
 
     fun loadBookDetails(bookKey: String) {
+        val cleanBookKey = bookKey.removePrefix("/works/")
+
+        _bookDetails.value?.let { currentDetails ->
+            if (currentDetails.key == cleanBookKey) return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             try {
-                val cleanBookKey = bookKey.removePrefix("/works/")
                 val details = repository.getBookDetails(cleanBookKey)
                 _bookDetails.value = details
 

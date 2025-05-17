@@ -38,7 +38,7 @@ fun EditBookNameDialog(
             ) {
                 Text(
                     text = "Edit Book Name",
-                    fontFamily = FontFamily(Font(R.font.alinsa)),
+                    fontFamily = FontFamily(Font(R.font.nektar)),
                     style = MaterialTheme.typography.titleLarge,
                     color = NaivetyPurple,
                     modifier = Modifier.padding(bottom = 16.dp)

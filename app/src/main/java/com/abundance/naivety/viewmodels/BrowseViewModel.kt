@@ -12,12 +12,16 @@ import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import com.abundance.naivety.repository.BrowseRepository
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 @HiltViewModel
 class BrowseViewModel @Inject constructor(
     private val repository: BrowseRepository
 ) : ViewModel() {
     private val _booksState = MutableStateFlow<List<OpenLibraryBook>>(emptyList())
+    val booksState = _booksState.asStateFlow()
     private val bookCache = mutableMapOf<String, OpenLibraryBook>()
 
     private val _selectedBook = MutableStateFlow<OpenLibraryBook?>(null)
@@ -50,6 +54,7 @@ class BrowseViewModel @Inject constructor(
             try {
                 val initialBooks = repository.getTrendingBooks()
                 _booksState.value = initialBooks
+
                 initialBooks.forEach { book ->
                     bookCache[book.key] = book
                 }
@@ -63,7 +68,13 @@ class BrowseViewModel @Inject constructor(
 
     fun getBookFromCache(key: String): OpenLibraryBook? = bookCache[key]
 
+    // In BrowseViewModel.kt, add this function:
+    fun isBookInAnyList(bookKey: String): Flow<Boolean> {
+        return repository.isBookInAnyList(bookKey)
+    }
+
     // Keep the original books flow for compatibility
+    @OptIn(ExperimentalCoroutinesApi::class)
     val books = _currentQuery
         .flatMapLatest { query ->
             repository.getRecommendedBooks(query)
@@ -103,9 +114,16 @@ class BrowseViewModel @Inject constructor(
     }
 
     // Modify searchBooks function
+    private var searchJob: Job? = null
+
     fun searchBooks(query: String) {
-        viewModelScope.launch {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             _searchState.value = SearchState.Searching
+
+            // Debounce typing
+            delay(300)
+
             currentPage = 1
             try {
                 val results = repository.getBooksByPage(query, 1)

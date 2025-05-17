@@ -19,7 +19,7 @@ fun DeleteConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    val aFont = FontFamily(Font(R.font.alinsa))
+    val aFont = FontFamily(Font(R.font.nektar))
     val bFont = FontFamily(Font(R.font.montserratextrabold))
 
     AlertDialog(

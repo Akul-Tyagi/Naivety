@@ -38,7 +38,7 @@ fun BookmarksList(
             Text(
                 text = "Bookmarks",
                 style = MaterialTheme.typography.titleLarge,
-                fontFamily = FontFamily(Font(R.font.alinsa)),
+                fontFamily = FontFamily(Font(R.font.nektar)),
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 16.dp)
             )

@@ -1,6 +1,6 @@
 package com.abundance.naivety.ui.screens
 
-import BookCard
+import com.abundance.naivety.ui.components.BookCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,9 +25,13 @@ import com.abundance.naivety.R
 import com.abundance.naivety.models.OpenLibraryBook
 import com.abundance.naivety.viewmodels.ListsViewModel
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import com.abundance.naivety.ui.components.EditListDialog
 import com.abundance.naivety.ui.theme.NaivetyPurple
 import com.abundance.naivety.data.List as UserList
+import com.abundance.naivety.ui.components.CreateNewListDialog
 
 @Composable
 fun ListsScreen(
@@ -38,7 +42,9 @@ fun ListsScreen(
     val lists = viewModel.lists.collectAsState().value
     val selectedListId = viewModel.selectedListId.collectAsState().value
     var showEditDialog by remember { mutableStateOf<UserList?>(null) }
-    val alinsaFont = FontFamily(Font(R.font.alinsa))
+    val alinsaFont = FontFamily(Font(R.font.nektar))
+    val alinsaFontt = FontFamily(Font(R.font.montserratblack))
+    var showCreateListDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -78,7 +84,7 @@ fun ListsScreen(
 
             // Floating add button
             FloatingActionButton(
-                onClick = { viewModel.createNewList() },
+                onClick = { showCreateListDialog = true }, // Show dialog instead of directly creating
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = 16.dp)
@@ -94,6 +100,16 @@ fun ListsScreen(
             }
         }
 
+        if (showCreateListDialog) {
+            CreateNewListDialog(
+                onConfirm = { name ->
+                    viewModel.createNewListWithName(name)
+                    showCreateListDialog = false
+                },
+                onDismiss = { showCreateListDialog = false }
+            )
+        }
+
         // Books grid for selected list
         selectedListId?.let { listId ->
             val booksInList =
@@ -107,9 +123,15 @@ fun ListsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No books in this list yet",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontFamily = alinsaFont
+                        text = "No books in this list yet...\n\nAdd some books through Browse section to get started!",
+                        color = Color.LightGray,
+                        textAlign = TextAlign.Center,
+                        fontFamily = alinsaFontt,
+                        fontSize = 15.sp,
+                        lineHeight = 16.sp,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(25.dp)
                     )
                 }
             } else {

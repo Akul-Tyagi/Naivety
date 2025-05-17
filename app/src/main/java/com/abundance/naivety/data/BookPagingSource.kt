@@ -23,7 +23,9 @@ class BookPagingSource(
                     // For trending, pagination is not supported by API, so we get all and page locally
                     val response = api.getTrendingBooks()
                     if (response.isSuccessful && response.body() != null) {
-                        response.body()!!.works.mapNotNull { work ->
+                        // Add null check for works collection
+                        val works = response.body()?.works ?: emptyList()
+                        works.mapNotNull { work ->
                             if (work.key != null && work.title != null) {
                                 OpenLibraryBook(
                                     key = work.key,
@@ -42,7 +44,9 @@ class BookPagingSource(
                     // For search, pagination is supported
                     val response = api.searchBooks(query, params.loadSize, page)
                     if (response.isSuccessful && response.body() != null) {
-                        response.body()!!.docs.mapNotNull { doc ->
+                        // Add null check for docs collection
+                        val docs = response.body()?.docs ?: emptyList()
+                        docs.mapNotNull { doc ->
                             if (doc.key != null && doc.title != null) {
                                 OpenLibraryBook(
                                     key = doc.key,
@@ -60,6 +64,7 @@ class BookPagingSource(
                 }
             }
 
+            // Rest of the method remains the same
             // Calculate paging for client-side pagination
             val pageSize = params.loadSize
             val startPos = (page - 1) * pageSize
@@ -77,7 +82,6 @@ class BookPagingSource(
                 nextKey = if (pageData.isEmpty() || endPos >= books.size) null else page + 1
             )
         } catch (e: Exception) {
-            Log.e("BookPagingSource", "Error loading books", e)
             LoadResult.Error(e)
         }
     }

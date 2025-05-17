@@ -45,7 +45,7 @@ fun AuthMainScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val alinsaFont = FontFamily(Font(R.font.alinsa))
+    val alinsaFont = FontFamily(Font(R.font.nektar))
 
     // Input validation
     val isEmailValid = remember(email) {
@@ -86,7 +86,7 @@ fun AuthMainScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = if (isSignIn) "Welcome Back" else "Create Account",
+                text = if (isSignIn) "Welcome" else "Create Account",
                 style = MaterialTheme.typography.headlineLarge,
                 fontFamily = alinsaFont,
                 color = MaterialTheme.colorScheme.primary,

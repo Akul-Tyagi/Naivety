@@ -1,4 +1,5 @@
 // app/src/main/java/com/abundance/naivety/ui/screens/SearchResultsScreen.kt
+package com.abundance.naivety.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -19,6 +20,9 @@ import com.abundance.naivety.models.OpenLibraryBook
 import android.app.Activity
 import com.abundance.naivety.ads.AdManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import com.abundance.naivety.ui.components.BookCard
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -54,10 +58,9 @@ fun SearchResultsScreen(
                 }
                 Text(
                     text = "Search Results",
-                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(start = 16.dp),
-                    fontStyle = FontStyle(R.font.montserratblack)
+                    fontFamily = FontFamily(Font(R.font.nektar))
                 )
             }
 
@@ -77,7 +80,7 @@ fun SearchResultsScreen(
                     Text(
                         text = "No results found",
                         color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.bodyLarge
+                        fontFamily = FontFamily(Font(R.font.montserratbold))
                     )
                 }
             } else {
@@ -98,7 +101,7 @@ fun SearchResultsScreen(
                                 // Show ad before navigating to book details
                                 val activity = (context as? Activity)
                                 if (activity != null) {
-                                    AdManager.showRewardedAd(
+                                    AdManager.showInterstitialAd(
                                         activity = activity,
                                         onAdClosed = {
                                             onBookClick(book)

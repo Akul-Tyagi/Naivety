@@ -46,7 +46,7 @@ fun MainSettingsSheet(
             Text(
                 "Settings",
                 style = MaterialTheme.typography.titleLarge,
-                fontFamily = FontFamily(Font(R.font.alinsa)),
+                fontFamily = FontFamily(Font(R.font.nektar)),
                 color = NaivetyPurple,
                 modifier = Modifier.padding(bottom = 24.dp)
             )

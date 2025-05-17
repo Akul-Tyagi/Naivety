@@ -8,57 +8,67 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
-import android.os.Handler
-import android.os.Looper
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 object AdManager {
     private const val TAG = "AdManager"
-    private const val REWARDED_AD_ID = "ca-app-pub-1590434069699907/2840514235"
-    private const val NAVIGATION_DELAY = 150L
-    private var rewardedAd: RewardedAd? = null
+    private const val INTERSTITIAL_AD_ID = "ca-app-pub-1590434069699907/8827538743"
+    private const val NAVIGATION_DELAY = 50L
+
+    private var interstitialAd: InterstitialAd? = null
     private var isAdLoading = false
+    private val mainScope = CoroutineScope(Dispatchers.Main)
 
     fun initialize(context: Context) {
         MobileAds.initialize(context) { status ->
             Log.d(TAG, "MobileAds initialization status: $status")
-            preloadRewardedAd(context)
+            preloadInterstitialAd(context)
         }
     }
 
-    fun preloadRewardedAd(context: Context) {
-        if (rewardedAd != null || isAdLoading) return
+    fun preloadInterstitialAd(context: Context) {
+        // Don't load if ad already exists or is currently loading
+        if (interstitialAd != null || isAdLoading) return
 
         isAdLoading = true
         val adRequest = AdRequest.Builder().build()
 
-        RewardedAd.load(context, REWARDED_AD_ID, adRequest, object : RewardedAdLoadCallback() {
-            override fun onAdLoaded(ad: RewardedAd) {
-                Log.d(TAG, "Rewarded ad loaded successfully")
-                rewardedAd = ad
-                isAdLoading = false
-                setupFullScreenCallbacks()
-            }
+        InterstitialAd.load(
+            context,
+            INTERSTITIAL_AD_ID,
+            adRequest,
+            object : InterstitialAdLoadCallback() {
+                override fun onAdLoaded(ad: InterstitialAd) {
+                    Log.d(TAG, "Interstitial ad loaded successfully")
+                    interstitialAd = ad
+                    isAdLoading = false
+                    setupFullScreenCallbacks(ad)
+                }
 
-            override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                Log.e(TAG, "Rewarded ad failed to load: ${loadAdError.message}")
-                rewardedAd = null
-                isAdLoading = false
+                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                    Log.e(TAG, "Interstitial ad failed to load: ${loadAdError.message}")
+                    interstitialAd = null
+                    isAdLoading = false
+                }
             }
-        })
+        )
     }
 
-    private fun setupFullScreenCallbacks() {
-        rewardedAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
+    private fun setupFullScreenCallbacks(ad: InterstitialAd) {
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
                 Log.d(TAG, "Ad was dismissed")
-                rewardedAd = null
+                interstitialAd = null
             }
 
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                 Log.e(TAG, "Ad failed to show: ${adError.message}")
-                rewardedAd = null
+                interstitialAd = null
             }
 
             override fun onAdShowedFullScreenContent() {
@@ -67,45 +77,54 @@ object AdManager {
         }
     }
 
-    fun showRewardedAd(activity: Activity, onAdClosed: () -> Unit, onAdFailedToShow: () -> Unit) {
-        if (rewardedAd != null) {
+    fun showInterstitialAd(
+        activity: Activity,
+        onAdClosed: () -> Unit,
+        onAdFailedToShow: () -> Unit
+    ) {
+        val ad = interstitialAd
+
+        if (ad != null) {
             // Set up a callback before showing the ad
-            rewardedAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
+            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
                     Log.d(TAG, "Ad was dismissed")
-                    rewardedAd = null
+                    interstitialAd = null
 
                     // Add a small delay before navigation to allow UI to settle
-                    Handler(Looper.getMainLooper()).postDelayed({
+                    mainScope.launch {
+                        delay(NAVIGATION_DELAY)
                         onAdClosed()
-                    }, NAVIGATION_DELAY)
+                    }
 
                     // Preload the next ad
-                    preloadRewardedAd(activity)
+                    preloadInterstitialAd(activity)
                 }
 
                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                     Log.e(TAG, "Ad failed to show: ${adError.message}")
-                    rewardedAd = null
-                    Handler(Looper.getMainLooper()).postDelayed({
+                    interstitialAd = null
+
+                    mainScope.launch {
+                        delay(NAVIGATION_DELAY)
                         onAdFailedToShow()
-                    }, NAVIGATION_DELAY)
+                    }
+
+                    preloadInterstitialAd(activity)
                 }
 
                 override fun onAdShowedFullScreenContent() {
                     Log.d(TAG, "Ad showed fullscreen content")
+                    interstitialAd = null
                 }
             }
 
             // Show the ad
-            rewardedAd?.show(activity) { rewardItem ->
-                Log.d(TAG, "User earned reward: ${rewardItem.amount} ${rewardItem.type}")
-                // Note: We handle navigation in onAdDismissedFullScreenContent instead
-            }
+            ad.show(activity)
         } else {
-            Log.d(TAG, "Rewarded ad not ready yet")
+            Log.d(TAG, "Interstitial ad not ready yet")
             onAdFailedToShow()
-            preloadRewardedAd(activity)
+            preloadInterstitialAd(activity)
         }
     }
 }

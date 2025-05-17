@@ -7,6 +7,7 @@ import com.abundance.naivety.repository.BrowseRepository
 import com.abundance.naivety.repository.BrowseRepositoryImpl
 import com.abundance.naivety.repository.ListsRepository
 import com.abundance.naivety.utils.BookCache
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,7 +27,7 @@ object NetworkModule {
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.BASIC
         }
     }
 
@@ -35,6 +36,14 @@ object NetworkModule {
     fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("Accept", "application/json")
+                    .header("Cache-Control", "public, max-age=300")
+                    .header("User-Agent", "NaivetyApp/1.0 (naivety.akul@gmail.com)")
+                    .build()
+                chain.proceed(request)
+            }
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
@@ -48,20 +57,24 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl("https://openlibrary.org/")
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideOpenLibraryApi(): OpenLibraryApi {
-        return OpenLibraryApi.create()
+    fun provideOpenLibraryApi(retrofit: Retrofit): OpenLibraryApi {
+        return retrofit.create(OpenLibraryApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideBrowseRepository(api: OpenLibraryApi, bookCache: BookCache): BrowseRepository {
-        return BrowseRepositoryImpl(api, bookCache)
+    fun provideBrowseRepository(
+        api: OpenLibraryApi,
+        bookCache: BookCache,
+        listsRepository: ListsRepository
+    ): BrowseRepository {
+        return BrowseRepositoryImpl(api, bookCache, listsRepository)
     }
 
     @Provides

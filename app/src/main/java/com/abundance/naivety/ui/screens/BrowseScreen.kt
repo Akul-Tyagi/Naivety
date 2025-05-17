@@ -2,15 +2,11 @@
 
 package com.abundance.naivety.ui.screens
 
-import BookCard
-import CustomSearchBar
-import SearchResultsScreen
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import com.abundance.naivety.models.OpenLibraryBook
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -36,7 +32,25 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import android.app.Activity
 import com.abundance.naivety.ads.AdManager
 import androidx.compose.ui.platform.LocalContext
+import com.abundance.naivety.models.OpenLibraryBook
 import com.abundance.naivety.models.SearchState
+import com.abundance.naivety.ui.components.BookCard
+import com.abundance.naivety.ui.components.CustomSearchBar
+import com.abundance.naivety.ui.screens.SearchResultsScreen
+
+// Shimmer effect extension - moved outside to fix the reference issue
+fun Modifier.shimmerBackground(): Modifier = composed {
+    val transition = rememberInfiniteTransition()
+    val alpha by transition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    background(Color.Gray.copy(alpha = alpha))
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -46,7 +60,7 @@ fun BrowseScreen(
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
-    val books = viewModel.books.collectAsLazyPagingItems()
+    val books by viewModel.booksState.collectAsState()
     val selectedBook by viewModel.selectedBook.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
     val fsFont = FontFamily(Font(R.font.fsultralit))
@@ -59,17 +73,17 @@ fun BrowseScreen(
     // Detect when we're near the end of the list and load more books
     LaunchedEffect(gridState) {
         snapshotFlow {
-            val lastIndex = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-            if (lastIndex != null) lastIndex else -1
+            val layoutInfo = gridState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+
+            // Trigger load when reaching end of list
+            lastVisibleItemIndex >= totalItems - 5
         }
             .distinctUntilChanged()
-            .collect { lastVisibleIndex ->
-                if (lastVisibleIndex > 0 && books.itemCount > 0) {
-                    val threshold = books.itemCount - 5
-                    if (lastVisibleIndex >= threshold) {
-                        // We're near the end, load more
-                        viewModel.loadMoreBooks()
-                    }
+            .collect { shouldLoadMore ->
+                if (shouldLoadMore) {
+                    viewModel.loadMoreBooks()
                 }
             }
     }
@@ -139,31 +153,41 @@ fun BrowseScreen(
                             verticalItemSpacing = 10.dp,
                             state = gridState
                         ) {
-                            items(books.itemCount) { index ->
-                                books[index]?.let { book ->
-                                    BookCard(
-                                        book = book,
-                                        onClick = {
-                                            // Show ad before navigating to book details
-                                            val activity = (context as? Activity)
-                                            if (activity != null) {
-                                                AdManager.showRewardedAd(
-                                                    activity = activity,
-                                                    onAdClosed = {
-                                                        onBookClick(book)
-                                                    },
-                                                    onAdFailedToShow = {
-                                                        onBookClick(book)
-                                                    }
-                                                )
-                                            } else {
-                                                onBookClick(book)
-                                            }
-                                        }
-                                    )
-                                }
-                            }
+                            items(
+                                count = books.size,
+                                key = { index -> books[index].key }
+                            ) { index ->
+                                val book = books[index]
+                                key(book.key) {
+                                    val isInAnyList by viewModel.isBookInAnyList(book.key).collectAsState(initial = false)
 
+                                        BookCard(
+                                            book = book,
+                                            onClick = {
+                                                // Show ad before navigating to book details
+                                                val activity = (context as? Activity)
+                                                if (activity != null) {
+                                                    AdManager.showInterstitialAd(
+                                                        activity = activity,
+                                                        onAdClosed = {
+                                                            onBookClick(book)
+                                                        },
+                                                        onAdFailedToShow = {
+                                                            onBookClick(book)
+                                                        }
+                                                    )
+                                                } else {
+                                                    onBookClick(book)
+                                                }
+                                            },
+                                            isLiked = isInAnyList,
+                                            onLikeToggle = {
+                                                // Show list selection dialog
+                                                val showListsDialog = true
+                                            }
+                                        )
+                                    }
+                                }
                             // Loading indicator at the bottom
                             item(span = StaggeredGridItemSpan.FullLine) {
                                 if (isLoadingMore) {
@@ -185,25 +209,26 @@ fun BrowseScreen(
     }
 }
 
+// Removed 'private' modifiers from local @Composable functions
 @Composable
-private fun PlaceholderBookCard() {
+fun PlaceholderBookCard() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(2f/3f),
+            .aspectRatio(2f / 3f),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .shimmerBackground() // Add a shimmer effect
+                .shimmerBackground() // Now the shimmer effect is properly referenced
         )
     }
 }
 
 @Composable
-private fun LoadingIndicator() {
+fun LoadingIndicator() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -218,7 +243,7 @@ private fun LoadingIndicator() {
 }
 
 @Composable
-private fun ErrorItem(onRetry: () -> Unit) {
+fun ErrorItem(onRetry: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -238,18 +263,3 @@ private fun ErrorItem(onRetry: () -> Unit) {
         }
     }
 }
-
-// Shimmer effect extension
-fun Modifier.shimmerBackground(): Modifier = composed {
-    val transition = rememberInfiniteTransition()
-    val alpha by transition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 0.4f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-    background(Color.Gray.copy(alpha = alpha))
-}
-

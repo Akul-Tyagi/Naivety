@@ -86,6 +86,8 @@ class PdfViewerActivity : ComponentActivity() {
         // Update ViewModel with saved reading mode
         viewModel.updateReadingMode(savedReadingMode)
 
+        viewModel.startReadingSession(lastPage)
+
         // Load bookmarks for this book
         viewModel.loadBookmarks(bookId!!)
 
@@ -688,7 +690,7 @@ class PdfViewerActivity : ComponentActivity() {
 
         // Add this code to log the reading session when pausing
         bookId?.let { id ->
-            viewModel.endReadingSession(pdfView.currentPage, id)
+            viewModel.endReadingSession(id)
         }
     }
 
@@ -725,7 +727,7 @@ class PdfViewerActivity : ComponentActivity() {
 
         // End reading session before cleanup
         bookId?.let { id ->
-            viewModel.endReadingSession(pdfView.currentPage, id)
+            viewModel.endReadingSession(id)
         }
 
         viewModel.cleanup()

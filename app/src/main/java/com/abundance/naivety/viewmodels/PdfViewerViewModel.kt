@@ -35,31 +35,63 @@ class PdfViewerViewModel @Inject constructor(
     private var isDocumentLoaded = false
     private var currentBookId: String? = null
 
+
     init {
         loadSavedSettings(null)
     }
+    private val readPages = mutableSetOf<Int>()
+    private val pageTimeMap = mutableMapOf<Int, Long>()
+    private var sessionStartTime = 0L
+    private var currentPageStartTime = 0L
+    private var currentPageId = 0
+    private val MIN_PAGE_READ_TIME = 1600L // 1.6 seconds
 
-    // Add to PdfViewerViewModel
-    private var sessionStartTime: Long = System.currentTimeMillis()
-    private var initialPage: Int = 0
-
+    // Clear caches when starting a new session
     fun startReadingSession(page: Int) {
         sessionStartTime = System.currentTimeMillis()
-        initialPage = page
+        currentPageStartTime = sessionStartTime
+        currentPageId = page
+        readPages.clear()
+        pageTimeMap.clear()
+    }
+
+    // Called when changing pages
+    fun onPageChanged(newPage: Int) {
+        val now = System.currentTimeMillis()
+        val timeOnPage = now - currentPageStartTime
+
+        // Update time for current page
+        pageTimeMap[currentPageId] = (pageTimeMap[currentPageId] ?: 0L) + timeOnPage
+
+        // If page was viewed long enough, mark it as read
+        if ((pageTimeMap[currentPageId] ?: 0L) >= MIN_PAGE_READ_TIME) {
+            readPages.add(currentPageId)
+        }
+
+        // Update tracking variables
+        currentPageId = newPage
+        currentPageStartTime = now
     }
 
     // In PdfViewerViewModel, update the endReadingSession method:
-    fun endReadingSession(currentPage: Int, bookId: String) {
-        val sessionTimeMinutes = ((System.currentTimeMillis() - sessionStartTime) / 1000 / 60).toInt()
-        val pagesRead = (currentPage - initialPage).coerceAtLeast(0)
+    fun endReadingSession(bookId: String) {
+        // Process final page
+        val timeOnLastPage = System.currentTimeMillis() - currentPageStartTime
+        pageTimeMap[currentPageId] = (pageTimeMap[currentPageId] ?: 0L) + timeOnLastPage
 
-        // Only record if some time was spent or pages read
-        if (sessionTimeMinutes > 0 || pagesRead > 0) {
+        if ((pageTimeMap[currentPageId] ?: 0L) >= MIN_PAGE_READ_TIME) {
+            readPages.add(currentPageId)
+        }
+
+        // Calculate total reading time in minutes
+        val sessionTimeMinutes = ((System.currentTimeMillis() - sessionStartTime) / 60000).toInt()
+
+        // Only log if we have read pages and spent some time
+        if (readPages.isNotEmpty() && sessionTimeMinutes > 0) {
             viewModelScope.launch {
-                // Use logReadingSession instead of addReadingDay
                 readingStatsRepository.logReadingSession(
                     bookId = bookId,
-                    pagesRead = pagesRead,
+                    pagesRead = readPages.size,
                     timeSpentMinutes = sessionTimeMinutes
                 )
             }
@@ -93,6 +125,8 @@ class PdfViewerViewModel @Inject constructor(
 
 
     fun updatePageCount(current: Int, total: Int, bookId: String?) {
+        onPageChanged(current) // Track page change
+
         viewModelScope.launch {
             _viewerState.update { currentState ->
                 currentState.copy(
@@ -100,6 +134,7 @@ class PdfViewerViewModel @Inject constructor(
                     totalPages = total.coerceAtLeast(1)
                 )
             }
+
             bookId?.let { id ->
                 updateCurrentPageBookmarkStatus(id, current)
             }
