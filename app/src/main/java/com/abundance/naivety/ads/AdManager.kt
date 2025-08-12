@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 object AdManager {
     private const val TAG = "AdManager"
-    private const val INTERSTITIAL_AD_ID = "ca-app-pub-1590434069699907/8827538743"
+    private const val INTERSTITIAL_AD_ID = "ca-app-pub-1590434069699907/2680152540"
     private const val NAVIGATION_DELAY = 50L
 
     private var interstitialAd: InterstitialAd? = null

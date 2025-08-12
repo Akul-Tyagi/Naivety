@@ -52,14 +52,15 @@ class BrowseViewModel @Inject constructor(
         viewModelScope.launch {
             _isInitialLoading.value = true
             try {
-                val initialBooks = repository.getTrendingBooks()
+                // Use getBestsellerBooks() instead of getTrendingBooks()
+                val initialBooks = repository.getBestsellerBooks()
                 _booksState.value = initialBooks
 
                 initialBooks.forEach { book ->
                     bookCache[book.key] = book
                 }
             } catch (e: Exception) {
-                // Handle error
+                Log.e("BrowseViewModel", "Error loading initial books", e)
             } finally {
                 _isInitialLoading.value = false
             }

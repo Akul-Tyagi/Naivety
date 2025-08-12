@@ -35,9 +35,13 @@ import com.abundance.naivety.ads.AdManager
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.foundation.border
+import com.abundance.naivety.AuthActivity
+import com.abundance.naivety.utils.PreferencesManager
+import com.google.firebase.auth.FirebaseAuth
+import kotlin.or
 
 @Composable
 fun MoreScreen(
@@ -46,7 +50,6 @@ fun MoreScreen(
     onNavigateToAchievements: () -> Unit,
     onNavigateToThemeSettings: () -> Unit
 ) {
-    val context = LocalContext.current
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
     val currentStreak by viewModel.currentStreak.collectAsState()
     val longestStreak by viewModel.longestStreak.collectAsState()
@@ -57,6 +60,10 @@ fun MoreScreen(
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.nektar))
     val fsFont = FontFamily(Font(R.font.montserratblack))
+
+    val context = LocalContext.current
+    var showLogoutConfirmation by remember { mutableStateOf(false) }
+    val isGuestMode = PreferencesManager.isGuestMode(context)
 
     Box(
         modifier = Modifier
@@ -188,7 +195,7 @@ fun MoreScreen(
             )
 
             // Book Download Resources Section
-            // BookDownloadResourcesSection(customFont = alinsaFont)
+            BookDownloadResourcesSection(customFont = alinsaFont)
 
             SettingsSection(
                 title = "About",
@@ -207,6 +214,77 @@ fun MoreScreen(
                 customFont = alinsaFont
             )
 
+            Spacer(modifier = Modifier.weight(2f))
+
+            // Auth button (Sign Up or Logout)
+            OutlinedButton(
+                onClick = {
+                    if (isGuestMode) {
+                        // Guest user clicking "Sign Up" - redirect to AuthActivity
+                        PreferencesManager.setGuestMode(context, false) // Clear guest mode
+                        val intent = Intent(context, AuthActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        context.startActivity(intent)
+                        (context as? Activity)?.finish() // Ensure current activity is finished
+                    } else {
+                        // Logged in user clicking "Logout"
+                        showLogoutConfirmation = true
+                    }
+                },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = if (isGuestMode) MaterialTheme.colorScheme.primary else Color.Red
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    if (isGuestMode) MaterialTheme.colorScheme.primary else Color.Red
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Icon(
+                    imageVector = if (isGuestMode) Icons.Default.PersonAdd else Icons.Default.Logout,
+                    contentDescription = if (isGuestMode) "Sign Up" else "Logout",
+                    tint = if (isGuestMode) MaterialTheme.colorScheme.primary else Color.Red
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = if (isGuestMode) "Sign Up with Account" else "Logout",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            // Logout confirmation dialog
+            if (showLogoutConfirmation) {
+                AlertDialog(
+                    onDismissRequest = { showLogoutConfirmation = false },
+                    title = { Text(text ="Confirm Logout", fontFamily = alinsaFont) },
+                    text = { Text("Are you sure you want to log out?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                FirebaseAuth.getInstance().signOut()
+                                PreferencesManager.setGuestMode(context, false)
+                                val intent = Intent(context, AuthActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                context.startActivity(intent)
+                                (context as? Activity)?.finish()
+                            }
+                        ) {
+                            Text("Yes")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    dismissButton = {
+                        TextButton(onClick = { showLogoutConfirmation = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
             // App Version
             Box(
                 modifier = Modifier
@@ -215,7 +293,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v2.2.0",
+                    text = "Naivety v2.2.6",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )

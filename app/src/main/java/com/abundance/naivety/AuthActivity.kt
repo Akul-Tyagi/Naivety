@@ -49,7 +49,7 @@ class AuthActivity : ComponentActivity() {
         viewModel.initGoogleSignIn(this)
 
         // Check if user is already authenticated
-        if (FirebaseAuth.getInstance().currentUser != null) {
+        if (FirebaseAuth.getInstance().currentUser != null || PreferencesManager.isGuestMode(this)) {
             startActivity(Intent(this, MainScreenActivity::class.java))
             finish()
             return
@@ -103,7 +103,13 @@ class AuthActivity : ComponentActivity() {
                     composable(Destinations.Auth.route) {
                         AuthMainScreen(
                             viewModel = viewModel,
-                            activity = this@AuthActivity
+                            activity = this@AuthActivity,
+                            onContinueWithoutAuth = {
+                                // Navigate to main screen without authentication
+                                PreferencesManager.setGuestMode(this@AuthActivity, true)
+                                startActivity(Intent(this@AuthActivity, MainScreenActivity::class.java))
+                                finish()
+                            }
                         )
                     }
                 }

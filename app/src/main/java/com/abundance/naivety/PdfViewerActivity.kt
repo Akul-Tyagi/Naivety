@@ -676,7 +676,7 @@ class PdfViewerActivity : ComponentActivity() {
                 viewModel.updatePage(
                     bookId = id,
                     page = page,
-                    position = pdfView.positionOffset
+                    position = if (::pdfView.isInitialized) pdfView.positionOffset else 0f
                 )
             }
         }
@@ -684,8 +684,13 @@ class PdfViewerActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
-        saveReadingProgress(pdfView.currentPage)
-        saveViewerSettings()
+
+        // Check if pdfView is initialized before using it
+        if (::pdfView.isInitialized) {
+            saveReadingProgress(pdfView.currentPage)
+            saveViewerSettings()
+        }
+
         viewModel.saveSettings(bookId)
 
         // Add this code to log the reading session when pausing
@@ -696,6 +701,8 @@ class PdfViewerActivity : ComponentActivity() {
 
     // Keep only one implementation of saveViewerSettings
     private fun saveViewerSettings() {
+        if (!::pdfView.isInitialized) return
+
         bookId?.let { id ->
             applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()

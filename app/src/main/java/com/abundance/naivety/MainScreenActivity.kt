@@ -36,6 +36,7 @@ import com.abundance.naivety.ui.screens.BrowseScreen
 import com.abundance.naivety.ui.screens.ReadingHeatmapScreen
 import com.abundance.naivety.ui.screens.ThemeSettingsScreen
 import dagger.hilt.android.AndroidEntryPoint
+import com.abundance.naivety.utils.PreferencesManager
 
 @AndroidEntryPoint
 class MainScreenActivity : ComponentActivity() {
@@ -73,6 +74,8 @@ class MainScreenActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
+                    val isGuestMode = PreferencesManager.isGuestMode(this@MainScreenActivity)
+
                     NavHost(
                         navController = navController,
                         startDestination = "main" ,
@@ -101,7 +104,8 @@ class MainScreenActivity : ComponentActivity() {
                                     viewModel.sortBooks(sortOrder)
                                 },
                                 navController = navController,
-                                defaultSection = defaultSection
+                                defaultSection = defaultSection,
+                                isGuestMode = isGuestMode
                             )
                         }
                         composable(Destinations.Browse.route) {

@@ -21,18 +21,17 @@ class BookPagingSource(
             val books = withContext(Dispatchers.IO) {
                 if (query.isBlank()) {
                     // For trending, pagination is not supported by API, so we get all and page locally
-                    val response = api.getTrendingBooks()
+                    val response = api.getBestsellerBooks(page = page)
                     if (response.isSuccessful && response.body() != null) {
-                        // Add null check for works collection
-                        val works = response.body()?.works ?: emptyList()
-                        works.mapNotNull { work ->
-                            if (work.key != null && work.title != null) {
+                        val docs = response.body()?.docs ?: emptyList()
+                        docs.mapNotNull { doc ->
+                            if (doc.key != null && doc.title != null) {
                                 OpenLibraryBook(
-                                    key = work.key,
-                                    title = work.title,
-                                    author = work.author_name?.firstOrNull() ?: "Unknown",
-                                    publishedYear = work.first_publish_year ?: 0,
-                                    coverUrl = work.cover_i?.let {
+                                    key = doc.key,
+                                    title = doc.title,
+                                    author = doc.author_name?.firstOrNull() ?: "Unknown",
+                                    publishedYear = doc.first_publish_year ?: 0,
+                                    coverUrl = doc.cover_i?.let {
                                         "https://covers.openlibrary.org/b/id/$it-L.jpg"
                                     } ?: "",
                                     description = ""
@@ -77,9 +76,9 @@ class BookPagingSource(
             }
 
             LoadResult.Page(
-                data = pageData,
+                data = books,
                 prevKey = if (page == 1) null else page - 1,
-                nextKey = if (pageData.isEmpty() || endPos >= books.size) null else page + 1
+                nextKey = if (books.isEmpty()) null else page + 1
             )
         } catch (e: Exception) {
             LoadResult.Error(e)

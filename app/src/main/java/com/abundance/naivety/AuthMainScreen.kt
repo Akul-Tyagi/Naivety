@@ -2,11 +2,13 @@ package com.abundance.naivety
 
 import android.app.Activity
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -30,7 +32,8 @@ import com.abundance.naivety.viewmodels.AuthViewModel
 @Composable
 fun AuthMainScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    activity: Activity
+    activity: Activity,
+    onContinueWithoutAuth: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val userPreferencesRepository = remember {
@@ -239,6 +242,38 @@ fun AuthMainScreen(
                         text = "Continue with Google",
                         color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = alinsaFont
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Add the Continue without account button
+            OutlinedButton(
+                onClick = onContinueWithoutAuth,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Guest",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Continue without account",
+                        fontFamily = alinsaFont,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }

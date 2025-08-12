@@ -180,7 +180,7 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                     Text(
                         text = mainHeadings[currentSlide],
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = 69.sp,
+                            fontSize = 64.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontFamily = mainFontFamily,
                             lineHeight = 52.sp,
@@ -210,7 +210,7 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                         Text(
                             text = visibleText,
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 43.sp,
+                                fontSize = 40.sp,
                                 lineHeight = 35.sp,
                                 textAlign = TextAlign.End,
                                 color = MaterialTheme.colorScheme.onBackground,

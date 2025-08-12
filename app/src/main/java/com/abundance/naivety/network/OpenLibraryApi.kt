@@ -3,7 +3,6 @@ package com.abundance.naivety.network
 import com.abundance.naivety.network.models.OpenLibraryBookDetail
 import com.abundance.naivety.network.models.OpenLibrarySearchResponse
 import com.abundance.naivety.network.models.RatingsResponse
-import com.abundance.naivety.network.models.TrendingBooksResponse
 import com.google.gson.GsonBuilder
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -29,8 +28,17 @@ interface OpenLibraryApi {
         @Query("sort") sort: String? = null
     ): Response<OpenLibrarySearchResponse>
 
-    @GET("trending/weekly.json")
-    suspend fun getTrendingBooks(): Response<TrendingBooksResponse>
+
+    @GET("search.json")
+    suspend fun getBestsellerBooks(
+        @Query("q") query: String = "bestseller",
+        @Query("limit") limit: Int = 20,
+        @Query("page") page: Int = 1,
+        @Query("fields") fields: String = "key,title,author_name,first_publish_year,cover_i",
+        @Query("mode") mode: String = "bestseller",
+        @Query("has_fulltext") hasFulltext: Boolean = false,
+        @Query("sort") sort: String = "readinglog"
+    ): Response<OpenLibrarySearchResponse>
 
     @GET("works/{workId}.json")
     suspend fun getBookDetails(

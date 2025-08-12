@@ -22,6 +22,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -41,7 +42,7 @@ class BrowseRepositoryImpl @Inject constructor(
     // Cache entries with timestamp
     private val cacheTimes = ConcurrentHashMap<String, Long>()
 
-    private var usingFallbackSource = false
+    private val _isLoadingBestsellers = MutableStateFlow(false)
 
     private enum class TrendingLoadState { NOT_STARTED, IN_PROGRESS, COMPLETED, FAILED }
     private var trendingLoadState = TrendingLoadState.NOT_STARTED
@@ -54,59 +55,56 @@ class BrowseRepositoryImpl @Inject constructor(
 
     override suspend fun getBooksByPage(query: String, page: Int, limit: Int): List<OpenLibraryBook> =
         withContext(Dispatchers.IO) {
-            // Cache check
-            val cacheKey = if (query.isBlank()) "trending_$page" else "search_${query}_$page"
+            // Cache check with proper key
+            val cacheKey = if (query.isBlank()) "bestsellers_$page" else "search_${query}_$page"
             bookCache.getPagedBooks(cacheKey)?.let {
                 Log.d("BrowseRepository", "Returning ${it.size} books for page $page from cache")
                 return@withContext it
             }
 
-            // Query handling
-            if (query.isNotBlank()) {
-                return@withContext searchBooksWithPagination(query, page, limit)
-            }
-
-            // For trending content
             try {
-                if (page == 1) {
-                    // First page loads trending
-                    return@withContext getTrendingBooks()
+                // Page 1 is handled differently only if query is blank
+                if (query.isBlank() && page == 1) {
+                    return@withContext getBestsellerBooks()
+                }
+
+                // For search queries and subsequent bestseller pages
+                val effectiveQuery = if (query.isBlank()) "bestseller" else query
+                Log.d("BrowseRepository", "Fetching ${if(query.isBlank()) "bestsellers" else "search results"} page $page...")
+
+                val response = if (query.isBlank()) {
+                    // For bestsellers, use dedicated method with page parameter
+                    api.getBestsellerBooks(page = page)
                 } else {
-                    // For pages after 1, wait for page 1 efficiently
-                    if (trendingLoadState == TrendingLoadState.IN_PROGRESS) {
-                        Log.d("BrowseRepository", "Page 1 still loading, waiting briefly...")
+                    // For search, use regular search
+                    api.searchBooks(effectiveQuery, limit, page)
+                }
 
-                        // Use withTimeoutOrNull to prevent infinite waiting
-                        var lastLogTime = 0L
-                        withTimeoutOrNull(trendingTimeout) {
-                            while (trendingLoadState == TrendingLoadState.IN_PROGRESS) {
-                                val now = System.currentTimeMillis()
-                                if (now - lastLogTime > logThrottleInterval) {
-                                    Log.d("BrowseRepository", "Waiting for page 1 to complete before loading page $page")
-                                    lastLogTime = now
-                                }
-                                delay(100)
-                            }
-                        }
+                if (response.isSuccessful) {
+                    val books = response.body()?.docs?.mapNotNull { doc ->
+                        val key = doc.key ?: return@mapNotNull null
+                        val title = doc.title ?: return@mapNotNull null
 
-                        // Only use backup source if trending explicitly failed
-                        if (trendingLoadState == TrendingLoadState.FAILED) {
-                            Log.d("BrowseRepository", "Using bestseller source for page $page due to trending failure")
-                            useBackupSource = true
-                        }
-                    }
+                        OpenLibraryBook(
+                            key = key,
+                            title = title,
+                            author = doc.author_name?.firstOrNull() ?: "Unknown",
+                            publishedYear = doc.first_publish_year ?: 0,
+                            coverUrl = doc.cover_i?.let { coverId ->
+                                "https://covers.openlibrary.org/b/id/$coverId-L.jpg"
+                            } ?: "",
+                            description = ""
+                        )
+                    } ?: emptyList()
 
-                    // Now get the books based on source decision
-                    Log.d("BrowseRepository", "Loading page $page using bestseller source")
-                    val books = getPagedBestsellers(page, limit)
-                    if (books.isNotEmpty()) {
-                        bookCache.cacheBooks(books)
-                        bookCache.cachePagedBooks(cacheKey, books)
-                    }
+                    // Cache the results with appropriate key
+                    bookCache.cachePagedBooks(cacheKey, books)
                     return@withContext books
                 }
+
+                return@withContext emptyList()
             } catch (e: Exception) {
-                Log.e("BrowseRepository", "Error getting books for page $page: ${e.message}")
+                Log.e("BrowseRepository", "Error fetching page $page: ${e.message}")
                 return@withContext emptyList()
             }
         }
@@ -204,82 +202,56 @@ class BrowseRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun getTrendingBooks(): List<OpenLibraryBook> =
+    // Rename this method from getTrendingBooks to getBestsellerBooks
+    override suspend fun getBestsellerBooks(): List<OpenLibraryBook> =
         withContext(Dispatchers.IO) {
             try {
-                // Set initial state
-                trendingLoadState = TrendingLoadState.IN_PROGRESS
+                _isLoadingBestsellers.value = true
 
-                // Cache check logic remains
-                bookCache.getPagedBooks("trending_1")?.let {
-                    Log.d("BrowseRepository", "Using cached trending books")
-                    trendingLoadState = TrendingLoadState.COMPLETED
+                // Check cache first
+                bookCache.getPagedBooks("bestsellers_1")?.let {
+                    Log.d("BrowseRepository", "Using cached bestseller books")
+                    _isLoadingBestsellers.value = false
                     return@withContext it
                 }
 
-                // Improved retry logic with cleaner timeout handling
-                val maxRetries = 2
-                var currentAttempt = 1
+                Log.d("BrowseRepository", "Fetching bestseller books...")
 
-                while (currentAttempt <= maxRetries) {
-                    try {
-                        Log.d("BrowseRepository", "Fetching trending books (attempt $currentAttempt/$maxRetries)...")
+                // Use the dedicated method with proper parameters
+                val response = api.getBestsellerBooks()
 
-                        val response = withTimeoutOrNull(trendingRequestTimeout) {
-                            api.getTrendingBooks()
+                if (response.isSuccessful) {
+                    val searchResponse = response.body()
+                    if (searchResponse != null) {
+                        val books = searchResponse.docs.mapNotNull { doc ->
+                            val key = doc.key ?: return@mapNotNull null
+                            val title = doc.title ?: return@mapNotNull null
+
+                            OpenLibraryBook(
+                                key = key,
+                                title = title,
+                                author = doc.author_name?.firstOrNull() ?: "Unknown",
+                                publishedYear = doc.first_publish_year ?: 0,
+                                coverUrl = doc.cover_i?.let { coverId ->
+                                    "https://covers.openlibrary.org/b/id/$coverId-L.jpg"
+                                } ?: "",
+                                description = ""
+                            )
                         }
 
-                        // Handle response or timeout
-                        if (response == null) {
-                            Log.w("BrowseRepository", "API call timed out")
-                        } else if (response.isSuccessful) {
-                            // Process trending response directly instead of using a separate method
-                            val trendingResponse = response.body()
-                            if (trendingResponse != null) {
-                                val works = trendingResponse.works
-                                if (works != null && works.isNotEmpty()) {
-                                    val books = mapWorksToBooks(works)
-                                    Log.d("BrowseRepository", "Mapped ${books.size} trending books")
-                                    bookCache.cacheBooks(books)
-                                    bookCache.cachePagedBooks("trending_1", books)
-                                    trendingLoadState = TrendingLoadState.COMPLETED
-                                    return@withContext books
-                                } else {
-                                    Log.w("BrowseRepository", "Empty works list received")
-                                }
-                            } else {
-                                Log.w("BrowseRepository", "Null response body")
-                            }
-                        } else {
-                            Log.e("BrowseRepository", "API error: ${response.code()} ${response.message()}")
-                        }
-
-                        // Increment and retry if needed
-                        currentAttempt++
-                        if (currentAttempt <= maxRetries) {
-                            val delayTime = 1000L * (currentAttempt - 1)
-                            Log.d("BrowseRepository", "Retrying in ${delayTime}ms (attempt $currentAttempt/$maxRetries)")
-                            delay(delayTime)
-                        }
-                    } catch (e: Exception) {
-                        Log.e("BrowseRepository", "Exception in trending API: ${e.message}")
-                        currentAttempt++
-                        if (currentAttempt <= maxRetries) {
-                            delay(1000L * (currentAttempt - 1))
-                        }
+                        Log.d("BrowseRepository", "Got ${books.size} bestseller books")
+                        bookCache.cacheBooks(books)
+                        bookCache.cachePagedBooks("bestsellers_1", books)
+                        _isLoadingBestsellers.value = false
+                        return@withContext books
                     }
                 }
 
-                // Use fallback after all retries failed
-                Log.d("BrowseRepository", "Trending API failed after $maxRetries attempts, using fallback...")
-                useBackupSource = true
-                val fallbackBooks = getTopBooksAsFallback()
-                trendingLoadState = TrendingLoadState.COMPLETED
-                return@withContext fallbackBooks
-
+                _isLoadingBestsellers.value = false
+                return@withContext emptyList()
             } catch (e: Exception) {
-                Log.e("BrowseRepository", "Error in getTrendingBooks: ${e.message}")
-                trendingLoadState = TrendingLoadState.FAILED
+                Log.e("BrowseRepository", "Error in getBestsellerBooks: ${e.message}")
+                _isLoadingBestsellers.value = false
                 return@withContext emptyList()
             }
         }
@@ -307,53 +279,6 @@ class BrowseRepositoryImpl @Inject constructor(
             )
         }
     }
-
-    // New fallback method for when trending API fails
-    private suspend fun getTopBooksAsFallback(): List<OpenLibraryBook> {
-        try {
-            Log.d("BrowseRepository", "Fetching bestsellers as fallback...")
-            val response = api.searchBooks(
-                query = "bestseller",
-                limit = 20,
-                page = 1,
-                fields = "key,title,author_name,first_publish_year,cover_i",
-                sort = "readinglog"
-            )
-
-            if (response.isSuccessful) {
-                val searchResponse = response.body()
-                if (searchResponse != null) {
-                    val books = searchResponse.docs.mapNotNull { doc ->
-                        val key = doc.key ?: return@mapNotNull null
-                        val title = doc.title ?: return@mapNotNull null
-
-                        OpenLibraryBook(
-                            key = key,
-                            title = title,
-                            author = doc.author_name?.firstOrNull() ?: "Unknown",
-                            publishedYear = doc.first_publish_year ?: 0,
-                            coverUrl = doc.cover_i?.let { coverId ->
-                                "https://covers.openlibrary.org/b/id/$coverId-L.jpg"
-                            } ?: "",
-                            description = ""
-                        )
-                    }
-
-                    Log.d("BrowseRepository", "Fallback successful: got ${books.size} bestseller books")
-                    bookCache.cacheBooks(books)
-                    bookCache.cachePagedBooks("trending_1", books) // Cache with same key for consistency
-                    return books
-                }
-            } else {
-                Log.e("BrowseRepository", "Fallback API error: ${response.code()} ${response.message()}")
-            }
-            return emptyList()
-        } catch (e: Exception) {
-            Log.e("BrowseRepository", "Exception in fallback search", e)
-            return emptyList()
-        }
-    }
-
 
 
     // In BrowseRepositoryImpl.kt, add:

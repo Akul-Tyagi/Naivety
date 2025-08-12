@@ -6,10 +6,6 @@ data class OpenLibrarySearchResponse(
     val docs: List<OpenLibraryDoc>
 )
 
-data class TrendingBooksResponse(
-    val works: List<OpenLibraryWork>
-)
-
 data class RatingsResponse(
     val summary: RatingSummary?,
     val counts: Map<String, Int>?

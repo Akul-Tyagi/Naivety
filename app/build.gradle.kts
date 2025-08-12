@@ -16,8 +16,8 @@ android {
         applicationId = "com.abundance.naivety"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "2.2.0"
+        versionCode = 10
+        versionName = "2.2.6"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -94,12 +94,11 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Retrofit Gson Converter
     implementation("io.coil-kt:coil-compose:2.5.0") // Image loading with Coil
     // Replace the existing PDF viewer dependency with this
-    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
+    implementation("com.github.Akul-Tyagi:AndroidPdfViewer:v3.2.5")
 
     //admob
     implementation("com.google.android.gms:play-services-ads:24.1.0")
-
-    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    
     //Browse Section
     // Paging 3 with Compose support
     implementation("androidx.paging:paging-compose:3.3.6")
@@ -119,7 +118,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("com.google.accompanist:accompanist-placeholder:0.32.0")
     // Add for better PDF handling
-    implementation("com.tom-roush:pdfbox-android:2.0.27.0") // PDF Viewer
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")

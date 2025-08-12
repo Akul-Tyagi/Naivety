@@ -41,7 +41,8 @@ fun MainScreen(
     onNavigateToRead: (String) -> Unit,
     onSortBooks: (SortOrder) -> Unit,
     navController: NavHostController,
-    defaultSection: String = "Home"
+    defaultSection: String = "Home",
+    isGuestMode: Boolean = false
 ) {
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.nektar))
@@ -292,23 +293,22 @@ private fun HomeSection(
                 BookGrid(
                     books = filteredBooks,
                     onBookClick = { book ->
-                        onNavigateToRead(Uri.parse(book.filePath))
                         // Show ad before navigating to read
-//                        val activity = (context as? Activity)
-//                        if (activity != null) {
-//                            AdManager.showInterstitialAd(
-//                                activity = activity,
-//                                onAdClosed = {
-//                                    onNavigateToRead(Uri.parse(book.filePath))
-//                                },
-//                                onAdFailedToShow = {
-//                                    onNavigateToRead(Uri.parse(book.filePath))
-//                                }
-//                            )
-//                        } else {
-//                            // Fallback if context is not an activity
-//                            onNavigateToRead(Uri.parse(book.filePath))
-//                        }
+                        val activity = (context as? Activity)
+                        if (activity != null) {
+                            AdManager.showInterstitialAd(
+                                activity = activity,
+                                onAdClosed = {
+                                    onNavigateToRead(Uri.parse(book.filePath))
+                                },
+                                onAdFailedToShow = {
+                                    onNavigateToRead(Uri.parse(book.filePath))
+                                }
+                            )
+                        } else {
+                            // Fallback if context is not an activity
+                            onNavigateToRead(Uri.parse(book.filePath))
+                        }
                     },
                     onLongPress = { book ->
                         bookToDelete = book
