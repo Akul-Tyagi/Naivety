@@ -94,7 +94,7 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Retrofit Gson Converter
     implementation("io.coil-kt:coil-compose:2.5.0") // Image loading with Coil
     // Replace the existing PDF viewer dependency with this
-    implementation("com.github.Akul-Tyagi:AndroidPdfViewer:v3.2.5")
+    implementation("com.github.Akul-Tyagi:AndroidPdfViewer:v3.4.3-16kb")
 
     //admob
     implementation("com.google.android.gms:play-services-ads:24.1.0")
