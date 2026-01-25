@@ -5,19 +5,14 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# WebView with JavaScript interface - required for EPUB reader
+-keepclassmembers class com.abundance.naivety.EpubReaderActivity$EpubJsInterface {
+   public *;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Preserve line number information for debugging stack traces
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
 # Base attributes to keep
 -keepattributes Signature, *Annotation*, EnclosingMethod, InnerClasses
@@ -143,3 +138,33 @@
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
+
+# ==================== READIUM EPUB SUPPORT ====================
+# Readium Kotlin Toolkit
+-keep class org.readium.** { *; }
+-keepclassmembers class org.readium.** { *; }
+-dontwarn org.readium.**
+
+# Jsoup (used by Readium for HTML parsing)
+-keep class org.jsoup.** { *; }
+-keepclassmembers class org.jsoup.** { *; }
+-dontwarn org.jsoup.**
+
+# WebKit (for EPUB WebView rendering)
+-keep class androidx.webkit.** { *; }
+-dontwarn androidx.webkit.**
+
+# EPUB reader state and settings classes
+-keep class com.abundance.naivety.epub.** { *; }
+-keep class com.abundance.naivety.ui.components.epub.** { *; }
+
+# ==================== R8 WARNING SUPPRESSIONS ====================
+# Suppress R8 warnings for Google Play Services Auth internal classes
+# These warnings are caused by obfuscated code in Google's AAR files
+# and do not affect app functionality
+-dontwarn com.google.android.gms.auth.api.identity.**
+-dontwarn com.google.android.gms.auth.api.signin.**
+-dontwarn com.google.android.gms.auth.api.signin.internal.**
+-dontwarn com.google.android.gms.internal.auth.**
+-keep class com.google.android.gms.auth.api.identity.** { *; }
+-keep class com.google.android.gms.auth.api.signin.internal.** { *; }
