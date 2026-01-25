@@ -45,11 +45,25 @@ class MainScreenActivity : ComponentActivity() {
     private val pdfLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
-        uri?.let { handlePdfSelection(it) }
+        uri?.let {
+            android.util.Log.d("MainScreenActivity", "File selected: $it")
+            try {
+                contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                android.util.Log.d("MainScreenActivity", "Permission granted, adding book...")
+                viewModel.addBook(it)  // This line was missing!
+            } catch (e: Exception) {
+                android.util.Log.e("MainScreenActivity", "Error adding book: ${e.message}", e)
+            }
+        } ?: run {
+            android.util.Log.d("MainScreenActivity", "No file selected (uri is null)")
+        }
     }
 
     fun launchPdfSelection() {
-        pdfLauncher.launch(arrayOf("application/pdf"))
+        pdfLauncher.launch(arrayOf("application/pdf", "application/epub+zip"))
     }
 
     private val userPreferencesRepository by lazy {
@@ -95,7 +109,7 @@ class MainScreenActivity : ComponentActivity() {
                                     viewModel.books.value.find { it.filePath == uri }?.let { book ->
                                         val intent = Intent(this@MainScreenActivity, PdfViewerActivity::class.java).apply {
                                             data = Uri.parse(uri)  // Convert String to Uri here
-                                            putExtra("BOOK_ID", book.id)
+                                            putExtra("BOOK_ID", book.id.toString())
                                         }
                                         startActivity(intent)
                                     }
@@ -198,7 +212,7 @@ class MainScreenActivity : ComponentActivity() {
                             cursor.getString(displayNameIndex)
                         } else "Untitled"
 
-                        viewModel.addBook(uri, displayName.removeSuffix(".pdf"))
+                        viewModel.addBook(uri)
                     }
                 }
             } catch (e: Exception) {

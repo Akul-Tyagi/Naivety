@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -31,13 +32,10 @@ import androidx.compose.foundation.border
 import com.abundance.naivety.data.ReadingDay
 import com.abundance.naivety.utils.getDisplayNameCompat
 import android.app.Activity
-import com.abundance.naivety.ads.AdManager
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Link
 import com.abundance.naivety.AuthActivity
 import com.abundance.naivety.utils.PreferencesManager
 import com.google.firebase.auth.FirebaseAuth
@@ -152,20 +150,7 @@ fun MoreScreen(
 
                     Button(
                         onClick = {
-                            val activity = context as? Activity
-                            if (activity != null) {
-                                AdManager.showInterstitialAd(
-                                    activity = activity,
-                                    onAdClosed = {
-                                        onNavigateToAchievements()
-                                    },
-                                    onAdFailedToShow = {
-                                        onNavigateToAchievements()
-                                    }
-                                )
-                            } else {
                                 onNavigateToAchievements()
-                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -194,24 +179,11 @@ fun MoreScreen(
                 customFont = alinsaFont
             )
 
-            // Book Download Resources Section
-            BookDownloadResourcesSection(customFont = alinsaFont)
-
-            SettingsSection(
-                title = "About",
-                options = listOf(
-                    SettingsOption(
-                        title = "Share App",
-                        icon = Icons.Default.Share,
-                        onClick = { viewModel.shareApp() }
-                    ),
-                    SettingsOption(
-                        title = "Rate App",
-                        icon = Icons.Default.Star,
-                        onClick = { viewModel.rateApp() }
-                    )
-                ),
-                customFont = alinsaFont
+            // Support Us Section (replacing Book Download Resources)
+            SupportUsSection(
+                customFont = alinsaFont,
+                onRateApp = { viewModel.rateApp() },
+                onShareApp = { viewModel.shareApp() }
             )
 
             Spacer(modifier = Modifier.weight(2f))
@@ -509,20 +481,7 @@ private fun ReadingHeatmapCard(
 
             Button(
                 onClick = {
-                    val activity = (context as? Activity)
-                    if (activity != null) {
-                        AdManager.showInterstitialAd(
-                            activity = activity,
-                            onAdClosed = {
-                                onViewDetailedActivity()
-                            },
-                            onAdFailedToShow = {
-                                onViewDetailedActivity()
-                            }
-                        )
-                    } else {
                         onViewDetailedActivity()
-                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -855,114 +814,213 @@ private fun SettingsItem(
 }
 
 @Composable
-private fun BookDownloadResourcesSection(
-    customFont: FontFamily
+private fun SupportUsSection(
+    customFont: FontFamily,
+    onRateApp: () -> Unit,
+    onShareApp: () -> Unit
 ) {
-    val context = LocalContext.current
-    val resources = listOf(
-        DownloadResource("PDF Drive", "https://pdfdrive.com.co/"),
-        DownloadResource("Z-Library", "https://z-library.co/"),
-        DownloadResource("Ocean of PDF", "https://oceanofpdf.com/"),
-        DownloadResource("PDF Room", "https://pdfroom.com/"),
-        DownloadResource("Library Genesis", "https://libgen.gs/index.php")
-    )
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    // Gradient-like background colors based on theme
+    val cardBackground = if (isDarkTheme) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    val accentColor = MaterialTheme.colorScheme.primary
+    val heartColor = Color(0xFFE91E63) // Pink/Red for heart
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = cardBackground
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Heart Icon with glow effect
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(36.dp))
+                    .background(
+                        heartColor.copy(alpha = 0.15f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = null,
+                    tint = heartColor,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Main Title
             Text(
-                text = "Book Download Resources",
-                style = MaterialTheme.typography.titleLarge.copy(fontFamily = customFont),
+                text = "Support Naivety",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = customFont,
+                    fontSize = 24.sp
+                ),
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 8.dp)
+                textAlign = TextAlign.Center
             )
 
-            // Resource links
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Subtitle with emphasis
+            Text(
+                text = "100% Free • No Ads • Forever",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = customFont
+                ),
+                color = accentColor,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Main message
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                resources.forEach { resource ->
-                    OutlinedButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(resource.url))
-                            context.startActivity(intent)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(12.dp)
-                            ),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Book,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = resource.name,
-                                fontFamily = customFont,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Icon(
-                                imageVector = Icons.Default.Link,
-                                contentDescription = "Open link",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-                // Disclaimer text
-                Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
+                Text(
+                    text = "We believe everyone deserves access to great reading tools without paying a dime or watching ads. " +
+                            "Your support helps us keep it that way! ✨",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = customFont,
+                        lineHeight = 22.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Rate Us Button - Primary CTA
+            Button(
+                onClick = onRateApp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = accentColor
+                ),
+                shape = RoundedCornerShape(16.dp),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 2.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
                     Text(
-                        text = "DISCLAIMER: These links are provided for convenience only. " +
-                                "Naivety is not affiliated with, does not endorse, and bears no responsibility for the content of these external websites. " +
-                                "Users should comply with applicable copyright laws when downloading materials.",
+                        text = "Rate Us 5 Stars",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = customFont
+                        ),
+                        color = Color.White
+                    )
+                    Text(
+                        text = "It takes just a second!",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(12.dp)
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "⭐⭐⭐⭐⭐",
+                    fontSize = 12.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Share Button - Secondary CTA
+            OutlinedButton(
+                onClick = onShareApp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = accentColor
+                ),
+                border = BorderStroke(2.dp, accentColor),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Share with Friends & Family",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = customFont
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Spread the joy of reading!",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Gratitude message
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Made with ",
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = null,
+                    tint = heartColor,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = " by readers, for readers",
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
             }
         }
     }
 }
-private data class DownloadResource(
-    val name: String,
-    val url: String
-)
 
 private data class SettingsOption(
     val title: String,

@@ -6,6 +6,7 @@ import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.util.Log
 import android.view.Window
 import android.view.WindowManager
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -67,7 +68,7 @@ class PdfViewerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setupWindow()
 
-        bookId = intent.getStringExtra("BOOK_ID")
+        bookId = intent.getStringExtra("BOOK_ID") ?:""
         if (bookId == null) {
             // Generate a unique ID if none is provided
             bookId = java.util.UUID.randomUUID().toString()
@@ -274,8 +275,11 @@ class PdfViewerActivity : ComponentActivity() {
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                         shape = RoundedCornerShape(20.dp)
                     ) {
+                        val currentPage = viewerState.value.currentPage + 1
+                        val totalPages = viewerState.value.totalPages.coerceAtLeast(1)
+                        val pagesLeft = (totalPages - currentPage).coerceAtLeast(0)
                         Text(
-                            text = "${viewerState.value.currentPage + 1}/${viewerState.value.totalPages}",
+                            text = "$currentPage/$totalPages • $pagesLeft left",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -671,13 +675,19 @@ class PdfViewerActivity : ComponentActivity() {
     }
 
     private fun saveReadingProgress(page: Int) {
+        if (pdfView == null) return
+
         bookId?.let { id ->
             lifecycleScope.launch {
-                viewModel.updatePage(
-                    bookId = id,
-                    page = page,
-                    position = if (::pdfView.isInitialized) pdfView.positionOffset else 0f
-                )
+                try {
+                    viewModel.updatePage(
+                        bookId = id,
+                        page = page,
+                        position = if (::pdfView.isInitialized) pdfView.positionOffset else 0f
+                    )
+                } catch (e: Exception){
+                    Log.e("PdfViewerActivity", "Error saving progress", e)
+                }
             }
         }
     }

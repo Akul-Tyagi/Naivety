@@ -41,12 +41,14 @@ fun TopBar(
             shape = RoundedCornerShape(28.dp),
             shadowElevation = 8.dp
         ) {
-            Row(
+            // Use Box to properly center the text independent of the icon
+            Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .padding(vertical = 10.dp, horizontal = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                contentAlignment = Alignment.Center
             ) {
+                // Centered text - takes full width but text is centered
                 Text(
                     text = pdfName,
                     color = NaivetyPurple,
@@ -56,18 +58,22 @@ fun TopBar(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 28.dp) // Padding on both sides to keep text away from icon area
                 )
 
+                // Edit icon positioned at the end
                 IconButton(
                     onClick = onEditClick,
-                    modifier = Modifier.size(21.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(18.dp) // Smaller icon button
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit name",
-                        tint = NaivetyPurple
+                        tint = NaivetyPurple,
+                        modifier = Modifier.size(14.dp) // Smaller icon
                     )
                 }
             }

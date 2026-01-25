@@ -7,6 +7,7 @@ import android.app.Activity
 import com.abundance.naivety.models.OpenLibraryBook
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +20,7 @@ import androidx.navigation.navArgument
 import com.abundance.naivety.*
 import com.abundance.naivety.ui.screens.*
 import com.abundance.naivety.viewmodels.BookViewModel
+import kotlin.toString
 
 @Composable
 fun NavGraph(
@@ -45,7 +47,7 @@ fun NavGraph(
         composable(Destinations.Auth.route) {
             AuthMainScreen(
                 viewModel = hiltViewModel(),
-                activity = LocalContext.current as Activity
+                activity = LocalActivity.current as Activity
             )
         }
 
@@ -66,7 +68,7 @@ fun NavGraph(
                     mainViewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
                         val intent = Intent(context, PdfViewerActivity::class.java).apply {
                             data = Uri.parse(uri)
-                            putExtra("BOOK_ID", book.id)
+                            putExtra("BOOK_ID", book.id.toString())
                         }
                         context.startActivity(intent)
                     }
@@ -135,11 +137,9 @@ fun NavGraph(
                     val uri = Uri.parse(Uri.decode(it))
                     val intent = Intent(context, PdfViewerActivity::class.java).apply {
                         data = uri
-                        // Get the book ID if available
-                        mainViewModel.books.value.find { book ->
-                            book.filePath == uri.toString()
-                        }?.let { book ->
-                            putExtra("BOOK_ID", book.id)
+                        // Get the book ID if available - use Long extra
+                        mainViewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
+                            putExtra("BOOK_ID", book.id.toString()) // Convert to String
                         }
                     }
                     context.startActivity(intent)

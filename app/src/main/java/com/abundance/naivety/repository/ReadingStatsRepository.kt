@@ -58,6 +58,23 @@ class ReadingStatsRepository @Inject constructor(
     private val _totalTimeSpent = MutableStateFlow(0)
     val totalTimeSpent: StateFlow<Int> = _totalTimeSpent
 
+    // PDF-specific stats
+    private val _pdfPagesRead = MutableStateFlow(0)
+    val pdfPagesRead: StateFlow<Int> = _pdfPagesRead
+
+    private val _pdfTimeSpent = MutableStateFlow(0)
+    val pdfTimeSpent: StateFlow<Int> = _pdfTimeSpent
+
+    // EPUB-specific stats
+    private val _epubEstimatedPages = MutableStateFlow(0)
+    val epubEstimatedPages: StateFlow<Int> = _epubEstimatedPages
+
+    private val _epubTimeSpent = MutableStateFlow(0)
+    val epubTimeSpent: StateFlow<Int> = _epubTimeSpent
+
+    private val _epubChaptersRead = MutableStateFlow(0)
+    val epubChaptersRead: StateFlow<Int> = _epubChaptersRead
+
     // Tracking for special achievements
     private val _nightReadingSessions = MutableStateFlow(0)
     private val _earlyMorningReadingSessions = MutableStateFlow(0)
@@ -276,9 +293,27 @@ class ReadingStatsRepository @Inject constructor(
 
     private fun updateAllStats(readingDays: List<ReadingDay>) {
         viewModelScope.launch {
-            // Calculate total pages and time
-            val totalPages = readingDays.sumOf { it.pagesRead }
-            val totalMinutes = readingDays.sumOf { it.timeSpentMinutes }
+            // Separate PDF and EPUB reading days
+            val pdfDays = readingDays.filter { it.bookType == "PDF" }
+            val epubDays = readingDays.filter { it.bookType == "EPUB" }
+
+            // Calculate PDF stats
+            val pdfPages = pdfDays.sumOf { it.pagesRead }
+            val pdfMinutes = pdfDays.sumOf { it.timeSpentMinutes }
+            _pdfPagesRead.value = pdfPages
+            _pdfTimeSpent.value = pdfMinutes
+
+            // Calculate EPUB stats
+            val epubPages = epubDays.sumOf { it.pagesRead }
+            val epubMinutes = epubDays.sumOf { it.timeSpentMinutes }
+            val epubChapters = epubDays.sumOf { it.chaptersRead }
+            _epubEstimatedPages.value = epubPages
+            _epubTimeSpent.value = epubMinutes
+            _epubChaptersRead.value = epubChapters
+
+            // Calculate combined totals
+            val totalPages = pdfPages + epubPages
+            val totalMinutes = pdfMinutes + epubMinutes
 
             _totalPagesRead.value = totalPages
             _totalTimeSpent.value = totalMinutes
@@ -556,6 +591,28 @@ class ReadingStatsRepository @Inject constructor(
     }
 
     suspend fun logReadingSession(bookId: String, pagesRead: Int, timeSpentMinutes: Int) {
+        logReadingSessionWithType(bookId, pagesRead, timeSpentMinutes, "PDF", 0)
+    }
+
+    /**
+     * Log a reading session with book type differentiation.
+     *
+     * For PDFs: pagesRead = actual pages read
+     * For EPUBs: pagesRead = estimated pages (calculated from time), chaptersRead = actual chapters progressed
+     *
+     * @param bookId Unique identifier for the book
+     * @param pagesRead Number of pages read (actual for PDF, estimated for EPUB)
+     * @param timeSpentMinutes Time spent reading in minutes
+     * @param bookType "PDF" or "EPUB"
+     * @param chaptersRead Number of chapters progressed (EPUB only)
+     */
+    suspend fun logReadingSessionWithType(
+        bookId: String,
+        pagesRead: Int,
+        timeSpentMinutes: Int,
+        bookType: String,
+        chaptersRead: Int = 0
+    ) {
         // Use today's date at midnight for consistent grouping
         val today = LocalDate.now()
         val todayEpochMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -563,34 +620,75 @@ class ReadingStatsRepository @Inject constructor(
         // Get start and end of today for proper date range matching
         val endOfDayMillis = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
 
-        // Check if we already have an entry for today by checking date range
+        // Check if we already have an entry for today for this specific book
         val existingDays = readingDayDao.getReadingDaysInRange(todayEpochMillis, endOfDayMillis)
-
-        // Get a day for this specific book if it exists
         val existingDay = existingDays.firstOrNull { it.bookId == bookId }
 
         // Validate inputs - apply reasonable limits
-        val validPages = if (pagesRead > 1000) 1000 else pagesRead.coerceAtLeast(0)
-        val validTime = if (timeSpentMinutes > 720) 720 else timeSpentMinutes.coerceAtLeast(0)
+        // For PDFs: max 1000 pages/session is reasonable
+        // For EPUBs: estimated pages based on time (max 720 min = 12 hours reading)
+        val validTime = timeSpentMinutes.coerceIn(0, 720)
+
+        val validPages = when (bookType) {
+            "EPUB" -> {
+                // For EPUB, estimate pages from reading time
+                // Average reading speed: ~250 words/min, ~250 words/page = ~1 page/min
+                // Use a slightly higher estimate (0.8 pages/min) to be more conservative
+                val estimatedPages = (validTime * 0.8).toInt().coerceAtLeast(if (validTime > 0) 1 else 0)
+                estimatedPages.coerceAtMost(500) // Max 500 estimated pages per session
+            }
+            else -> {
+                // For PDF, use actual pages with validation
+                pagesRead.coerceIn(0, 1000)
+            }
+        }
+
+        val validChapters = chaptersRead.coerceIn(0, 100) // Max 100 chapters per session
 
         if (existingDay != null) {
-            // Update existing day - ACCUMULATE values instead of replacing them
+            // Update existing day - ACCUMULATE values
             val updatedDay = existingDay.copy(
-                // Add new values to existing values
                 pagesRead = existingDay.pagesRead + validPages,
-                timeSpentMinutes = existingDay.timeSpentMinutes + validTime
+                timeSpentMinutes = existingDay.timeSpentMinutes + validTime,
+                bookType = bookType, // Keep the same book type
+                chaptersRead = existingDay.chaptersRead + validChapters
             )
             readingDayDao.insertReadingDay(updatedDay)
         } else {
-            // Create new day
+            // Create new entry for today
             val newDay = ReadingDay(
                 date = todayEpochMillis,
                 bookId = bookId,
                 pagesRead = validPages,
-                timeSpentMinutes = validTime
+                timeSpentMinutes = validTime,
+                bookType = bookType,
+                chaptersRead = validChapters
             )
             readingDayDao.insertReadingDay(newDay)
         }
+    }
+
+    /**
+     * Log an EPUB reading session with accurate chapter tracking.
+     * Pages are estimated from reading time since EPUB "pages" are virtual.
+     */
+    suspend fun logEpubReadingSession(
+        bookId: String,
+        timeSpentMinutes: Int,
+        chaptersRead: Int,
+        startChapter: Int,
+        endChapter: Int
+    ) {
+        // Calculate chapters progressed (forward progress only)
+        val actualChaptersProgressed = (endChapter - startChapter).coerceAtLeast(0)
+
+        logReadingSessionWithType(
+            bookId = bookId,
+            pagesRead = 0, // Will be calculated from time inside the function
+            timeSpentMinutes = timeSpentMinutes,
+            bookType = "EPUB",
+            chaptersRead = actualChaptersProgressed
+        )
     }
 
     // Method to share achievements

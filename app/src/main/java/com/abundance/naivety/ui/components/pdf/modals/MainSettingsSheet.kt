@@ -110,15 +110,6 @@ fun MainSettingsSheet(
                 )
 
 
-                ToggleSetting(
-                    title = "Animate Page Transition",
-                    icon = Icons.Default.Animation,
-                    isChecked = settings.animatePageTransition,
-                    onCheckedChange = {
-                        onSettingsChange(settings.copy(animatePageTransition = it))
-                    }
-                )
-
             }
 
             Spacer(modifier = Modifier.height(24.dp))

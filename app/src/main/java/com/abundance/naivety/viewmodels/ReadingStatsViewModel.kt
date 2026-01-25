@@ -3,6 +3,7 @@ package com.abundance.naivety.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.abundance.naivety.data.Achievement
+import com.abundance.naivety.data.ReadingDayDao
 import com.abundance.naivety.repository.ReadingStatsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReadingStatsViewModel @Inject constructor(
-    private val repository: ReadingStatsRepository
+    private val repository: ReadingStatsRepository,
+    private val readingDayDao: ReadingDayDao
 ) : ViewModel() {
 
     private val _achievements = MutableStateFlow<List<Achievement>>(emptyList())
@@ -24,6 +26,17 @@ class ReadingStatsViewModel @Inject constructor(
     val selectedYear = repository.selectedYear
     private val _availableYears = MutableStateFlow<List<Int>>(generateYearRange())
     val availableYears: StateFlow<List<Int>> = _availableYears.asStateFlow()
+
+    // Expose total stats
+    val totalPagesRead = repository.totalPagesRead
+    val totalTimeSpent = repository.totalTimeSpent
+
+    // Expose format-specific stats
+    val pdfPagesRead = repository.pdfPagesRead
+    val pdfTimeSpent = repository.pdfTimeSpent
+    val epubEstimatedPages = repository.epubEstimatedPages
+    val epubTimeSpent = repository.epubTimeSpent
+    val epubChaptersRead = repository.epubChaptersRead
 
     init {
         loadAchievements()
@@ -82,4 +95,29 @@ class ReadingStatsViewModel @Inject constructor(
         // Implementation for sharing achievements
         // This can be expanded later with actual sharing functionality
     }
+
+    suspend fun logReadingSession(bookId: String, pagesRead: Int, timeSpentMinutes: Int) {
+        // Use repository method for proper date grouping and accumulation
+        repository.logReadingSession(bookId, pagesRead, timeSpentMinutes)
+    }
+
+    /**
+     * Log an EPUB reading session with chapter-based tracking.
+     * Pages are automatically estimated from reading time.
+     */
+    suspend fun logEpubReadingSession(
+        bookId: String,
+        timeSpentMinutes: Int,
+        startChapter: Int,
+        endChapter: Int
+    ) {
+        repository.logEpubReadingSession(
+            bookId = bookId,
+            timeSpentMinutes = timeSpentMinutes,
+            chaptersRead = (endChapter - startChapter).coerceAtLeast(0),
+            startChapter = startChapter,
+            endChapter = endChapter
+        )
+    }
+
 }

@@ -89,10 +89,13 @@ class PdfViewerViewModel @Inject constructor(
         // Only log if we have read pages and spent some time
         if (readPages.isNotEmpty() && sessionTimeMinutes > 0) {
             viewModelScope.launch {
-                readingStatsRepository.logReadingSession(
+                // Use the PDF-specific logging method
+                readingStatsRepository.logReadingSessionWithType(
                     bookId = bookId,
                     pagesRead = readPages.size,
-                    timeSpentMinutes = sessionTimeMinutes
+                    timeSpentMinutes = sessionTimeMinutes,
+                    bookType = "PDF",
+                    chaptersRead = 0
                 )
             }
         }
@@ -255,7 +258,8 @@ class PdfViewerViewModel @Inject constructor(
 
     fun updatePage(bookId: String, page: Int, position: Float) {
         viewModelScope.launch {
-            bookRepository.updateReadingProgress(bookId, page, position)
+            // Save page + 1 to database since pages are 0-indexed but lastReadPage should be 1-indexed
+            bookRepository.updateReadingProgress(bookId, page + 1, position)
             _viewerState.update { it.copy(currentPage = page) }
         }
     }

@@ -1,5 +1,6 @@
 package com.abundance.naivety.ui.screens
 
+import android.R.attr.data
 import android.net.Uri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.animation.Crossfade
@@ -31,7 +32,12 @@ import com.abundance.naivety.ui.components.DeleteConfirmationDialog
 import com.abundance.naivety.viewmodels.BookViewModel
 import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
+import android.content.Intent
+import com.abundance.naivety.EpubReaderActivity
 import com.abundance.naivety.ads.AdManager
+import com.abundance.naivety.utils.BookFileType
+import kotlin.jvm.java
+import kotlin.toString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -293,23 +299,21 @@ private fun HomeSection(
                 BookGrid(
                     books = filteredBooks,
                     onBookClick = { book ->
-                        // Show ad before navigating to read
-                        val activity = (context as? Activity)
-                        if (activity != null) {
-                            AdManager.showInterstitialAd(
-                                activity = activity,
-                                onAdClosed = {
-                                    onNavigateToRead(Uri.parse(book.filePath))
+                                    // Check file type and route appropriately
+                                    if (book.getBookFileType() == BookFileType.EPUB) {
+                                        // Navigate to EPUB reader (you need to create this)
+                                        val intent = Intent(
+                                            context,
+                                            EpubReaderActivity::class.java
+                                        ).apply {
+                                            data = Uri.parse(book.filePath)
+                                            putExtra("BOOK_ID", book.id.toString())
+                                        }
+                                        context.startActivity(intent)
+                                    } else {
+                                        onNavigateToRead(Uri.parse(book.filePath))
+                                    }
                                 },
-                                onAdFailedToShow = {
-                                    onNavigateToRead(Uri.parse(book.filePath))
-                                }
-                            )
-                        } else {
-                            // Fallback if context is not an activity
-                            onNavigateToRead(Uri.parse(book.filePath))
-                        }
-                    },
                     onLongPress = { book ->
                         bookToDelete = book
                     },

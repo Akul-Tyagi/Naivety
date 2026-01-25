@@ -1,4 +1,4 @@
-// BookItem.kt
+// app/src/main/java/com/abundance/naivety/ui/components/BookItem.kt
 package com.abundance.naivety.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -31,6 +31,15 @@ fun BookItem(
     viewModel: BookViewModel,
     modifier: Modifier = Modifier
 ) {
+    // Calculate progress and pages remaining locally
+    val readingProgress = if (book.totalPages > 0) {
+        (book.lastReadPage.toFloat() / book.totalPages.toFloat()).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    val pagesRemaining = maxOf(0, book.totalPages - book.lastReadPage)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -49,8 +58,8 @@ fun BookItem(
             contentScale = ContentScale.Crop
         )
 
-        // Pages remaining indicator
-        if (book.lastReadPage > 0 && book.totalPages > 0) {
+        // Pages remaining indicator - show only if book has been started (lastReadPage > 0)
+        if (book.totalPages > 0 && book.lastReadPage > 0) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -62,7 +71,7 @@ fun BookItem(
                     .padding(horizontal = 6.dp)
             ) {
                 Text(
-                    text = "${viewModel.getPagesRemaining(book)}",
+                    text = "$pagesRemaining",
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 10.sp,
                     fontFamily = FontFamily(Font(R.font.nektar)),
@@ -71,10 +80,10 @@ fun BookItem(
             }
         }
 
-        // Progress indicator
-        if (book.lastReadPage > 0) {
+        // Progress indicator - show only if book has been started (lastReadPage > 0)
+        if (book.totalPages > 0 && book.lastReadPage > 0) {
             LinearProgressIndicator(
-                progress = viewModel.getReadingProgress(book),
+                progress = { readingProgress },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()

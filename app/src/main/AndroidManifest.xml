@@ -33,6 +33,11 @@
         <activity
             android:name=".PdfViewerActivity"
             android:exported="false" />
+        <activity
+            android:name=".EpubReaderActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:theme="@style/Theme.Naivety" />
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-1590434069699907~1331189119"/>

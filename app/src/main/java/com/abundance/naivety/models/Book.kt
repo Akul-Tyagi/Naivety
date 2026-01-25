@@ -2,20 +2,28 @@ package com.abundance.naivety.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.UUID
+import com.abundance.naivety.utils.BookFileType
 
 @Entity(tableName = "books")
 data class Book(
-    @PrimaryKey
-    val id: String = UUID.randomUUID().toString(),
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
     val title: String,
+    val author: String? = null,
     val filePath: String,
-    val thumbnailPath: String,
+    val thumbnailPath: String? = null,
+    val dateAdded: Long = System.currentTimeMillis(),
+    val lastOpened: Long? = null,
     val lastReadPage: Int = 0,
     val lastReadPosition: Float = 0f,
-    val dateAdded: Long = System.currentTimeMillis(),
-    val author: String? = null,
     val totalPages: Int = 0,
-    val fileSize: Long = 0L,
-    val lastModified: Long = System.currentTimeMillis()
-)
+    val fileType: String = BookFileType.PDF.name // Add this field
+) {
+    fun getBookFileType(): BookFileType {
+        return try {
+            BookFileType.valueOf(fileType)
+        } catch (e: Exception) {
+            BookFileType.PDF
+        }
+    }
+}

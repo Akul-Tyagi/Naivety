@@ -98,23 +98,9 @@ fun SearchResultsScreen(
                         BookCard(
                             book = book,
                             onClick = {
-                                // Show ad before navigating to book details
-                                val activity = (context as? Activity)
-                                if (activity != null) {
-                                    AdManager.showInterstitialAd(
-                                        activity = activity,
-                                        onAdClosed = {
-                                            onBookClick(book)
-                                        },
-                                        onAdFailedToShow = {
-                                            onBookClick(book)
-                                        }
-                                    )
-                                } else {
                                     onBookClick(book)
-                                }
                             },
-                            modifier = Modifier.animateItemPlacement()
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }

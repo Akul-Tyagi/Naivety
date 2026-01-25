@@ -230,6 +230,10 @@ fun ReadingStatsCard(
         date.year == selectedYear
     }
 
+    // Separate PDF and EPUB reading days for detailed stats
+    val pdfDays = filteredReadingDays.filter { it.bookType == "PDF" }
+    val epubDays = filteredReadingDays.filter { it.bookType == "EPUB" }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -250,23 +254,32 @@ fun ReadingStatsCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Combined stats row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                // Unique reading days (counting a day once even if both PDF and EPUB were read)
+                val uniqueDays = filteredReadingDays
+                    .map { timestampToLocalDate(it.date) }
+                    .distinct()
+                    .size
+
                 StatItem(
-                    value = filteredReadingDays.size.toString(),
+                    value = uniqueDays.toString(),
                     label = "Days Read",
                     customFont = customFont
                 )
 
+                // Total pages (PDF actual + EPUB estimated)
                 val totalPages = filteredReadingDays.sumOf { it.pagesRead }
                 StatItem(
                     value = totalPages.toString(),
-                    label = "Pages",
+                    label = "Pages*",
                     customFont = customFont
                 )
 
+                // Total time spent
                 val totalMinutes = filteredReadingDays.sumOf { it.timeSpentMinutes }
                 val hours = totalMinutes / 60
                 val minutes = totalMinutes % 60
@@ -276,6 +289,61 @@ fun ReadingStatsCard(
                     value = timeFormatted,
                     label = "Time",
                     customFont = customFont
+                )
+            }
+
+            // Show detailed breakdown if both PDF and EPUB data exists
+            if (pdfDays.isNotEmpty() && epubDays.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Divider
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // PDF specific stats
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val pdfPages = pdfDays.sumOf { it.pagesRead }
+                    val pdfMinutes = pdfDays.sumOf { it.timeSpentMinutes }
+                    val pdfHours = pdfMinutes / 60
+                    val pdfMins = pdfMinutes % 60
+
+                    StatItem(
+                        value = pdfPages.toString(),
+                        label = "PDF Pages",
+                        customFont = customFont
+                    )
+
+                    StatItem(
+                        value = String.format("%d:%02d", pdfHours, pdfMins),
+                        label = "PDF Time",
+                        customFont = customFont
+                    )
+
+                    val epubChapters = epubDays.sumOf { it.chaptersRead }
+                    StatItem(
+                        value = epubChapters.toString(),
+                        label = "EPUB Chapters",
+                        customFont = customFont
+                    )
+                }
+            }
+
+            // Note about EPUB pages
+            if (epubDays.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "*EPUB pages are estimated from reading time",
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
             }
         }
