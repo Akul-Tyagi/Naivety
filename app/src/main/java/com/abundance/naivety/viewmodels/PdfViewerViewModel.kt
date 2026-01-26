@@ -44,7 +44,7 @@ class PdfViewerViewModel @Inject constructor(
     private var sessionStartTime = 0L
     private var currentPageStartTime = 0L
     private var currentPageId = 0
-    private val MIN_PAGE_READ_TIME = 1600L // 1.6 seconds
+    private val MIN_PAGE_READ_TIME = 2500L // 2.5 seconds
 
     // Clear caches when starting a new session
     fun startReadingSession(page: Int) {
@@ -127,7 +127,7 @@ class PdfViewerViewModel @Inject constructor(
     }
 
 
-    fun updatePageCount(current: Int, total: Int, bookId: String?) {
+    fun updatePageCount(current: Int, total: Int, bookId: Long?) {
         onPageChanged(current) // Track page change
 
         viewModelScope.launch {
@@ -139,7 +139,9 @@ class PdfViewerViewModel @Inject constructor(
             }
 
             bookId?.let { id ->
-                updateCurrentPageBookmarkStatus(id, current)
+                if (id > 0L) {
+                    updateCurrentPageBookmarkStatus(id, current)
+                }
             }
         }
     }
@@ -201,13 +203,13 @@ class PdfViewerViewModel @Inject constructor(
         }
     }
 
-    fun updateCurrentPageBookmarkStatus(bookId: String, page: Int) {
+    fun updateCurrentPageBookmarkStatus(bookId: Long, page: Int) {
         viewModelScope.launch {
             _isCurrentPageBookmarked.value = bookmarkDao.isPageBookmarked(bookId, page)
         }
     }
 
-    fun addBookmark(bookId: String, page: Int) {
+    fun addBookmark(bookId: Long, page: Int) {
         viewModelScope.launch {
             try {
                 val bookmark = Bookmark(
@@ -225,7 +227,7 @@ class PdfViewerViewModel @Inject constructor(
         }
     }
 
-    fun removeBookmark(bookId: String, page: Int) {
+    fun removeBookmark(bookId: Long, page: Int) {
         viewModelScope.launch {
             try {
                 bookmarkDao.getBookmarkAtPage(bookId, page)?.let { bookmark ->
@@ -240,8 +242,8 @@ class PdfViewerViewModel @Inject constructor(
         }
     }
 
-    fun loadBookmarks(bookId: String) {
-        currentBookId = bookId
+    fun loadBookmarks(bookId: Long) {
+        currentBookId = bookId.toString()
         viewModelScope.launch {
             try {
                 // Load bookmarks from database
@@ -256,7 +258,7 @@ class PdfViewerViewModel @Inject constructor(
         }
     }
 
-    fun updatePage(bookId: String, page: Int, position: Float) {
+    fun updatePage(bookId: Long, page: Int, position: Float) {
         viewModelScope.launch {
             // Save page + 1 to database since pages are 0-indexed but lastReadPage should be 1-indexed
             bookRepository.updateReadingProgress(bookId, page + 1, position)

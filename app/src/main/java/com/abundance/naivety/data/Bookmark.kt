@@ -16,12 +16,12 @@ import com.abundance.naivety.models.Book
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("bookId")] // Add this line
+    indices = [Index("bookId")]
 )
 data class Bookmark(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val bookId: String,
+    val bookId: Long, // Changed from String to Long to match Book.id type
     val page: Int,
     val title: String? = null,
     val notes: String? = null,

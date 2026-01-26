@@ -77,7 +77,7 @@ class EpubReaderActivity : ComponentActivity() {
 
     private val readingStatsViewModel: ReadingStatsViewModel by viewModels()
 
-    private var bookId: String? = null
+    private var bookId: Long = 0L
     private var publication: Publication? = null
     private var startTime: Long = 0L
     private var startChapter: Int = 0
@@ -171,8 +171,8 @@ class EpubReaderActivity : ComponentActivity() {
                     trackActiveReading()
 
                     _viewerState.value = state.copy(currentChapter = chapterIndex)
-                    bookId?.let { id ->
-                        updateBookmarkStatus(id, chapterIndex)
+                    if (bookId > 0L) {
+                        updateBookmarkStatus(bookId, chapterIndex)
                     }
                     // Save progress when chapter changes
                     saveProgress(chapterIndex, 0)
@@ -223,10 +223,10 @@ class EpubReaderActivity : ComponentActivity() {
         private const val TAG = "EpubReaderActivity"
         private const val EXTRA_BOOK_ID = "BOOK_ID"
 
-        fun createIntent(context: Context, uri: Uri, bookId: String): Intent {
+        fun createIntent(context: Context, uri: Uri, bookId: Long): Intent {
             return Intent(context, EpubReaderActivity::class.java).apply {
                 data = uri
-                putExtra(EXTRA_BOOK_ID, bookId)
+                putExtra(EXTRA_BOOK_ID, bookId.toString())
             }
         }
     }
@@ -236,7 +236,9 @@ class EpubReaderActivity : ComponentActivity() {
         setupWindow()
 
         preferencesManager = EpubPreferencesManager(this)
-        bookId = intent.getStringExtra(EXTRA_BOOK_ID)
+        // Parse bookId from String to Long
+        val bookIdStr = intent.getStringExtra(EXTRA_BOOK_ID) ?: "0"
+        bookId = bookIdStr.toLongOrNull() ?: 0L
         val uri = intent.data
 
         if (uri == null) {
@@ -249,8 +251,8 @@ class EpubReaderActivity : ComponentActivity() {
         loadSavedSettings()
 
         lifecycleScope.launch {
-            bookId?.let { id ->
-                val book = database.bookDao().getBookById(id)
+            if (bookId > 0L) {
+                val book = database.bookDao().getBookById(bookId)
                 actualTotalPages = book?.totalPages ?: 0
                 Log.d(TAG, "Loaded actual total pages from DB: $actualTotalPages")
             }
@@ -287,7 +289,8 @@ class EpubReaderActivity : ComponentActivity() {
         val showDisplaySettings = remember { mutableStateOf(false) }
         val showBookmarks = remember { mutableStateOf(false) }
         var showEditName by remember { mutableStateOf(false) }
-        var localEpubName by remember { mutableStateOf(preferencesManager.getSavedBookName(bookId ?: "") ?: extractEpubName(uri, context)) }
+        val bookIdStr = bookId.toString()
+        var localEpubName by remember { mutableStateOf(preferencesManager.getSavedBookName(bookIdStr) ?: extractEpubName(uri, context)) }
 
         val backgroundColor = androidx.compose.ui.graphics.Color(state.displaySettings.pageTheme.backgroundColor)
 
@@ -297,8 +300,8 @@ class EpubReaderActivity : ComponentActivity() {
         LaunchedEffect(uri) {
             loadEpub(uri, context) { pub, chapCount ->
                 publication = pub
-                val lastChapter = preferencesManager.loadLastChapter(bookId ?: "")
-                val lastPage = preferencesManager.loadLastPageInChapter(bookId ?: "")
+                val lastChapter = preferencesManager.loadLastChapter(bookIdStr)
+                val lastPage = preferencesManager.loadLastPageInChapter(bookIdStr)
                 val displayTotalPages = if (actualTotalPages > 0) actualTotalPages else chapCount
 
                 _viewerState.value = _viewerState.value.copy(
@@ -319,7 +322,7 @@ class EpubReaderActivity : ComponentActivity() {
                 totalActiveReadingTime = 0L
 
                 epubName = pub.metadata.title ?: extractEpubName(uri, context)
-                localEpubName = preferencesManager.getSavedBookName(bookId ?: "") ?: epubName
+                localEpubName = preferencesManager.getSavedBookName(bookIdStr) ?: epubName
                 isLoading = false
                 Log.d(TAG, "EPUB loaded: $chapCount chapters, starting at chapter $sessionStartChapter")
             }?.let { e ->
@@ -330,9 +333,9 @@ class EpubReaderActivity : ComponentActivity() {
 
         // Load bookmarks
         LaunchedEffect(bookId) {
-            bookId?.let { id ->
-                loadBookmarks(id)
-                updateBookmarkStatus(id, state.currentChapter)
+            if (bookId > 0L) {
+                loadBookmarks(bookId)
+                updateBookmarkStatus(bookId, state.currentChapter)
             }
         }
 
@@ -400,7 +403,7 @@ class EpubReaderActivity : ComponentActivity() {
                 onEditNameDismiss = { showEditName = false },
                 onNameChange = { newName ->
                     localEpubName = newName
-                    preferencesManager.saveBookName(bookId ?: "", newName)
+                    preferencesManager.saveBookName(bookIdStr, newName)
                     showEditName = false
                 },
                 showSettings = showSettings,
@@ -1215,8 +1218,8 @@ class EpubReaderActivity : ComponentActivity() {
             saveProgress(chapterIndex, if (startAtPage >= 0) startAtPage else 0)
 
             // Update bookmark status for the new chapter
-            bookId?.let { id ->
-                updateBookmarkStatus(id, chapterIndex)
+            if (bookId > 0L) {
+                updateBookmarkStatus(bookId, chapterIndex)
             }
 
             Log.d(TAG, "Navigated to chapter: $chapterIndex, page: $startAtPage")
@@ -1341,21 +1344,21 @@ class EpubReaderActivity : ComponentActivity() {
     }
 
     private fun toggleBookmark() {
-        bookId?.let { id ->
+        if (bookId > 0L) {
             lifecycleScope.launch {
                 val currentChapter = _viewerState.value.currentChapter
                 val isBookmarked = _viewerState.value.isCurrentPageBookmarked
 
                 if (isBookmarked) {
                     // Remove bookmark
-                    database.bookmarkDao().getBookmarkAtPage(id, currentChapter)?.let { bookmark ->
+                    database.bookmarkDao().getBookmarkAtPage(bookId, currentChapter)?.let { bookmark ->
                         database.bookmarkDao().removeBookmark(bookmark)
                     }
                     _viewerState.value = _viewerState.value.copy(isCurrentPageBookmarked = false)
                 } else {
                     // Add bookmark
                     val bookmark = Bookmark(
-                        bookId = id,
+                        bookId = bookId,
                         page = currentChapter,
                         dateCreated = System.currentTimeMillis()
                     )
@@ -1364,12 +1367,12 @@ class EpubReaderActivity : ComponentActivity() {
                 }
 
                 // Refresh bookmarks list
-                loadBookmarks(id)
+                loadBookmarks(bookId)
             }
         }
     }
 
-    private fun loadBookmarks(bookId: String) {
+    private fun loadBookmarks(bookId: Long) {
         lifecycleScope.launch {
             try {
                 _bookmarks.value = database.bookmarkDao().getBookmarks(bookId)
@@ -1379,7 +1382,7 @@ class EpubReaderActivity : ComponentActivity() {
         }
     }
 
-    private fun updateBookmarkStatus(bookId: String, chapter: Int) {
+    private fun updateBookmarkStatus(bookId: Long, chapter: Int) {
         lifecycleScope.launch {
             try {
                 val isBookmarked = database.bookmarkDao().isPageBookmarked(bookId, chapter)
@@ -1394,7 +1397,9 @@ class EpubReaderActivity : ComponentActivity() {
         lifecycleScope.launch {
             try {
                 database.bookmarkDao().removeBookmark(bookmark)
-                bookId?.let { loadBookmarks(it) }
+                if (bookId > 0L) {
+                    loadBookmarks(bookId)
+                }
 
                 // Update status if we removed the current chapter's bookmark
                 if (bookmark.page == _viewerState.value.currentChapter) {
@@ -1441,18 +1446,22 @@ class EpubReaderActivity : ComponentActivity() {
     // --- Settings Persistence ---
 
     private fun loadSavedSettings() {
-        bookId?.let { id -> _viewerState.value = preferencesManager.loadSettings(id) }
+        if (bookId > 0L) {
+            _viewerState.value = preferencesManager.loadSettings(bookId.toString())
+        }
     }
 
     private fun saveSettings() {
-        bookId?.let { id -> preferencesManager.saveSettings(id, _viewerState.value) }
+        if (bookId > 0L) {
+            preferencesManager.saveSettings(bookId.toString(), _viewerState.value)
+        }
     }
 
     private fun saveProgress(chapter: Int, page: Int = 0) {
-        bookId?.let { id ->
-            preferencesManager.saveProgress(id, chapter, page)
+        if (bookId > 0L) {
+            preferencesManager.saveProgress(bookId.toString(), chapter, page)
             lifecycleScope.launch {
-                database.bookDao().updateReadingProgress(id, chapter + 1, 0f)
+                database.bookDao().updateReadingProgress(bookId, chapter + 1, 0f)
             }
         }
     }
@@ -1589,10 +1598,10 @@ class EpubReaderActivity : ComponentActivity() {
 
         // Only log if meaningful activity occurred
         if (readingTimeMinutes > 0 || chaptersProgressed > 0) {
-            bookId?.let { id ->
+            if (bookId > 0L) {
                 lifecycleScope.launch {
                     readingStatsViewModel.logEpubReadingSession(
-                        bookId = id,
+                        bookId = bookId.toString(),
                         timeSpentMinutes = readingTimeMinutes,
                         startChapter = sessionStartChapter,
                         endChapter = highestChapterReached

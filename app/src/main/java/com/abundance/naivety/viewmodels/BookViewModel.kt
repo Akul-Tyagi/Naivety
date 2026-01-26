@@ -279,7 +279,7 @@ class BookViewModel @Inject constructor(
 
     fun updateReadingProgress(bookId: Long, page: Int, position: Float = 0f) {
         viewModelScope.launch {
-            database.bookDao().updateReadingProgress(bookId.toString(), page, position)
+            database.bookDao().updateReadingProgress(bookId, page, position)
         }
     }
 

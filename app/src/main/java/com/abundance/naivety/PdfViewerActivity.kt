@@ -53,7 +53,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class PdfViewerActivity : ComponentActivity() {
     private val viewModel: PdfViewerViewModel by viewModels()
-    private var bookId: String? = null
+    private var bookId: Long = 0L
     private var pdfName: String = "PDF"
     private lateinit var pdfView: PDFView
     companion object {
@@ -68,11 +68,9 @@ class PdfViewerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setupWindow()
 
-        bookId = intent.getStringExtra("BOOK_ID") ?:""
-        if (bookId == null) {
-            // Generate a unique ID if none is provided
-            bookId = java.util.UUID.randomUUID().toString()
-        }
+        // Parse bookId from String to Long
+        val bookIdStr = intent.getStringExtra("BOOK_ID") ?: "0"
+        bookId = bookIdStr.toLongOrNull() ?: 0L
 
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastPage = prefs.getInt("${bookId}_last_page", 0)
@@ -90,7 +88,9 @@ class PdfViewerActivity : ComponentActivity() {
         viewModel.startReadingSession(lastPage)
 
         // Load bookmarks for this book
-        viewModel.loadBookmarks(bookId!!)
+        if (bookId > 0L) {
+            viewModel.loadBookmarks(bookId)
+        }
 
         setContent {
             NaivetyTheme(darkTheme = true) {
@@ -111,7 +111,7 @@ class PdfViewerActivity : ComponentActivity() {
     @Composable
     private fun PdfViewerScreen(
         viewModel: PdfViewerViewModel,
-        bookId: String?,
+        bookId: Long,
         lastPage: Int,
         intent: Intent,
         window: Window,
@@ -149,8 +149,8 @@ class PdfViewerActivity : ComponentActivity() {
             }
 
             LaunchedEffect(bookId) {
-                bookId?.let { id ->
-                    viewModel.updateCurrentPageBookmarkStatus(id, viewerState.value.currentPage)
+                if (bookId > 0L) {
+                    viewModel.updateCurrentPageBookmarkStatus(bookId, viewerState.value.currentPage)
                 }
             }
 
@@ -377,15 +377,15 @@ class PdfViewerActivity : ComponentActivity() {
                                                     showBookmarksList.value = true
                                                 },
                                                 onTap = {
-                                                    bookId?.let { id ->
+                                                    if (bookId > 0L) {
                                                         val currentPage = pdfView.currentPage
                                                         if (isCurrentPageBookmarked) {
                                                             viewModel.removeBookmark(
-                                                                id,
+                                                                bookId,
                                                                 currentPage
                                                             )
                                                         } else {
-                                                            viewModel.addBookmark(id, currentPage)
+                                                            viewModel.addBookmark(bookId, currentPage)
                                                         }
                                                     }
                                                 }
@@ -677,11 +677,11 @@ class PdfViewerActivity : ComponentActivity() {
     private fun saveReadingProgress(page: Int) {
         if (pdfView == null) return
 
-        bookId?.let { id ->
+        if (bookId > 0L) {
             lifecycleScope.launch {
                 try {
                     viewModel.updatePage(
-                        bookId = id,
+                        bookId = bookId,
                         page = page,
                         position = if (::pdfView.isInitialized) pdfView.positionOffset else 0f
                     )
@@ -701,11 +701,11 @@ class PdfViewerActivity : ComponentActivity() {
             saveViewerSettings()
         }
 
-        viewModel.saveSettings(bookId)
+        viewModel.saveSettings(bookId.toString())
 
         // Add this code to log the reading session when pausing
-        bookId?.let { id ->
-            viewModel.endReadingSession(id)
+        if (bookId > 0L) {
+            viewModel.endReadingSession(bookId.toString())
         }
     }
 
@@ -713,27 +713,27 @@ class PdfViewerActivity : ComponentActivity() {
     private fun saveViewerSettings() {
         if (!::pdfView.isInitialized) return
 
-        bookId?.let { id ->
+        if (bookId > 0L) {
             applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
-                .putInt("${id}_last_page", pdfView.currentPage)
-                .putString("${id}_reading_mode", viewModel.viewerState.value.readingMode.name)
-                .putString("${id}_book_name", pdfName)
+                .putInt("${bookId}_last_page", pdfView.currentPage)
+                .putString("${bookId}_reading_mode", viewModel.viewerState.value.readingMode.name)
+                .putString("${bookId}_book_name", pdfName)
                 .apply()
         }
     }
 
-    private fun getSavedBookName(bookId: String?): String? {
-        return bookId?.let { id ->
+    private fun getSavedBookName(bookId: Long): String? {
+        return if (bookId > 0L) {
             getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .getString("${id}_book_name", null)
-        }
+                .getString("${bookId}_book_name", null)
+        } else null
     }
 
     private fun saveBookName(name: String) {
-        bookId?.let { id ->
+        if (bookId > 0L) {
             getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().apply {
-                putString("${id}_book_name", name)
+                putString("${bookId}_book_name", name)
                 apply()
             }
         }
@@ -743,8 +743,8 @@ class PdfViewerActivity : ComponentActivity() {
         super.onDestroy()
 
         // End reading session before cleanup
-        bookId?.let { id ->
-            viewModel.endReadingSession(id)
+        if (bookId > 0L) {
+            viewModel.endReadingSession(bookId.toString())
         }
 
         viewModel.cleanup()
@@ -761,7 +761,7 @@ private fun PDFView.configurePdfView(
     lastPage: Int,
     readingMode: ReadingMode,
     viewModel: PdfViewerViewModel,
-    bookId: String?,
+    bookId: Long,
     onPageChange: (Int, Int) -> Unit
 ) {
     viewModel.initializePdfViewer()

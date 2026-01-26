@@ -12,20 +12,20 @@ interface BookmarkDao {
     suspend fun removeBookmark(bookmark: Bookmark)
 
     @Query("SELECT * FROM bookmarks WHERE bookId = :bookId ORDER BY page ASC")
-    fun getBookmarksFlow(bookId: String): Flow<kotlin.collections.List<Bookmark>>
+    fun getBookmarksFlow(bookId: Long): Flow<kotlin.collections.List<Bookmark>>
 
     @Query("SELECT * FROM bookmarks WHERE bookId = :bookId ORDER BY page ASC")
-    suspend fun getBookmarks(bookId: String): kotlin.collections.List<Bookmark>
+    suspend fun getBookmarks(bookId: Long): kotlin.collections.List<Bookmark>
 
     @Query("SELECT * FROM bookmarks WHERE bookId = :bookId AND page = :page LIMIT 1")
-    suspend fun getBookmarkAtPage(bookId: String, page: Int): Bookmark?
+    suspend fun getBookmarkAtPage(bookId: Long, page: Int): Bookmark?
 
     @Query("DELETE FROM bookmarks WHERE bookId = :bookId")
-    suspend fun deleteAllBookmarksForBook(bookId: String)
+    suspend fun deleteAllBookmarksForBook(bookId: Long)
 
     @Transaction
     @Query("SELECT EXISTS(SELECT 1 FROM bookmarks WHERE bookId = :bookId AND page = :page)")
-    suspend fun isPageBookmarked(bookId: String, page: Int): Boolean
+    suspend fun isPageBookmarked(bookId: Long, page: Int): Boolean
 
     @Update
     suspend fun updateBookmark(bookmark: Bookmark)

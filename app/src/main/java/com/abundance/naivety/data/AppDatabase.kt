@@ -28,12 +28,68 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
 
         // Migration from version 1 to version 2
+        // v1 = PDF only support, v2 = PDF + EPUB support with updated schema
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add bookType column with default value "PDF" for existing entries
+                // Add bookType column with default value "PDF" for existing entries in reading_days
                 db.execSQL("ALTER TABLE reading_days ADD COLUMN bookType TEXT NOT NULL DEFAULT 'PDF'")
                 // Add chaptersRead column with default value 0
                 db.execSQL("ALTER TABLE reading_days ADD COLUMN chaptersRead INTEGER NOT NULL DEFAULT 0")
+
+                // Recreate the books table with new schema
+                // The old schema had: id (TEXT), title, filePath, fileSize, lastModified, thumbnailPath (NOT NULL), dateAdded, lastReadPage, lastReadPosition, totalPages
+                // The new schema has: id (INTEGER auto), title, author, filePath, thumbnailPath (nullable), dateAdded, lastOpened, lastReadPage, lastReadPosition, totalPages, fileType
+
+                // Step 1: Create new table with correct schema
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS books_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        author TEXT,
+                        filePath TEXT NOT NULL,
+                        thumbnailPath TEXT,
+                        dateAdded INTEGER NOT NULL,
+                        lastOpened INTEGER,
+                        lastReadPage INTEGER NOT NULL,
+                        lastReadPosition REAL NOT NULL,
+                        totalPages INTEGER NOT NULL,
+                        fileType TEXT NOT NULL DEFAULT 'PDF'
+                    )
+                """.trimIndent())
+
+                // Step 2: Copy data from old table to new table (mapping old columns to new)
+                db.execSQL("""
+                    INSERT INTO books_new (title, filePath, thumbnailPath, dateAdded, lastReadPage, lastReadPosition, totalPages, fileType)
+                    SELECT title, filePath, thumbnailPath, dateAdded, lastReadPage, lastReadPosition, totalPages, 'PDF'
+                    FROM books
+                """.trimIndent())
+
+                // Step 3: Drop old table
+                db.execSQL("DROP TABLE books")
+
+                // Step 4: Rename new table to original name
+                db.execSQL("ALTER TABLE books_new RENAME TO books")
+
+                // Step 5: Recreate bookmarks table with correct bookId type (INTEGER to match books.id)
+                // First, drop the old bookmarks table (data will be lost, but necessary for schema fix)
+                db.execSQL("DROP TABLE IF EXISTS bookmarks")
+
+                // Create new bookmarks table with correct schema
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS bookmarks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        bookId INTEGER NOT NULL,
+                        page INTEGER NOT NULL,
+                        title TEXT,
+                        notes TEXT,
+                        dateCreated INTEGER NOT NULL,
+                        colorHex TEXT NOT NULL DEFAULT '#FF8E42FF',
+                        FOREIGN KEY (bookId) REFERENCES books(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                // Create index on bookId for bookmarks
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_bookmarks_bookId ON bookmarks (bookId)")
             }
         }
 
@@ -133,10 +189,10 @@ interface BookDao {
     suspend fun deleteBook(book: Book)
 
     @Query("SELECT * FROM books WHERE id = :bookId")
-    suspend fun getBookById(bookId: String): Book?
+    suspend fun getBookById(bookId: Long): Book?
 
     @Query("UPDATE books SET lastReadPage = :page, lastReadPosition = :position WHERE id = :bookId")
-    suspend fun updateReadingProgress(bookId: String, page: Int, position: Float)
+    suspend fun updateReadingProgress(bookId: Long, page: Int, position: Float)
 }
 
 class Converters {

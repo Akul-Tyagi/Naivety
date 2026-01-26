@@ -265,7 +265,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v3.1.1",
+                    text = "Naivety v3.4.0",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )

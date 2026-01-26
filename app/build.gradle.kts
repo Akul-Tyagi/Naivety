@@ -16,8 +16,8 @@ android {
         applicationId = "com.abundance.naivety"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "3.1.1"
+        versionCode = 12
+        versionName = "3.4.0"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

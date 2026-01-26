@@ -11,7 +11,7 @@ class BookRepository @Inject constructor(
     val bookDao = appDatabase.bookDao()
     val bookmarkDao = appDatabase.bookmarkDao()
 
-    suspend fun updateReadingProgress(bookId: String, page: Int, position: Float) {
+    suspend fun updateReadingProgress(bookId: Long, page: Int, position: Float) {
         bookDao.updateReadingProgress(bookId, page, position)
     }
 
