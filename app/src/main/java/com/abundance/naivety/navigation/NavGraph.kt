@@ -107,16 +107,8 @@ fun NavGraph(
                     description = ""
                 ),
                 onBackPressed = {
-                    // This will ensure we go back to the browse screen
-                    navController.previousBackStackEntry?.destination?.route?.let { previousRoute ->
-                        if (previousRoute.startsWith("browse")) {
-                            navController.navigateUp()
-                        } else {
-                            navController.navigate(Destinations.Browse.route) {
-                                popUpTo(Destinations.BookDetail.route) { inclusive = true }
-                            }
-                        }
-                    }
+                    // Simply pop the back stack - let navigation handle where to go
+                    navController.popBackStack()
                 },
                 navController = navController
             )

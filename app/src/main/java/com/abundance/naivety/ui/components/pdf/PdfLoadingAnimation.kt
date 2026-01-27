@@ -17,7 +17,8 @@ import kotlin.math.sin
 
 @Composable
 fun PdfLoadingAnimation(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    loadingText: String = "Loading PDF..."
 ) {
     var rotation by remember { mutableStateOf(0f) }
     val infiniteTransition = rememberInfiniteTransition()
@@ -62,7 +63,7 @@ fun PdfLoadingAnimation(
 
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Loading PDF...",
+            text = loadingText,
             color = MaterialTheme.colorScheme.onBackground
         )
     }

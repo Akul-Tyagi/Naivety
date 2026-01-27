@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.abundance.naivety.models.OpenLibraryBook
 import com.abundance.naivety.repository.BrowseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -23,9 +25,24 @@ class SearchViewModel @Inject constructor(
     private val _searchResults = MutableStateFlow<List<OpenLibraryBook>>(emptyList())
     val searchResults = _searchResults.asStateFlow()
 
+    private var searchJob: Job? = null
+
     fun searchBooks(query: String) {
-        viewModelScope.launch {
+        // Cancel any previous search job to avoid race conditions
+        searchJob?.cancel()
+
+        if (query.isBlank()) {
+            _searchState.value = SearchState.Idle
+            _searchResults.value = emptyList()
+            return
+        }
+
+        searchJob = viewModelScope.launch {
             _searchState.value = SearchState.Searching
+
+            // Debounce to prevent excessive API calls while typing
+            delay(300)
+
             try {
                 val results = repository.searchBooks(query)
 
@@ -43,6 +60,7 @@ class SearchViewModel @Inject constructor(
     }
 
     fun clearSearch() {
+        searchJob?.cancel()
         _searchState.value = SearchState.Idle
         _searchResults.value = emptyList()
     }

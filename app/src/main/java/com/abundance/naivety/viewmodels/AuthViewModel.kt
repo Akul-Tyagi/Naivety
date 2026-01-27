@@ -18,7 +18,6 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,6 +70,10 @@ class AuthViewModel @Inject constructor() : ViewModel() {
                 _authState.value = AuthState.Error(e.message ?: "Sign out failed")
             }
         }
+    }
+
+    fun resetAuthState() {
+        _authState.value = AuthState.Initial
     }
 
 

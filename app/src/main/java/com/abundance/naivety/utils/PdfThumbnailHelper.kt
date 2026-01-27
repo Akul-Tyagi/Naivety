@@ -36,9 +36,11 @@ object PdfThumbnailHelper {
                         PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
                     )
 
-                    // Save bitmap
+                    // Save bitmap to persistent storage (not cache which can be cleared)
+                    val thumbnailsDir = File(context.filesDir, "thumbnails")
+                    if (!thumbnailsDir.exists()) thumbnailsDir.mkdirs()
                     val fileName = "thumbnail_${System.currentTimeMillis()}.jpg"
-                    val thumbnailFile = File(context.filesDir, fileName)
+                    val thumbnailFile = File(thumbnailsDir, fileName)
 
                     FileOutputStream(thumbnailFile).use { out ->
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)

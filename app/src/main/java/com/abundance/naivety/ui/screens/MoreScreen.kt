@@ -1,10 +1,12 @@
 // app/src/main/java/com/abundance/naivety/ui/screens/MoreScreen.kt
 package com.abundance.naivety.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,16 +15,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.abundance.naivety.R
+import com.abundance.naivety.navigation.Destinations
 import com.abundance.naivety.viewmodel.MoreViewModel
 import androidx.compose.ui.text.style.TextAlign
 import java.time.LocalDate
@@ -86,7 +94,7 @@ fun MoreScreen(
                 readingDays = readingDays,
                 selectedYear = selectedYear,
                 customFont = alinsaFont,
-                onViewDetailedActivity = { navController.navigate("reading_heatmap") }
+                onViewDetailedActivity = { navController.navigate(Destinations.ReadingHeatmap.route) }
             )
 
             // Reading Stats Card
@@ -265,7 +273,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v3.4.0",
+                    text = "Naivety v3.7.1",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -820,203 +828,335 @@ private fun SupportUsSection(
     onShareApp: () -> Unit
 ) {
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-
-    // Gradient-like background colors based on theme
-    val cardBackground = if (isDarkTheme) {
-        MaterialTheme.colorScheme.surface
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-
     val accentColor = MaterialTheme.colorScheme.primary
-    val heartColor = Color(0xFFE91E63) // Pink/Red for heart
+    val heartColor = Color(0xFFE91E63)
+    val goldColor = Color(0xFFFFD700)
+
+    // Animated heart beat
+    val heartBeat = rememberInfiniteTransition(label = "heartbeat")
+    val heartScale by heartBeat.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heartScale"
+    )
+
+    // Floating animation for the icon
+    val floatAnim = rememberInfiniteTransition(label = "float")
+    val floatOffset by floatAnim.animateFloat(
+        initialValue = 0f,
+        targetValue = 8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "floatOffset"
+    )
+
+    // Glow animation
+    val glowAnim = rememberInfiniteTransition(label = "glow")
+    val glowAlpha by glowAnim.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glowAlpha"
+    )
+
+    // Star rotation animation
+    val starRotation by floatAnim.animateFloat(
+        initialValue = -5f,
+        targetValue = 5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "starRotation"
+    )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = cardBackground
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Heart Icon with glow effect
+            // Subtle gradient overlay
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(36.dp))
+                    .fillMaxWidth()
+                    .height(200.dp)
                     .background(
-                        heartColor.copy(alpha = 0.15f)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = null,
-                    tint = heartColor,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Main Title
-            Text(
-                text = "Support Naivety",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontFamily = customFont,
-                    fontSize = 24.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                accentColor.copy(alpha = if (isDarkTheme) 0.08f else 0.06f),
+                                Color.Transparent
+                            )
+                        )
+                    )
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Subtitle with emphasis
-            Text(
-                text = "100% Free • No Ads • Forever",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = customFont
-                ),
-                color = accentColor,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Main message
-            Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Animated heart icon with glow
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.offset(y = (-floatOffset).dp)
+                ) {
+                    // Glow layer
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(heartColor.copy(alpha = glowAlpha * 0.3f))
+                            .blur(20.dp)
+                    )
+                    // Background circle
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        heartColor.copy(alpha = 0.2f),
+                                        heartColor.copy(alpha = 0.08f)
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = null,
+                            tint = heartColor,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .scale(heartScale)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Main Title with gradient-like appearance
                 Text(
-                    text = "We believe everyone deserves access to great reading tools without paying a dime or watching ads. " +
-                            "Your support helps us keep it that way! ✨",
-                    style = MaterialTheme.typography.bodyMedium.copy(
+                    text = "Keep Naivety Alive",
+                    style = MaterialTheme.typography.headlineSmall.copy(
                         fontFamily = customFont,
-                        lineHeight = 22.sp
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
                     ),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp)
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
                 )
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-            // Rate Us Button - Primary CTA
-            Button(
-                onClick = onRateApp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = accentColor
-                ),
-                shape = RoundedCornerShape(16.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp,
-                    pressedElevation = 2.dp
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                // Badge-like subtitle
+                Surface(
+                    color = accentColor.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
                     Text(
-                        text = "Rate Us 5 Stars",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = customFont
+                        text = "100% Free • No Ads • Forever",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontFamily = customFont,
+                            fontWeight = FontWeight.SemiBold
                         ),
-                        color = Color.White
-                    )
-                    Text(
-                        text = "It takes just a second!",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = accentColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "⭐⭐⭐⭐⭐",
-                    fontSize = 12.sp
-                )
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // Share Button - Secondary CTA
-            OutlinedButton(
-                onClick = onShareApp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = accentColor
-                ),
-                border = BorderStroke(2.dp, accentColor),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = null,
-                    tint = accentColor,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                // Message card with elegant styling
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isDarkTheme)
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        else
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text(
-                        text = "Share with Friends & Family",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = customFont
+                        text = "Naivety is free and ad-free, which means we don't have a marketing budget. We exist solely because users like you rate us, and your support means the world to us!✨",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = customFont,
+                            lineHeight = 24.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Spread the joy of reading!",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Gratitude message
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Made with ",
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = null,
-                    tint = heartColor,
-                    modifier = Modifier.size(14.dp)
-                )
-                Text(
-                    text = " by readers, for readers",
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+                // Rate Us Button - simplified and responsive
+                Button(
+                    onClick = onRateApp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = accentColor
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 2.dp
+                    )
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Leave a 5-Star Review",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = Color.White,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "It Only Takes A Second!",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.85f),
+                            maxLines = 1
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(7.dp))
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = goldColor,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(starRotation)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = goldColor,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(starRotation)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = goldColor,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(starRotation)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = goldColor,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(starRotation)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = goldColor,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(starRotation)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Share Button - simplified and responsive
+                OutlinedButton(
+                    onClick = onShareApp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = accentColor
+                    ),
+                    border = BorderStroke(2.dp, accentColor),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Share with Your Loved Ones",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "Give The Gift Of Free Reading",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            maxLines = 1
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Elegant footer with animated heart
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Built with ",
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null,
+                        tint = heartColor,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .scale(heartScale * 0.9f)
+                    )
+                    Text(
+                        text = " for book lovers everywhere",
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
             }
         }
     }

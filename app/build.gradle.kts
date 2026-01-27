@@ -16,8 +16,8 @@ android {
         applicationId = "com.abundance.naivety"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "3.4.0"
+        versionCode = 14
+        versionName = "3.7.1"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -67,14 +67,15 @@ android {
 }
 
 dependencies {
-    implementation ("com.airbnb.android:lottie:6.7.1")
+    // Firebase (using BOM for version management)
     implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.android.gms:play-services-auth:21.5.0")
-    implementation ("androidx.compose.ui:ui:1.10.1")
-    implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+
+    // Compose core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -84,49 +85,49 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    implementation("androidx.compose.material3:material3:1.4.0")
-    implementation ("com.google.android.material:material:1.13.0")
-    implementation("androidx.compose.material3:material3-window-size-class:1.4.0")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0")
-    implementation("androidx.core:core-splashscreen:1.2.0") // Add this line
-    implementation("com.google.firebase:firebase-auth-ktx:23.2.1") // Firebase Authentication
-    implementation("com.google.firebase:firebase-firestore-ktx:25.1.4") // Firebase Firestore
-    implementation("com.squareup.retrofit2:retrofit:3.0.0") // Retrofit
-    implementation("com.squareup.retrofit2:converter-gson:3.0.0") // Retrofit Gson Converter
-    implementation("io.coil-kt:coil-compose:2.7.0") // Image loading with Coil
-    // Replace the existing PDF viewer dependency with this
-    implementation("com.github.Akul-Tyagi:AndroidPdfViewer:v3.4.3-16kb")
+    implementation("com.google.android.material:material:1.13.0")
+    implementation("androidx.core:core-splashscreen:1.2.0")
 
-    //admob
-    implementation("com.google.android.gms:play-services-ads:24.9.0")
-    
-    //Browse Section
-    // Paging 3 with Compose support
-    implementation("androidx.paging:paging-compose:3.3.6")
+    // Network
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
 
+    // Image loading
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // PDF viewer
+    implementation("com.github.Akul-Tyagi:AndroidPdfViewer:v3.4.3-16kb")
+
+    // AdMob
+    implementation("com.google.android.gms:play-services-ads:24.9.0")
+    
+    // Paging 3 with Compose support
+    implementation("androidx.paging:paging-compose:3.3.6")
+
     // Dagger Hilt for dependency injection
-    implementation("com.google.devtools.ksp:symbol-processing-api:2.3.3")
     implementation("com.google.dagger:hilt-android:2.58")
     ksp("com.google.dagger:hilt-android-compiler:2.58")
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
     implementation("androidx.navigation:navigation-compose:2.9.6")
-    // Additional Compose dependencies for animations and effects
+
+    // Compose animations and foundation
     implementation("androidx.compose.animation:animation:1.10.1")
     implementation("androidx.compose.foundation:foundation:1.10.1")
-    // For blur effects and other UI utilities
+
+    // System UI controller
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
-    implementation("com.google.accompanist:accompanist-placeholder:0.36.0")
-    // Add for better PDF handling
+
+    // Lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-    implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
-    implementation("androidx.compose.runtime:runtime-livedata:1.10.1")
-    implementation(libs.books)
+
+    // Room database
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")
+
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

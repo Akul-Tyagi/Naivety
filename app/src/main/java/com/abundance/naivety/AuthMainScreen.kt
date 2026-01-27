@@ -282,7 +282,11 @@ fun AuthMainScreen(
 
             // Switch between Sign In and Sign Up
             TextButton(
-                onClick = { isSignIn = !isSignIn }
+                onClick = {
+                    isSignIn = !isSignIn
+                    errorMessage = null // Clear error when switching modes
+                    viewModel.resetAuthState() // Reset auth state to clear any error states
+                }
             ) {
                 Text(
                     text = if (isSignIn) "Don't have an account? Sign Up" else "Already have an account? Sign In",

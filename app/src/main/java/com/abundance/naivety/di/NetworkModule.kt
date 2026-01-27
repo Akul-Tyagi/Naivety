@@ -1,6 +1,7 @@
 // app/src/main/java/com/abundance/naivety/di/NetworkModule.kt
 package com.abundance.naivety.di
 
+import android.content.Context
 import com.abundance.naivety.data.AppDatabase
 import com.abundance.naivety.network.OpenLibraryApi
 import com.abundance.naivety.repository.BrowseRepository
@@ -11,11 +12,14 @@ import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -33,16 +37,36 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+    fun provideCache(@ApplicationContext context: Context): Cache {
+        val cacheSize = 10L * 1024 * 1024 // 10 MB
+        val cacheDir = File(context.cacheDir, "http_cache")
+        return Cache(cacheDir, cacheSize)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        cache: Cache
+    ): OkHttpClient {
         return OkHttpClient.Builder()
+            .cache(cache)
             .addInterceptor(loggingInterceptor)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .header("Accept", "application/json")
-                    .header("Cache-Control", "public, max-age=300")
+                    .header("Cache-Control", "public, max-age=300") // 5 minutes
                     .header("User-Agent", "NaivetyApp/1.0 (naivety.akul@gmail.com)")
                     .build()
                 chain.proceed(request)
+            }
+            .addNetworkInterceptor { chain ->
+                // Add cache headers to response if not present
+                val response = chain.proceed(chain.request())
+                response.newBuilder()
+                    .header("Cache-Control", "public, max-age=300")
+                    .removeHeader("Pragma")
+                    .build()
             }
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)

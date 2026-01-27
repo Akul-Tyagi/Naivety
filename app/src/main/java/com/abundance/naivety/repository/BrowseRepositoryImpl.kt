@@ -8,23 +8,15 @@ import com.abundance.naivety.data.BookPagingSource
 import com.abundance.naivety.models.OpenLibraryBook
 import com.abundance.naivety.network.OpenLibraryApi
 import com.abundance.naivety.network.models.OpenLibraryBookDetail
-import com.abundance.naivety.network.models.OpenLibraryWork
 import com.abundance.naivety.utils.BookCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 @Singleton
 class BrowseRepositoryImpl @Inject constructor(
@@ -33,25 +25,8 @@ class BrowseRepositoryImpl @Inject constructor(
     private val listsRepository: ListsRepository
 ) : BrowseRepository {
 
-    // In-memory cache for book details
-    private val bookDetailsCache = ConcurrentHashMap<String, OpenLibraryBookDetail>()
-
-    // Cache timeout in milliseconds (10 minutes)
-    private val cacheTimeout = 10 * 60 * 1000
-
-    // Cache entries with timestamp
-    private val cacheTimes = ConcurrentHashMap<String, Long>()
-
+    // Loading state for bestsellers (can be exposed if needed by UI)
     private val _isLoadingBestsellers = MutableStateFlow(false)
-
-    private enum class TrendingLoadState { NOT_STARTED, IN_PROGRESS, COMPLETED, FAILED }
-    private var trendingLoadState = TrendingLoadState.NOT_STARTED
-    private val dataSourceLock = Mutex()
-    private var useBackupSource = false
-    private val trendingTimeout = 15000L
-
-    private val trendingRequestTimeout = 10000L // 10 seconds
-    private val logThrottleInterval = 1000L // Log once per second
 
     override suspend fun getBooksByPage(query: String, page: Int, limit: Int): List<OpenLibraryBook> =
         withContext(Dispatchers.IO) {
@@ -108,45 +83,6 @@ class BrowseRepositoryImpl @Inject constructor(
                 return@withContext emptyList()
             }
         }
-
-    // Helper for paged bestsellers
-    private suspend fun getPagedBestsellers(page: Int, limit: Int): List<OpenLibraryBook> {
-        try {
-            Log.d("BrowseRepository", "Fetching bestsellers page $page as fallback...")
-            val response = api.searchBooks(
-                query = "bestseller",
-                limit = limit,
-                page = page,
-                fields = "key,title,author_name,first_publish_year,cover_i",
-                sort = "readinglog"
-            )
-
-            if (response.isSuccessful) {
-                val searchResponse = response.body()
-                if (searchResponse != null) {
-                    return searchResponse.docs.mapNotNull { doc ->
-                        val key = doc.key ?: return@mapNotNull null
-                        val title = doc.title ?: return@mapNotNull null
-
-                        OpenLibraryBook(
-                            key = key,
-                            title = title,
-                            author = doc.author_name?.firstOrNull() ?: "Unknown",
-                            publishedYear = doc.first_publish_year ?: 0,
-                            coverUrl = doc.cover_i?.let { coverId ->
-                                "https://covers.openlibrary.org/b/id/$coverId-L.jpg"
-                            } ?: "",
-                            description = ""
-                        )
-                    }
-                }
-            }
-            return emptyList()
-        } catch (e: Exception) {
-            Log.e("BrowseRepository", "Exception in paged bestsellers", e)
-            return emptyList()
-        }
-    }
 
     // Rename this method to avoid the override conflict
     suspend fun searchBooksWithPagination(query: String, page: Int = 1, limit: Int = 20): List<OpenLibraryBook> =
@@ -261,25 +197,6 @@ class BrowseRepositoryImpl @Inject constructor(
     override suspend fun searchBooks(query: String): List<OpenLibraryBook> =
         searchBooksWithPagination(query)
 
-    // Helper function to map works to books (extract common code)
-    private fun mapWorksToBooks(works: List<OpenLibraryWork>): List<OpenLibraryBook> {
-        return works.mapNotNull { work ->
-            val key = work.key ?: return@mapNotNull null
-            val title = work.title ?: return@mapNotNull null
-
-            OpenLibraryBook(
-                key = key,
-                title = title,
-                author = work.author_name?.firstOrNull() ?: "Unknown",
-                publishedYear = work.first_publish_year ?: 0,
-                coverUrl = work.cover_i?.let { coverId ->
-                    "https://covers.openlibrary.org/b/id/$coverId-L.jpg"
-                } ?: "",
-                description = ""
-            )
-        }
-    }
-
 
     // In BrowseRepositoryImpl.kt, add:
     override fun isBookInAnyList(bookKey: String): Flow<Boolean> {
@@ -288,17 +205,9 @@ class BrowseRepositoryImpl @Inject constructor(
 
     override suspend fun getBookDetails(workId: String): OpenLibraryBookDetail =
         withContext(Dispatchers.IO) {
-            // Check if cache is valid
-            val cachedDetails = bookDetailsCache[workId]
-            val cacheTime = cacheTimes[workId] ?: 0L
-            val now = System.currentTimeMillis()
-
+            // Check cache first
             bookCache.getBookDetail(workId)?.let {
                 return@withContext it
-            }
-
-            if (cachedDetails != null && (now - cacheTime < cacheTimeout)) {
-                return@withContext cachedDetails
             }
 
             try {
@@ -322,7 +231,7 @@ class BrowseRepositoryImpl @Inject constructor(
                     }
                 } catch (e: Exception) {
                     // Log but continue even if ratings fail
-                    e.printStackTrace()
+                    Log.w("BrowseRepository", "Failed to fetch ratings: ${e.message}")
                 }
 
                 // Create book detail with ratings data
@@ -339,16 +248,13 @@ class BrowseRepositoryImpl @Inject constructor(
                     number_of_pages = bookDetailResponse.number_of_pages
                 )
 
-                // Update cache
-                bookDetailsCache[workId] = bookDetail
-                cacheTimes[workId] = now
+                // Cache the result
                 bookCache.cacheBookDetail(workId, bookDetail)
 
                 return@withContext bookDetail
             } catch (e: IOException) {
-                if (cachedDetails != null) {
-                    return@withContext cachedDetails
-                }
+                // Try returning cached data on network error
+                bookCache.getBookDetail(workId)?.let { return@withContext it }
                 throw e
             }
         }

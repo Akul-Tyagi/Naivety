@@ -350,7 +350,10 @@ class EpubReaderActivity : ComponentActivity() {
 
         Box(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
             when {
-                isLoading -> PdfLoadingAnimation(modifier = Modifier.align(Alignment.Center))
+                isLoading -> PdfLoadingAnimation(
+                    modifier = Modifier.align(Alignment.Center),
+                    loadingText = "Loading EPUB..."
+                )
                 error != null -> ErrorDisplay(error!!, onBack, Modifier.align(Alignment.Center))
                 publication != null -> {
                     EpubWebView(

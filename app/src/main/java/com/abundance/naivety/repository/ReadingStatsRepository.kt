@@ -434,9 +434,10 @@ class ReadingStatsRepository @Inject constructor(
         // Update each achievement based on its criteria
         updatedAchievements.forEachIndexed { index, achievement ->
             when (achievement.id) {
-                // Streak achievements
+                // Streak achievements - use longestStreak for fairness
+                // (so past achievements aren't missed if current streak is broken)
                 "streak_7" -> {
-                    if (!achievement.unlocked && _currentStreak.value >= 7) {
+                    if (!achievement.unlocked && _longestStreak.value >= 7) {
                         updatedAchievements[index] = achievement.copy(
                             unlocked = true,
                             dateUnlocked = now
@@ -444,7 +445,7 @@ class ReadingStatsRepository @Inject constructor(
                     }
                 }
                 "streak_14" -> {
-                    if (!achievement.unlocked && _currentStreak.value >= 14) {
+                    if (!achievement.unlocked && _longestStreak.value >= 14) {
                         updatedAchievements[index] = achievement.copy(
                             unlocked = true,
                             dateUnlocked = now
@@ -452,7 +453,7 @@ class ReadingStatsRepository @Inject constructor(
                     }
                 }
                 "streak_21" -> {
-                    if (!achievement.unlocked && _currentStreak.value >= 21) {
+                    if (!achievement.unlocked && _longestStreak.value >= 21) {
                         updatedAchievements[index] = achievement.copy(
                             unlocked = true,
                             dateUnlocked = now
@@ -460,7 +461,7 @@ class ReadingStatsRepository @Inject constructor(
                     }
                 }
                 "streak_30" -> {
-                    if (!achievement.unlocked && _currentStreak.value >= 30) {
+                    if (!achievement.unlocked && _longestStreak.value >= 30) {
                         updatedAchievements[index] = achievement.copy(
                             unlocked = true,
                             dateUnlocked = now
@@ -468,7 +469,7 @@ class ReadingStatsRepository @Inject constructor(
                     }
                 }
                 "streak_50" -> {
-                    if (!achievement.unlocked && _currentStreak.value >= 50) {
+                    if (!achievement.unlocked && _longestStreak.value >= 50) {
                         updatedAchievements[index] = achievement.copy(
                             unlocked = true,
                             dateUnlocked = now
@@ -476,7 +477,7 @@ class ReadingStatsRepository @Inject constructor(
                     }
                 }
                 "streak_100" -> {
-                    if (!achievement.unlocked && _currentStreak.value >= 100) {
+                    if (!achievement.unlocked && _longestStreak.value >= 100) {
                         updatedAchievements[index] = achievement.copy(
                             unlocked = true,
                             dateUnlocked = now

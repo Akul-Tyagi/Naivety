@@ -3,7 +3,6 @@ package com.abundance.naivety
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import com.abundance.naivety.repository.UserPreferencesRepository
-import com.abundance.naivety.ads.AdManager
 import com.abundance.naivety.epub.ReadiumManager
 import javax.inject.Inject
 
@@ -26,7 +25,6 @@ class NaivetyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        AdManager.initialize(this)
         instance = this
     }
 }

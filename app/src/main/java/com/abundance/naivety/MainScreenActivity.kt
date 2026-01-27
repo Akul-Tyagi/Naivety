@@ -34,9 +34,13 @@ import com.abundance.naivety.navigation.Destinations
 import com.abundance.naivety.ui.screens.AchievementsScreen
 import com.abundance.naivety.ui.screens.BrowseScreen
 import com.abundance.naivety.ui.screens.ReadingHeatmapScreen
+import com.abundance.naivety.ui.screens.SearchResultsScreen
 import com.abundance.naivety.ui.screens.ThemeSettingsScreen
 import dagger.hilt.android.AndroidEntryPoint
 import com.abundance.naivety.utils.PreferencesManager
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.abundance.naivety.viewmodels.ListsViewModel
+import com.abundance.naivety.viewmodels.SearchViewModel
 
 @AndroidEntryPoint
 class MainScreenActivity : ComponentActivity() {
@@ -74,6 +78,9 @@ class MainScreenActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        // Track app opens for rating prompt
+        com.abundance.naivety.ui.components.RatingPromptManager.onAppOpened(this)
+
         setContent {
 
             val isDarkTheme = userPreferencesRepository.isDarkTheme.collectAsState().value
@@ -92,38 +99,63 @@ class MainScreenActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "main" ,
+                        startDestination = Destinations.Main.route,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        composable("main") { backStackEntry ->
-                            // Get the default section from saved state handle or use "Browse" if coming from BookDetail
-                            val defaultSection = if (backStackEntry.savedStateHandle.get<Boolean>("fromBookDetail") == true) {
-                                "Browse"
-                            } else {
-                                "Home"
-                            }
-                            MainScreen(
-                                viewModel = viewModel,
-                                onPdfSelect = { launchPdfSelection() },
-                                onNavigateToRead = { uri ->  // Change this line to accept String
-                                    viewModel.books.value.find { it.filePath == uri }?.let { book ->
-                                        val intent = Intent(this@MainScreenActivity, PdfViewerActivity::class.java).apply {
-                                            data = Uri.parse(uri)  // Convert String to Uri here
-                                            putExtra("BOOK_ID", book.id.toString())
+                        composable(Destinations.Main.route) { backStackEntry ->
+                            // Get the section to show from savedStateHandle (set when navigating back)
+                            val savedSection = backStackEntry.savedStateHandle.get<String>("selectedSection")
+
+                            // Wrap MainScreen and RatingPromptHandler in a Box to properly overlay
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                MainScreen(
+                                    viewModel = viewModel,
+                                    onPdfSelect = { launchPdfSelection() },
+                                    onNavigateToRead = { uri ->
+                                        viewModel.books.value.find { it.filePath == uri }?.let { book ->
+                                            val intent = Intent(this@MainScreenActivity, PdfViewerActivity::class.java).apply {
+                                                data = Uri.parse(uri)
+                                                putExtra("BOOK_ID", book.id.toString())
+                                            }
+                                            startActivity(intent)
                                         }
-                                        startActivity(intent)
-                                    }
-                                },
-                                onSortBooks = { sortOrder ->
-                                    viewModel.sortBooks(sortOrder)
-                                },
-                                navController = navController,
-                                defaultSection = defaultSection,
-                                isGuestMode = isGuestMode
-                            )
+                                    },
+                                    onSortBooks = { sortOrder ->
+                                        viewModel.sortBooks(sortOrder)
+                                    },
+                                    navController = navController,
+                                    defaultSection = savedSection ?: "Home",
+                                    isGuestMode = isGuestMode
+                                )
+
+                                // Show rating prompt on Main screen (overlaid on top)
+                                com.abundance.naivety.ui.components.RatingPromptHandler()
+                            }
                         }
-                        composable(Destinations.Browse.route) {
-                            BrowseScreen(
+
+                        // Search Results Screen - proper navigation destination
+                        composable(
+                            route = Destinations.SearchResults.route,
+                            arguments = listOf(
+                                navArgument("query") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            val query = backStackEntry.arguments?.getString("query")?.let { Uri.decode(it) } ?: ""
+                            val searchViewModel: SearchViewModel = hiltViewModel()
+                            val listsViewModel: ListsViewModel = hiltViewModel()
+
+                            // Trigger search when screen is displayed
+                            LaunchedEffect(query) {
+                                if (query.isNotBlank()) {
+                                    searchViewModel.searchBooks(query)
+                                }
+                            }
+
+                            val searchResults by searchViewModel.searchResults.collectAsState()
+                            val searchState by searchViewModel.searchState.collectAsState()
+
+                            SearchResultsScreen(
+                                books = searchResults,
                                 onBookClick = { book ->
                                     navController.navigate(
                                         Destinations.BookDetail.createRoute(
@@ -134,10 +166,16 @@ class MainScreenActivity : ComponentActivity() {
                                             coverUrl = book.coverUrl
                                         )
                                     )
-                                }
+                                },
+                                onBackPress = {
+                                    navController.popBackStack()
+                                },
+                                isLoading = searchState is com.abundance.naivety.models.SearchState.Searching,
+                                isBookInAnyList = { bookKey -> listsViewModel.isBookInAnyList(bookKey) }
                             )
                         }
-                        // Add BookDetail destination here
+
+                        // Book Detail Screen
                         composable(
                             route = Destinations.BookDetail.route,
                             arguments = listOf(
@@ -147,37 +185,53 @@ class MainScreenActivity : ComponentActivity() {
                                 navArgument("year") { type = NavType.IntType },
                                 navArgument("coverUrl") { type = NavType.StringType }
                             )
-                        ) {
+                        ) { backStackEntry ->
+                            val bookKey = backStackEntry.arguments?.getString("bookKey")?.let { Uri.decode(it) } ?: ""
+                            val title = backStackEntry.arguments?.getString("title")?.let { Uri.decode(it) } ?: ""
+                            val author = backStackEntry.arguments?.getString("author")?.let { Uri.decode(it) } ?: ""
+                            val year = backStackEntry.arguments?.getInt("year") ?: 0
+                            val coverUrl = backStackEntry.arguments?.getString("coverUrl")?.let { Uri.decode(it) } ?: ""
+
                             BookDetailScreen(
                                 book = OpenLibraryBook(
-                                    key = it.arguments?.getString("bookKey") ?: "",
-                                    title = it.arguments?.getString("title") ?: "",
-                                    author = it.arguments?.getString("author") ?: "",
-                                    publishedYear = it.arguments?.getInt("year") ?: 0,
-                                    coverUrl = it.arguments?.getString("coverUrl") ?: "",
+                                    key = bookKey,
+                                    title = title,
+                                    author = author,
+                                    publishedYear = year,
+                                    coverUrl = coverUrl,
                                     description = ""
                                 ),
                                 onBackPressed = {
-                                    navController.previousBackStackEntry?.savedStateHandle?.set("fromBookDetail", true)
-                                    navController.navigateUp()
+                                    // Simply pop back - let the navigation stack handle where to go
+                                    navController.popBackStack()
                                 },
                                 navController = navController
                             )
                         }
-                        composable("achievements") {
+
+                        // Achievements Screen
+                        composable(Destinations.Achievements.route) {
                             val fsFont = FontFamily(Font(R.font.montserratblack))
                             AchievementsScreen(
                                 customFont = fsFont,
-                                onBackPressed = { navController.navigateUp() }
+                                onBackPressed = {
+                                    navController.popBackStack()
+                                }
                             )
                         }
-                        composable("reading_heatmap") {
+
+                        // Reading Heatmap Screen
+                        composable(Destinations.ReadingHeatmap.route) {
                             val fsFont = FontFamily(Font(R.font.montserratblack))
                             ReadingHeatmapScreen(
                                 customFont = fsFont,
-                                onBackPressed = { navController.popBackStack() }
+                                onBackPressed = {
+                                    navController.popBackStack()
+                                }
                             )
                         }
+
+                        // Theme Settings Screen
                         composable(Destinations.ThemeSettings.route) {
                             val fsFont = FontFamily(Font(R.font.montserratblack))
                             ThemeSettingsScreen(
@@ -188,7 +242,9 @@ class MainScreenActivity : ComponentActivity() {
                                     }
                                 },
                                 customFont = fsFont,
-                                onBackPressed = { navController.navigateUp() }
+                                onBackPressed = {
+                                    navController.popBackStack()
+                                }
                             )
                         }
                     }

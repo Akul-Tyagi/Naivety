@@ -69,63 +69,62 @@ class ListsRepository @Inject constructor(
     }
 
     private suspend fun ensureBookIsSaved(bookKey: String) {
-        if (savedBookDao.getBookByKey(bookKey) == null) {
-            try {
-                val cleanBookKey = bookKey.removePrefix("/works/")
+        // Get existing book data - single query instead of multiple
+        val existingBook = savedBookDao.getBookByKey(bookKey)
 
-                // Get existing book data if any
-                val existingBook = savedBookDao.getBookByKey(bookKey)
+        // If book exists and has valid author, no need to update
+        if (existingBook != null &&
+            existingBook.author != "Unknown" &&
+            existingBook.author != "Unknown Author") {
+            return
+        }
 
-                // If book exists and has valid author, no need to update
-                if (existingBook != null && existingBook.author != "Unknown" && existingBook.author != "Unknown Author") {
-                    return
+        try {
+            val cleanBookKey = bookKey.removePrefix("/works/")
+            val response = api.getBookDetails(cleanBookKey)
+
+            if (response.isSuccessful) {
+                val bookDetails = response.body() ?: return
+
+                // Try multiple ways to get author
+                var author = "Unknown Author"
+
+                // Method 1: From authors object
+                if (bookDetails.authors?.isNotEmpty() == true) {
+                    author = bookDetails.authors.firstOrNull()?.name ?: author
                 }
 
-                val response = api.getBookDetails(cleanBookKey)
-                if (response.isSuccessful) {
-                    val bookDetails = response.body()
-                    if (bookDetails != null) {
-                        // Try multiple ways to get author
-                        var author = "Unknown Author"
-
-                        // Method 1: From authors object
-                        if (bookDetails.authors?.isNotEmpty() == true) {
-                            author = bookDetails.authors.firstOrNull()?.name ?: author
-                        }
-
-                        // Method 2: If still unknown, try search endpoint
-                        if (author == "Unknown Author") {
-                            try {
-                                val searchResponse = api.searchBooks("key:$cleanBookKey", 1)
-                                if (searchResponse.isSuccessful) {
-                                    val searchAuthor = searchResponse.body()?.docs?.firstOrNull()?.author_name?.firstOrNull()
-                                    if (!searchAuthor.isNullOrBlank()) {
-                                        author = searchAuthor
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                // Method 2: If still unknown, try search endpoint
+                if (author == "Unknown Author") {
+                    try {
+                        val searchResponse = api.searchBooks("key:$cleanBookKey", 1)
+                        if (searchResponse.isSuccessful) {
+                            val searchAuthor = searchResponse.body()?.docs?.firstOrNull()?.author_name?.firstOrNull()
+                            if (!searchAuthor.isNullOrBlank()) {
+                                author = searchAuthor
                             }
                         }
-
-                        // Create or update book
-                        val savedBook = SavedBook(
-                            bookKey = bookKey,
-                            title = bookDetails.title,
-                            author = author,
-                            coverUrl = bookDetails.covers?.firstOrNull()?.let {
-                                "https://covers.openlibrary.org/b/id/$it-L.jpg"
-                            } ?: "",
-                            publishedYear = bookDetails.first_publish_year ?: 0,
-                            description = bookDetails.getDescription()
-                        )
-
-                        savedBookDao.insertBook(savedBook)
+                    } catch (e: Exception) {
+                        // Continue with unknown author
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+                // Create or update book
+                val savedBook = SavedBook(
+                    bookKey = bookKey,
+                    title = bookDetails.title,
+                    author = author,
+                    coverUrl = bookDetails.covers?.firstOrNull()?.let {
+                        "https://covers.openlibrary.org/b/id/$it-L.jpg"
+                    } ?: "",
+                    publishedYear = bookDetails.first_publish_year ?: 0,
+                    description = bookDetails.getDescription()
+                )
+
+                savedBookDao.insertBook(savedBook)
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

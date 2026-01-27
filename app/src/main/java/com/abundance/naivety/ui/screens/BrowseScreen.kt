@@ -25,18 +25,12 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.abundance.naivety.R
 import com.abundance.naivety.viewmodels.BrowseViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
-import android.app.Activity
-import com.abundance.naivety.ads.AdManager
-import androidx.compose.ui.platform.LocalContext
 import com.abundance.naivety.models.OpenLibraryBook
-import com.abundance.naivety.models.SearchState
 import com.abundance.naivety.ui.components.BookCard
 import com.abundance.naivety.ui.components.CustomSearchBar
-import com.abundance.naivety.ui.screens.SearchResultsScreen
 
 // Shimmer effect extension - moved outside to fix the reference issue
 fun Modifier.shimmerBackground(): Modifier = composed {
@@ -56,17 +50,11 @@ fun Modifier.shimmerBackground(): Modifier = composed {
 @Composable
 fun BrowseScreen(
     viewModel: BrowseViewModel = hiltViewModel(),
-    onBookClick: (OpenLibraryBook) -> Unit
+    onBookClick: (OpenLibraryBook) -> Unit,
+    onSearchSubmit: ((String) -> Unit)? = null  // New parameter for navigation-based search
 ) {
-    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val books by viewModel.booksState.collectAsState()
-    val selectedBook by viewModel.selectedBook.collectAsState()
-    val searchState by viewModel.searchState.collectAsState()
-    val fsFont = FontFamily(Font(R.font.fsultralit))
-    var showSearchResults by remember { mutableStateOf(false) }
-    val searchResults by viewModel.searchResults.collectAsState()
-    val isInitialLoading by viewModel.isInitialLoading.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val gridState = rememberLazyStaggeredGridState()
 
@@ -88,105 +76,65 @@ fun BrowseScreen(
             }
     }
 
-    if (showSearchResults) {
-        SearchResultsScreen(
-            books = searchResults,
-            onBookClick = onBookClick,
-            onBackPress = {
-                showSearchResults = false
-                viewModel.clearSearch()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        CustomSearchBar(
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            onSearchSubmit = { query ->
+                // Use navigation-based search if available, otherwise do nothing
+                onSearchSubmit?.invoke(query)
             },
-            isLoading = searchState is SearchState.Searching
+            fsFont = FontFamily(Font(R.font.fsultralit))
         )
-    } else {
-        Column(
+
+        // Book Grid
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            CustomSearchBar(
-                searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it },
-                onSearchSubmit = { query ->
-                    viewModel.searchBooks(query)
-                    showSearchResults = true
-                },
-                fsFont = FontFamily(Font(R.font.fsultralit))
-            )
-
-            // Book Grid
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalItemSpacing = 10.dp,
+                state = gridState
             ) {
-                when (searchState) {
-                    is SearchState.Searching -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                items(
+                    count = books.size,
+                    key = { index -> books[index].key }
+                ) { index ->
+                    val book = books[index]
+                    key(book.key) {
+                        val isInAnyList by viewModel.isBookInAnyList(book.key).collectAsState(initial = false)
 
-                    is SearchState.NoResults -> {
-                        Text(
-                            text = "No results found",
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-
-                    is SearchState.Error -> {
-                        Text(
-                            text = "Error searching books",
-                            color = Color.Red,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-
-                    else -> {
-                        LazyVerticalStaggeredGrid(
-                            columns = StaggeredGridCells.Fixed(2),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalItemSpacing = 10.dp,
-                            state = gridState
-                        ) {
-                            items(
-                                count = books.size,
-                                key = { index -> books[index].key }
-                            ) { index ->
-                                val book = books[index]
-                                key(book.key) {
-                                    val isInAnyList by viewModel.isBookInAnyList(book.key).collectAsState(initial = false)
-
-                                        BookCard(
-                                            book = book,
-                                            onClick = {
-                                                    onBookClick(book)
-                                            },
-                                            isLiked = isInAnyList,
-                                            onLikeToggle = {
-                                                // Show list selection dialog
-                                                val showListsDialog = true
-                                            }
-                                        )
-                                    }
-                                }
-                            // Loading indicator at the bottom
-                            item(span = StaggeredGridItemSpan.FullLine) {
-                                if (isLoadingMore) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
+                        BookCard(
+                            book = book,
+                            onClick = {
+                                onBookClick(book)
+                            },
+                            isLiked = isInAnyList,
+                            onLikeToggle = {
+                                // Show list selection dialog
                             }
+                        )
+                    }
+                }
+                // Loading indicator at the bottom
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    if (isLoadingMore) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }

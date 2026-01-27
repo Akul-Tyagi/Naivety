@@ -44,12 +44,31 @@ class BookViewModel @Inject constructor(
 
     init {
         loadBooks()
+        // Check and regenerate any missing thumbnails (from cache being cleared)
+        checkAndRegenerateMissingThumbnails()
     }
 
     private fun loadBooks() {
         viewModelScope.launch {
             database.bookDao().getAllBooks().collect { bookList ->
                 _books.value = sortBookList(bookList, _currentSortOrder.value)
+                // After loading books, check for missing thumbnails
+                checkMissingThumbnailsForBooks(bookList)
+            }
+        }
+    }
+
+    private fun checkMissingThumbnailsForBooks(books: List<Book>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            books.forEach { book ->
+                val thumbnailExists = book.thumbnailPath?.let { path ->
+                    File(path).exists()
+                } ?: false
+
+                if (!thumbnailExists && book.thumbnailPath != null) {
+                    // Thumbnail path exists in DB but file is missing - regenerate
+                    regenerateThumbnailIfNeeded(book)
+                }
             }
         }
     }
@@ -184,7 +203,10 @@ class BookViewModel @Inject constructor(
                             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                             page.close()
 
-                            val thumbnailFile = File(context.cacheDir, "thumb_${System.currentTimeMillis()}.png")
+                            // Use filesDir instead of cacheDir to prevent automatic deletion
+                            val thumbnailsDir = File(context.filesDir, "thumbnails")
+                            if (!thumbnailsDir.exists()) thumbnailsDir.mkdirs()
+                            val thumbnailFile = File(thumbnailsDir, "thumb_${System.currentTimeMillis()}.png")
                             FileOutputStream(thumbnailFile).use { out ->
                                 bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
                             }
@@ -215,7 +237,10 @@ class BookViewModel @Inject constructor(
                         val resource = pub.get(link)
                         val bytes = resource?.read()?.getOrNull()
                         if (bytes != null && bytes.isNotEmpty()) {
-                            val thumbnailFile = File(context.cacheDir, "thumb_${System.currentTimeMillis()}.png")
+                            // Use filesDir instead of cacheDir to prevent automatic deletion
+                            val thumbnailsDir = File(context.filesDir, "thumbnails")
+                            if (!thumbnailsDir.exists()) thumbnailsDir.mkdirs()
+                            val thumbnailFile = File(thumbnailsDir, "thumb_${System.currentTimeMillis()}.png")
                             thumbnailFile.writeBytes(bytes)
                             return@withContext thumbnailFile.absolutePath
                         }
@@ -299,6 +324,56 @@ class BookViewModel @Inject constructor(
         viewModelScope.launch {
             val updatedBook = book.copy(title = newTitle)
             database.bookDao().insertBook(updatedBook)
+        }
+    }
+
+    /**
+     * Regenerate thumbnail for a book if the thumbnail file is missing.
+     * This can happen if thumbnails were previously stored in cacheDir which can be cleared by the system.
+     */
+    fun regenerateThumbnailIfNeeded(book: Book) {
+        viewModelScope.launch {
+            // Check if thumbnail exists
+            val thumbnailExists = book.thumbnailPath?.let { path ->
+                File(path).exists()
+            } ?: false
+
+            if (!thumbnailExists) {
+                Log.d("BookViewModel", "Regenerating thumbnail for: ${book.title}")
+                val uri = Uri.parse(book.filePath)
+                val fileType = BookFileType.valueOf(book.fileType)
+
+                val newThumbnailPath: String? = when (fileType) {
+                    BookFileType.PDF -> generatePdfThumbnail(uri)
+                    BookFileType.EPUB -> {
+                        val result = readiumManager.openEpub(uri)
+                        val publication = result.getOrNull()
+                        val path = generateEpubThumbnail(uri, publication)
+                        readiumManager.closeCurrentPublication()
+                        path
+                    }
+                    else -> null
+                }
+
+                // Update book with new thumbnail path
+                if (newThumbnailPath != null) {
+                    val updatedBook = book.copy(thumbnailPath = newThumbnailPath)
+                    database.bookDao().insertBook(updatedBook)
+                    Log.d("BookViewModel", "Thumbnail regenerated successfully for: ${book.title}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Check and regenerate thumbnails for all books with missing thumbnail files.
+     * Call this at app startup to fix any books that lost their thumbnails due to cache clearing.
+     */
+    fun checkAndRegenerateMissingThumbnails() {
+        viewModelScope.launch {
+            _books.value.forEach { book ->
+                regenerateThumbnailIfNeeded(book)
+            }
         }
     }
 }

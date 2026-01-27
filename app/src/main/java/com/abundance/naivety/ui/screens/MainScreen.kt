@@ -34,7 +34,6 @@ import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
 import android.content.Intent
 import com.abundance.naivety.EpubReaderActivity
-import com.abundance.naivety.ads.AdManager
 import com.abundance.naivety.utils.BookFileType
 import kotlin.jvm.java
 import kotlin.toString
@@ -57,6 +56,11 @@ fun MainScreen(
     var showSortMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+
+    // Update selectedSection when defaultSection changes (e.g., when navigating back)
+    LaunchedEffect(defaultSection) {
+        selectedSection = defaultSection
+    }
 
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -129,6 +133,8 @@ fun MainScreen(
                                 ListsScreen(
                                     onNavigateToRead = onNavigateToRead,
                                     onBookClick = { book ->
+                                        // Save current section before navigating
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedSection", "Lists")
                                         navController.navigate(
                                             Destinations.BookDetail.createRoute(
                                                 book.key,
@@ -144,6 +150,8 @@ fun MainScreen(
                             "Browse" -> {
                                 BrowseScreen(
                                     onBookClick = { book ->
+                                        // Save current section before navigating
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedSection", "Browse")
                                         navController.navigate(
                                             Destinations.BookDetail.createRoute(
                                                 book.key,
@@ -152,6 +160,13 @@ fun MainScreen(
                                                 book.publishedYear,
                                                 book.coverUrl
                                             )
+                                        )
+                                    },
+                                    onSearchSubmit = { query ->
+                                        // Save current section before navigating to search
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedSection", "Browse")
+                                        navController.navigate(
+                                            Destinations.SearchResults.createRoute(query)
                                         )
                                     }
                                 )
@@ -162,9 +177,13 @@ fun MainScreen(
                                     viewModel = hiltViewModel(),
                                     navController = navController,
                                     onNavigateToAchievements = {
-                                        navController.navigate("achievements")
+                                        // Save current section before navigating
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedSection", "More")
+                                        navController.navigate(Destinations.Achievements.route)
                                     },
                                     onNavigateToThemeSettings = {
+                                        // Save current section before navigating
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedSection", "More")
                                         navController.navigate(Destinations.ThemeSettings.route)
                                     }
                                 )

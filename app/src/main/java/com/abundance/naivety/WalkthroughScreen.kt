@@ -35,8 +35,8 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
 
     val subHeadings = listOf(
         "Lets Make Reading Feel As Smooth As Turning A Page.",
-        "Keep Your Favorite Novels, Romances, And Adventures At Your Fingertips, Always Waiting Right Where You Left Them.",
-        "No Clutter, No Distractions—Just You And The Words That Matter. Ready To Dive In?"
+        "PDFs, EPUBs, Your Personal Lists—Everything Organized Beautifully. Browse Millions Of Books And Build Your Perfect Library.",
+        "Completely Free, Forever Ad Free. Track Your Reading Journey With Stats, Streaks, And Achievements. Just Pure Reading Bliss."
     )
 
     val context = LocalContext.current
@@ -54,9 +54,9 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
     // Animation states
     val slideTransitionAlpha = remember { Animatable(initialValue = 1f) }
     val mainHeadingProgress = remember { Animatable(initialValue = 0f) }
-    val mainHeadingScale = remember { Animatable(initialValue = 0.9f) }
+    val mainHeadingScale = remember { Animatable(initialValue = 0.95f) }
     val typewriterProgress = remember { Animatable(initialValue = 0f) }
-    val buttonPulse = remember { Animatable(initialValue = 1f) }
+    val buttonScale = remember { Animatable(initialValue = 1f) }
 
     // Content visibility control
     val mainHeadingAlpha = remember { Animatable(initialValue = 0f) }
@@ -65,6 +65,7 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
     // Custom easing curves for smoother animations
     val easeOutQuint = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
     val easeInOutQuint = CubicBezierEasing(0.83f, 0f, 0.17f, 1f)
+    val easeOutExpo = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
 
     LaunchedEffect(currentSlide) {
 
@@ -72,82 +73,82 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
         mainHeadingAlpha.snapTo(0f)
         subHeadingAlpha.snapTo(0f)
 
-        // Slide transition fade out
+        // Slide transition fade out - smoother with easing
         isSlideTransitioning = true
         slideTransitionAlpha.animateTo(
             targetValue = 0f,
-            animationSpec = tween(500, easing = LinearEasing)
+            animationSpec = tween(400, easing = easeOutQuint)
         )
 
         // Reset animation states
         shouldShowSubheading = false
         mainHeadingProgress.snapTo(0f)
-        mainHeadingScale.snapTo(0.9f)
+        mainHeadingScale.snapTo(0.95f)
         typewriterProgress.snapTo(0f)
 
-        // Slide transition fade in
+        // Slide transition fade in - slightly delayed for smoother feel
         slideTransitionAlpha.animateTo(
             targetValue = 1f,
-            animationSpec = tween(500, easing = LinearEasing)
+            animationSpec = tween(450, easing = easeOutExpo)
         )
         isSlideTransitioning = false
 
-        delay(100)
+        delay(50)
 
-        // Fade in main heading
+        // Fade in main heading with smoother timing
         launch {
             mainHeadingAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(300, easing = easeOutQuint)
+                animationSpec = tween(400, easing = easeOutExpo)
             )
         }
 
-        // Animate main heading sliding in with scale
+        // Animate main heading sliding in with scale - smoother curve
         launch {
             mainHeadingProgress.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(1000, easing = easeOutQuint)
+                animationSpec = tween(900, easing = easeOutExpo)
             )
         }
 
         launch {
             mainHeadingScale.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(1200, easing = easeOutQuint)
+                animationSpec = tween(1000, easing = easeOutExpo)
             )
         }
 
         // Add a short delay before showing subheading
-        delay(100)
+        delay(150)
         shouldShowSubheading = true
 
-        // Fade in subheading
+        // Fade in subheading with smoother timing
         launch {
             subHeadingAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(300, easing = easeOutQuint)
+                animationSpec = tween(400, easing = easeOutExpo)
             )
         }
 
-        // Animate typewriter effect with improved timing
+        // Animate typewriter effect with improved timing - slightly faster for better UX
         typewriterProgress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(3000, delayMillis = 100, easing = easeInOutQuint)
+            animationSpec = tween(2500, delayMillis = 50, easing = easeInOutQuint)
         )
     }
 
-    // Button pulsing animation
+    // Button smooth breathing animation
     LaunchedEffect(Unit) {
         while (true) {
-            buttonPulse.animateTo(
-                targetValue = 1.1f,
-                animationSpec = tween(1000, easing = easeInOutQuint)
+            buttonScale.animateTo(
+                targetValue = 1.05f,
+                animationSpec = tween(1200, easing = easeInOutQuint)
             )
-            buttonPulse.animateTo(
+            buttonScale.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(1000, easing = easeInOutQuint)
+                animationSpec = tween(1200, easing = easeInOutQuint)
             )
-            delay(1000) // Pause between pulses
+            delay(800) // Pause between pulses
         }
     }
 
@@ -243,26 +244,32 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                             MaterialTheme.colorScheme.primary,
                             MaterialTheme.shapes.extraLarge
                         )
-                        .scale(buttonPulse.value)
+                        .scale(buttonScale.value)
                         .alpha(mainHeadingProgress.value),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF111111),
                         contentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     shape = MaterialTheme.shapes.extraLarge,
-                    enabled = !isSlideTransitioning
+                    enabled = !isSlideTransitioning,
+                    contentPadding = if (currentSlide < mainHeadings.size - 1)
+                        PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                    else
+                        PaddingValues(horizontal = 20.dp, vertical = 12.dp)
                 ) {
-                    Text(
-                        text = if (currentSlide < mainHeadings.size - 1) "→" else "Finish",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = mainFontFamily
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (currentSlide < mainHeadings.size - 1) "→" else "Finish",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = mainFontFamily
+                            ),
+                            textAlign = TextAlign.Center
                         )
-                    )
+                    }
                 }
             }
         }
     }
 }
-// Custom easing curves for smooth animations
-private val EaseOutQuint = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
-private val EaseInOutQuint = CubicBezierEasing(0.83f, 0f, 0.17f, 1f)

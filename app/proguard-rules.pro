@@ -107,7 +107,6 @@
 -keep class com.github.mhiew.** { *; }
 -keep class com.tom_roush.pdfbox.** { *; }
 -keep class com.google.android.gms.ads.** { *; }
--keep class com.airbnb.lottie.** { *; }
 -keep class io.coil.** { *; }
 -dontwarn com.gemalto.jp2.**
 

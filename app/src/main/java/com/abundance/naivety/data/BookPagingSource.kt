@@ -19,60 +19,31 @@ class BookPagingSource(
 
             // Use withContext to ensure network call is on IO thread
             val books = withContext(Dispatchers.IO) {
-                if (query.isBlank()) {
-                    // For trending, pagination is not supported by API, so we get all and page locally
-                    val response = api.getBestsellerBooks(page = page)
-                    if (response.isSuccessful && response.body() != null) {
-                        val docs = response.body()?.docs ?: emptyList()
-                        docs.mapNotNull { doc ->
-                            if (doc.key != null && doc.title != null) {
-                                OpenLibraryBook(
-                                    key = doc.key,
-                                    title = doc.title,
-                                    author = doc.author_name?.firstOrNull() ?: "Unknown",
-                                    publishedYear = doc.first_publish_year ?: 0,
-                                    coverUrl = doc.cover_i?.let {
-                                        "https://covers.openlibrary.org/b/id/$it-L.jpg"
-                                    } ?: "",
-                                    description = ""
-                                )
-                            } else null
-                        }
-                    } else emptyList()
+                val response = if (query.isBlank()) {
+                    // For bestsellers/trending
+                    api.getBestsellerBooks(page = page, limit = params.loadSize)
                 } else {
-                    // For search, pagination is supported
-                    val response = api.searchBooks(query, params.loadSize, page)
-                    if (response.isSuccessful && response.body() != null) {
-                        // Add null check for docs collection
-                        val docs = response.body()?.docs ?: emptyList()
-                        docs.mapNotNull { doc ->
-                            if (doc.key != null && doc.title != null) {
-                                OpenLibraryBook(
-                                    key = doc.key,
-                                    title = doc.title,
-                                    author = doc.author_name?.firstOrNull() ?: "Unknown",
-                                    publishedYear = doc.first_publish_year ?: 0,
-                                    coverUrl = doc.cover_i?.let {
-                                        "https://covers.openlibrary.org/b/id/$it-L.jpg"
-                                    } ?: "",
-                                    description = ""
-                                )
-                            } else null
-                        }
-                    } else emptyList()
+                    // For search queries
+                    api.searchBooks(query, params.loadSize, page)
                 }
-            }
 
-            // Rest of the method remains the same
-            // Calculate paging for client-side pagination
-            val pageSize = params.loadSize
-            val startPos = (page - 1) * pageSize
-            val endPos = minOf(startPos + pageSize, books.size)
-
-            val pageData = if (books.isEmpty() || startPos >= books.size) {
-                emptyList()
-            } else {
-                books.subList(startPos, endPos)
+                if (response.isSuccessful && response.body() != null) {
+                    val docs = response.body()?.docs ?: emptyList()
+                    docs.mapNotNull { doc ->
+                        if (doc.key != null && doc.title != null) {
+                            OpenLibraryBook(
+                                key = doc.key,
+                                title = doc.title,
+                                author = doc.author_name?.firstOrNull() ?: "Unknown",
+                                publishedYear = doc.first_publish_year ?: 0,
+                                coverUrl = doc.cover_i?.let {
+                                    "https://covers.openlibrary.org/b/id/$it-L.jpg"
+                                } ?: "",
+                                description = ""
+                            )
+                        } else null
+                    }
+                } else emptyList()
             }
 
             LoadResult.Page(
@@ -81,6 +52,7 @@ class BookPagingSource(
                 nextKey = if (books.isEmpty()) null else page + 1
             )
         } catch (e: Exception) {
+            Log.e("BookPagingSource", "Error loading page: ${e.message}")
             LoadResult.Error(e)
         }
     }

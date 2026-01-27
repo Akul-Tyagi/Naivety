@@ -10,6 +10,13 @@ sealed class Destinations(val route: String) {
     object Lists : Destinations("lists")
     object ThemeSettings : Destinations("theme_settings")
     object Achievements : Destinations("achievements")
+    object ReadingHeatmap : Destinations("reading_heatmap")
+
+    object SearchResults : Destinations("search_results/{query}") {
+        fun createRoute(query: String): String {
+            return "search_results/${Uri.encode(query)}"
+        }
+    }
 
     object BookDetail : Destinations(
         "bookDetail/{bookKey}/{title}/{author}/{year}/{coverUrl}"
