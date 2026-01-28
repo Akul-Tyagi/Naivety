@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,7 @@ import com.abundance.naivety.data.AppDatabase
 import com.abundance.naivety.epub.ReadiumManager
 import com.abundance.naivety.models.Book
 import com.abundance.naivety.models.SortOrder
+import com.abundance.naivety.utils.BookFileManager
 import com.abundance.naivety.utils.BookFileType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -46,6 +48,8 @@ class BookViewModel @Inject constructor(
         loadBooks()
         // Check and regenerate any missing thumbnails (from cache being cleared)
         checkAndRegenerateMissingThumbnails()
+        // Migrate any books that still have content URIs to internal storage
+        migrateContentUriBooks()
     }
 
     private fun loadBooks() {
@@ -55,6 +59,71 @@ class BookViewModel @Inject constructor(
                 // After loading books, check for missing thumbnails
                 checkMissingThumbnailsForBooks(bookList)
             }
+        }
+    }
+
+    /**
+     * Migrate books with content:// URIs to internal storage.
+     * This ensures books remain accessible after app updates/reinstalls.
+     */
+    private fun migrateContentUriBooks() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val booksToMigrate = _books.value.filter {
+                BookFileManager.isContentUri(it.filePath)
+            }
+
+            for (book in booksToMigrate) {
+                try {
+                    val uri = Uri.parse(book.filePath)
+
+                    // Try to access the content URI - if this fails, we don't have permission
+                    val canAccess = try {
+                        context.contentResolver.openInputStream(uri)?.use { true } ?: false
+                    } catch (e: SecurityException) {
+                        Log.w("BookViewModel", "Cannot migrate book '${book.title}' - no permission to access content URI")
+                        false
+                    } catch (e: Exception) {
+                        Log.w("BookViewModel", "Cannot migrate book '${book.title}' - error accessing content URI: ${e.message}")
+                        false
+                    }
+
+                    if (!canAccess) {
+                        continue
+                    }
+
+                    val fileType = BookFileType.valueOf(book.fileType)
+                    val fileName = getFileNameFromUri(uri) ?: "${book.title}.${if (fileType == BookFileType.PDF) "pdf" else "epub"}"
+
+                    // Copy to internal storage
+                    val internalPath = BookFileManager.copyBookToInternalStorage(
+                        context, uri, fileType, fileName
+                    )
+
+                    if (internalPath != null) {
+                        // Update book with new internal path
+                        val updatedBook = book.copy(filePath = internalPath)
+                        database.bookDao().insertBook(updatedBook)
+                        Log.d("BookViewModel", "Successfully migrated book '${book.title}' to internal storage")
+                    } else {
+                        Log.e("BookViewModel", "Failed to migrate book '${book.title}' to internal storage")
+                    }
+                } catch (e: Exception) {
+                    Log.e("BookViewModel", "Error migrating book '${book.title}'", e)
+                }
+            }
+        }
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String? {
+        return try {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (cursor.moveToFirst() && nameIndex >= 0) {
+                    cursor.getString(nameIndex)
+                } else null
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -132,21 +201,34 @@ class BookViewModel @Inject constructor(
                 val fileName = getFileName(uri)
                 val title = fileName.removeSuffix(".pdf").removeSuffix(".PDF")
 
-                // Generate thumbnail
+                // Copy the PDF to internal storage for persistence across reinstalls
+                val internalPath = BookFileManager.copyBookToInternalStorage(
+                    context, uri, BookFileType.PDF, fileName
+                )
+
+                if (internalPath == null) {
+                    Log.e("BookViewModel", "Failed to copy PDF to internal storage, falling back to URI")
+                }
+
+                // Use internal path if available, otherwise fall back to URI
+                val filePath = internalPath ?: uri.toString()
+
+                // Generate thumbnail using the source URI (we still have permission)
                 val thumbnailPath = generatePdfThumbnail(uri)
 
-                // Get page count
+                // Get page count using the source URI
                 val pageCount = getPdfPageCount(uri)
 
                 val book = Book(
                     title = title,
-                    filePath = uri.toString(),
+                    filePath = filePath,
                     thumbnailPath = thumbnailPath,
                     totalPages = pageCount,
                     fileType = BookFileType.PDF.name
                 )
 
                 database.bookDao().insertBook(book)
+                Log.d("BookViewModel", "PDF book added successfully: $title, path: $filePath")
             } catch (e: Exception) {
                 Log.e("BookViewModel", "Error adding PDF book", e)
             }
@@ -158,7 +240,19 @@ class BookViewModel @Inject constructor(
             try {
                 val fileName = getFileName(uri)
 
-                // Try to open with Readium to get metadata
+                // Copy the EPUB to internal storage for persistence across reinstalls
+                val internalPath = BookFileManager.copyBookToInternalStorage(
+                    context, uri, BookFileType.EPUB, fileName
+                )
+
+                if (internalPath == null) {
+                    Log.e("BookViewModel", "Failed to copy EPUB to internal storage, falling back to URI")
+                }
+
+                // Use internal path if available, otherwise fall back to URI
+                val filePath = internalPath ?: uri.toString()
+
+                // Try to open with Readium to get metadata (use original URI while we have permission)
                 val result = readiumManager.openEpub(uri)
                 val publication = result.getOrNull()
 
@@ -166,13 +260,13 @@ class BookViewModel @Inject constructor(
                 val author = publication?.metadata?.authors?.firstOrNull()?.name
                 val pageCount = publication?.readingOrder?.size ?: 0
 
-                // Generate thumbnail for EPUB
+                // Generate thumbnail for EPUB using original URI
                 val thumbnailPath = generateEpubThumbnail(uri, publication)
 
                 val book = Book(
                     title = title,
                     author = author,
-                    filePath = uri.toString(),
+                    filePath = filePath,
                     thumbnailPath = thumbnailPath,
                     totalPages = pageCount,
                     fileType = BookFileType.EPUB.name
@@ -180,6 +274,7 @@ class BookViewModel @Inject constructor(
 
                 database.bookDao().insertBook(book)
                 readiumManager.closeCurrentPublication()
+                Log.d("BookViewModel", "EPUB book added successfully: $title, path: $filePath")
             } catch (e: Exception) {
                 Log.e("BookViewModel", "Error adding EPUB book", e)
             }
@@ -280,6 +375,12 @@ class BookViewModel @Inject constructor(
                         Log.e("BookViewModel", "Error deleting thumbnail", e)
                     }
                 }
+
+                // Delete the book file if it's stored in internal storage
+                if (BookFileManager.isInternalBookFile(book.filePath)) {
+                    BookFileManager.deleteBookFile(book.filePath)
+                }
+
                 database.bookDao().deleteBook(book)
             } catch (e: Exception) {
                 Log.e("BookViewModel", "Error deleting book", e)
@@ -340,13 +441,39 @@ class BookViewModel @Inject constructor(
 
             if (!thumbnailExists) {
                 Log.d("BookViewModel", "Regenerating thumbnail for: ${book.title}")
-                val uri = Uri.parse(book.filePath)
+
+                val uri: Uri
+                val canAccess: Boolean
+
+                if (BookFileManager.isInternalBookFile(book.filePath)) {
+                    // Internal file - always accessible
+                    uri = BookFileManager.getFileUri(book.filePath)
+                    canAccess = BookFileManager.isFileAccessible(book.filePath)
+                } else {
+                    // Content URI - try to access
+                    uri = Uri.parse(book.filePath)
+                    canAccess = try {
+                        context.contentResolver.openInputStream(uri)?.use { true } ?: false
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
+
+                if (!canAccess) {
+                    Log.w("BookViewModel", "Cannot access file for thumbnail regeneration: ${book.title}")
+                    return@launch
+                }
+
                 val fileType = BookFileType.valueOf(book.fileType)
 
                 val newThumbnailPath: String? = when (fileType) {
-                    BookFileType.PDF -> generatePdfThumbnail(uri)
+                    BookFileType.PDF -> generatePdfThumbnailFromFile(book.filePath)
                     BookFileType.EPUB -> {
-                        val result = readiumManager.openEpub(uri)
+                        val result = if (BookFileManager.isInternalBookFile(book.filePath)) {
+                            readiumManager.openEpub(uri)
+                        } else {
+                            readiumManager.openEpub(uri)
+                        }
                         val publication = result.getOrNull()
                         val path = generateEpubThumbnail(uri, publication)
                         readiumManager.closeCurrentPublication()
@@ -361,6 +488,50 @@ class BookViewModel @Inject constructor(
                     database.bookDao().insertBook(updatedBook)
                     Log.d("BookViewModel", "Thumbnail regenerated successfully for: ${book.title}")
                 }
+            }
+        }
+    }
+
+    /**
+     * Generate PDF thumbnail from file path (internal or URI).
+     */
+    private suspend fun generatePdfThumbnailFromFile(filePath: String): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val pfd: ParcelFileDescriptor? = if (BookFileManager.isInternalBookFile(filePath)) {
+                    ParcelFileDescriptor.open(File(filePath), ParcelFileDescriptor.MODE_READ_ONLY)
+                } else {
+                    context.contentResolver.openFileDescriptor(Uri.parse(filePath), "r")
+                }
+
+                pfd?.use { descriptor ->
+                    val renderer = PdfRenderer(descriptor)
+                    renderer.use { pdf ->
+                        if (pdf.pageCount > 0) {
+                            val page = pdf.openPage(0)
+                            val bitmap = Bitmap.createBitmap(
+                                page.width * 2,
+                                page.height * 2,
+                                Bitmap.Config.ARGB_8888
+                            )
+                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            page.close()
+
+                            val thumbnailsDir = File(context.filesDir, "thumbnails")
+                            if (!thumbnailsDir.exists()) thumbnailsDir.mkdirs()
+                            val thumbnailFile = File(thumbnailsDir, "thumb_${System.currentTimeMillis()}.png")
+                            FileOutputStream(thumbnailFile).use { out ->
+                                bitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
+                            }
+                            bitmap.recycle()
+                            return@withContext thumbnailFile.absolutePath
+                        }
+                    }
+                }
+                null
+            } catch (e: Exception) {
+                Log.e("BookViewModel", "Error generating PDF thumbnail from file", e)
+                null
             }
         }
     }

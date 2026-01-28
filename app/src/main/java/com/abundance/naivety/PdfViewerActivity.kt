@@ -9,6 +9,7 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.view.Window
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.activity.ComponentActivity
@@ -41,6 +42,7 @@ import com.abundance.naivety.ui.components.pdf.modals.*
 import com.abundance.naivety.ui.pdf.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.abundance.naivety.ui.theme.NaivetyTheme
+import com.abundance.naivety.utils.BookFileManager
 import com.abundance.naivety.viewmodels.PdfViewerViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.sp
@@ -49,6 +51,7 @@ import com.github.barteksc.pdfviewer.PDFView
 import com.github.barteksc.pdfviewer.util.FitPolicy
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.File
 
 @AndroidEntryPoint
 class PdfViewerActivity : ComponentActivity() {
@@ -68,11 +71,39 @@ class PdfViewerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setupWindow()
 
+        // Check if we have a valid URI
+        val pdfUri = intent.data
+        if (pdfUri == null) {
+            Toast.makeText(this, "Unable to open PDF: No file selected", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        // Check file accessibility based on type (internal file or content URI)
+        val isAccessible = if (pdfUri.scheme == "file") {
+            // Internal file - check if exists
+            val file = File(pdfUri.path ?: "")
+            file.exists() && file.canRead()
+        } else {
+            // Content URI - try to open, let the PDF library handle errors
+            true
+        }
+
+        if (!isAccessible) {
+            Toast.makeText(
+                this,
+                "Unable to open this PDF. The file may have been moved or deleted.",
+                Toast.LENGTH_LONG
+            ).show()
+            finish()
+            return
+        }
+
         // Parse bookId from String to Long
         val bookIdStr = intent.getStringExtra("BOOK_ID") ?: "0"
         bookId = bookIdStr.toLongOrNull() ?: 0L
 
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val lastPage = prefs.getInt("${bookId}_last_page", 0)
         val savedReadingMode = prefs.getString("${bookId}_reading_mode", null)?.let {
             try {

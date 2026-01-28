@@ -104,7 +104,9 @@ class MainScreenActivity : ComponentActivity() {
                     ) {
                         composable(Destinations.Main.route) { backStackEntry ->
                             // Get the section to show from savedStateHandle (set when navigating back)
-                            val savedSection = backStackEntry.savedStateHandle.get<String>("selectedSection")
+                            // Use collectAsState to properly observe changes
+                            val savedSection by backStackEntry.savedStateHandle.getStateFlow("selectedSection", "Home")
+                                .collectAsState()
 
                             // Wrap MainScreen and RatingPromptHandler in a Box to properly overlay
                             Box(modifier = Modifier.fillMaxSize()) {
@@ -125,7 +127,7 @@ class MainScreenActivity : ComponentActivity() {
                                         viewModel.sortBooks(sortOrder)
                                     },
                                     navController = navController,
-                                    defaultSection = savedSection ?: "Home",
+                                    defaultSection = savedSection,
                                     isGuestMode = isGuestMode
                                 )
 

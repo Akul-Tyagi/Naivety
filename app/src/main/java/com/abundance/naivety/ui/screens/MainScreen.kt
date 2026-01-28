@@ -2,6 +2,7 @@ package com.abundance.naivety.ui.screens
 
 import android.R.attr.data
 import android.net.Uri
+import android.widget.Toast
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -34,7 +35,9 @@ import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
 import android.content.Intent
 import com.abundance.naivety.EpubReaderActivity
+import com.abundance.naivety.PdfViewerActivity
 import com.abundance.naivety.utils.BookFileType
+import com.abundance.naivety.utils.BookFileManager
 import kotlin.jvm.java
 import kotlin.toString
 
@@ -59,7 +62,19 @@ fun MainScreen(
 
     // Update selectedSection when defaultSection changes (e.g., when navigating back)
     LaunchedEffect(defaultSection) {
-        selectedSection = defaultSection
+        if (defaultSection.isNotEmpty()) {
+            selectedSection = defaultSection
+        }
+    }
+
+    // Also observe the savedStateHandle for changes
+    val backStackEntry = navController.currentBackStackEntry
+    val savedSection = backStackEntry?.savedStateHandle?.get<String>("selectedSection")
+
+    LaunchedEffect(savedSection) {
+        if (!savedSection.isNullOrEmpty()) {
+            selectedSection = savedSection
+        }
     }
 
             Scaffold(
@@ -323,22 +338,56 @@ private fun HomeSection(
                 BookGrid(
                     books = filteredBooks,
                     onBookClick = { book ->
-                                    // Check file type and route appropriately
-                                    if (book.getBookFileType() == BookFileType.EPUB) {
-                                        // Navigate to EPUB reader (you need to create this)
-                                        val intent = Intent(
-                                            context,
-                                            EpubReaderActivity::class.java
-                                        ).apply {
-                                            data = Uri.parse(book.filePath)
-                                            putExtra("BOOK_ID", book.id.toString())
-                                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                        }
-                                        context.startActivity(intent)
-                                    } else {
-                                        onNavigateToRead(Uri.parse(book.filePath))
-                                    }
-                                },
+                        // Get the proper URI based on file location
+                        val uri = BookFileManager.getFileUri(book.filePath)
+
+                        // Check if we can access the file
+                        val canAccess = if (BookFileManager.isInternalBookFile(book.filePath)) {
+                            // Internal file - check if file exists
+                            BookFileManager.isFileAccessible(book.filePath)
+                        } else {
+                            // Content URI - we have the flag set, try to access
+                            true // Let the activity handle any errors
+                        }
+
+                        if (!canAccess) {
+                            Toast.makeText(
+                                context,
+                                "Unable to access this book. The file may have been deleted.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            return@BookGrid
+                        }
+
+                        // Check file type and route appropriately
+                        if (book.getBookFileType() == BookFileType.EPUB) {
+                            // Navigate to EPUB reader
+                            val intent = Intent(
+                                context,
+                                EpubReaderActivity::class.java
+                            ).apply {
+                                data = uri
+                                putExtra("BOOK_ID", book.id.toString())
+                                if (BookFileManager.isContentUri(book.filePath)) {
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                }
+                            }
+                            context.startActivity(intent)
+                        } else {
+                            // Navigate to PDF reader
+                            val intent = Intent(
+                                context,
+                                PdfViewerActivity::class.java
+                            ).apply {
+                                data = uri
+                                putExtra("BOOK_ID", book.id.toString())
+                                if (BookFileManager.isContentUri(book.filePath)) {
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                }
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
                     onLongPress = { book ->
                         bookToDelete = book
                     },

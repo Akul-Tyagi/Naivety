@@ -274,7 +274,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v3.7.3",
+                    text = "Naivety v3.7.8",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -1017,7 +1017,7 @@ private fun SupportUsSection(
                     onClick = onRateApp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp),
+                        .heightIn(min = 72.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = accentColor
                     ),
@@ -1026,43 +1026,47 @@ private fun SupportUsSection(
                         defaultElevation = 4.dp,
                         pressedElevation = 2.dp
                     ),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Leave a 5-Star Review",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = customFont,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = Color.White,
-                            maxLines = 1
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        // Stars row first
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                text = "It Only Takes A Second! ",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.85f),
-                                maxLines = 1
-                            )
                             repeat(5) {
                                 Icon(
                                     imageVector = Icons.Default.Star,
                                     contentDescription = null,
                                     tint = goldColor,
                                     modifier = Modifier
-                                        .size(16.dp)
+                                        .size(18.dp)
                                         .rotate(starRotation)
                                 )
                             }
                         }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Leave a 5-Star Review",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            ),
+                            color = Color.White,
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "It Only Takes A Second!",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = Color.White.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
 
@@ -1073,45 +1077,42 @@ private fun SupportUsSection(
                     onClick = onShareApp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp),
+                        .heightIn(min = 72.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = accentColor
                     ),
                     border = BorderStroke(2.dp, accentColor),
                     shape = RoundedCornerShape(16.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = null,
-                                tint = accentColor,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Share With Your Person",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontFamily = customFont,
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Give The Gift Of Free Reading",
-                            style = MaterialTheme.typography.bodySmall,
+                            text = "Share With Your Person",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = customFont,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Gift Of Free Reading",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            maxLines = 1
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }

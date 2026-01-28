@@ -17,6 +17,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -56,6 +57,7 @@ import com.abundance.naivety.ui.components.pdf.TopBar
 import com.abundance.naivety.ui.pdf.RotationMode
 import com.abundance.naivety.ui.theme.NaivetyTheme
 import com.abundance.naivety.ui.theme.TransparentSystemBars
+import com.abundance.naivety.utils.BookFileManager
 import com.abundance.naivety.viewmodels.ReadingStatsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -243,6 +245,28 @@ class EpubReaderActivity : ComponentActivity() {
 
         if (uri == null) {
             Log.e(TAG, "No URI provided")
+            Toast.makeText(this, "Unable to open EPUB: No file selected", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        // Check file accessibility based on type (internal file or content URI)
+        val isAccessible = if (uri.scheme == "file") {
+            // Internal file - check if exists
+            val file = java.io.File(uri.path ?: "")
+            file.exists() && file.canRead()
+        } else {
+            // Content URI - let Readium handle errors
+            true
+        }
+
+        if (!isAccessible) {
+            Log.e(TAG, "Cannot access file: $uri")
+            Toast.makeText(
+                this,
+                "Unable to open this EPUB. The file may have been moved or deleted.",
+                Toast.LENGTH_LONG
+            ).show()
             finish()
             return
         }
