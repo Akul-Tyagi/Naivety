@@ -54,7 +54,8 @@ fun MoreScreen(
     viewModel: MoreViewModel,
     navController: NavController,
     onNavigateToAchievements: () -> Unit,
-    onNavigateToThemeSettings: () -> Unit
+    onNavigateToThemeSettings: () -> Unit,
+    onNavigateToReadingHeatmap: () -> Unit = { navController.navigate(Destinations.ReadingHeatmap.route) }
 ) {
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
     val currentStreak by viewModel.currentStreak.collectAsState()
@@ -94,7 +95,7 @@ fun MoreScreen(
                 readingDays = readingDays,
                 selectedYear = selectedYear,
                 customFont = alinsaFont,
-                onViewDetailedActivity = { navController.navigate(Destinations.ReadingHeatmap.route) }
+                onViewDetailedActivity = { onNavigateToReadingHeatmap() }
             )
 
             // Reading Stats Card
@@ -273,7 +274,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v3.7.1",
+                    text = "Naivety v3.7.3",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -1011,12 +1012,12 @@ private fun SupportUsSection(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Rate Us Button - simplified and responsive
+                // Rate Us Button - responsive vertical layout
                 Button(
                     onClick = onRateApp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp),
+                        .height(80.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = accentColor
                     ),
@@ -1024,10 +1025,12 @@ private fun SupportUsSection(
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,
                         pressedElevation = 2.dp
-                    )
+                    ),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = "Leave a 5-Star Review",
@@ -1038,89 +1041,72 @@ private fun SupportUsSection(
                             color = Color.White,
                             maxLines = 1
                         )
-                        Text(
-                            text = "It Only Takes A Second!",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.85f),
-                            maxLines = 1
-                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "It Only Takes A Second! ",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.85f),
+                                maxLines = 1
+                            )
+                            repeat(5) {
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = goldColor,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .rotate(starRotation)
+                                )
+                            }
+                        }
                     }
-                    Spacer(modifier = Modifier.width(7.dp))
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = goldColor,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .rotate(starRotation)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = goldColor,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .rotate(starRotation)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = goldColor,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .rotate(starRotation)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = goldColor,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .rotate(starRotation)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = goldColor,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .rotate(starRotation)
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Share Button - simplified and responsive
+                // Share Button - responsive vertical layout
                 OutlinedButton(
                     onClick = onShareApp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp),
+                        .height(80.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = accentColor
                     ),
                     border = BorderStroke(2.dp, accentColor),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Share with Your Loved Ones",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = customFont,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Share With Your Person",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = customFont,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Give The Gift Of Free Reading",
                             style = MaterialTheme.typography.bodySmall,

@@ -69,6 +69,7 @@ fun NavGraph(
                         val intent = Intent(context, PdfViewerActivity::class.java).apply {
                             data = Uri.parse(uri)
                             putExtra("BOOK_ID", book.id.toString())
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                         }
                         context.startActivity(intent)
                     }
@@ -133,6 +134,7 @@ fun NavGraph(
                         mainViewModel.books.value.find { it.filePath == uri.toString() }?.let { book ->
                             putExtra("BOOK_ID", book.id.toString()) // Convert to String
                         }
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                     }
                     context.startActivity(intent)
                 }

@@ -116,6 +116,7 @@ class MainScreenActivity : ComponentActivity() {
                                             val intent = Intent(this@MainScreenActivity, PdfViewerActivity::class.java).apply {
                                                 data = Uri.parse(uri)
                                                 putExtra("BOOK_ID", book.id.toString())
+                                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                                             }
                                             startActivity(intent)
                                         }

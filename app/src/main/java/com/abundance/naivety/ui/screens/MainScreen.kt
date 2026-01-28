@@ -185,6 +185,11 @@ fun MainScreen(
                                         // Save current section before navigating
                                         navController.currentBackStackEntry?.savedStateHandle?.set("selectedSection", "More")
                                         navController.navigate(Destinations.ThemeSettings.route)
+                                    },
+                                    onNavigateToReadingHeatmap = {
+                                        // Save current section before navigating
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("selectedSection", "More")
+                                        navController.navigate(Destinations.ReadingHeatmap.route)
                                     }
                                 )
                             }
@@ -327,6 +332,7 @@ private fun HomeSection(
                                         ).apply {
                                             data = Uri.parse(book.filePath)
                                             putExtra("BOOK_ID", book.id.toString())
+                                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                                         }
                                         context.startActivity(intent)
                                     } else {
