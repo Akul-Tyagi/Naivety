@@ -67,7 +67,7 @@ fun MoreScreen(
 
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.nektar))
-    val fsFont = FontFamily(Font(R.font.montserratblack))
+    val fsFont = FontFamily(Font(R.font.sonder))
 
     val context = LocalContext.current
     var showLogoutConfirmation by remember { mutableStateOf(false) }
@@ -275,7 +275,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v3.8.0",
+                    text = "Naivety v3.8.5",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )

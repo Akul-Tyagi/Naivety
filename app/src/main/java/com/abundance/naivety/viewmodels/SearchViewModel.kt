@@ -11,6 +11,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 // app/src/main/java/com/abundance/naivety/viewmodels/SearchViewModel.kt
@@ -52,8 +54,20 @@ class SearchViewModel @Inject constructor(
                 } else {
                     SearchState.Success(query)
                 }
+            } catch (e: HttpException) {
+                val isServerError = e.code() in 500..599
+                val errorMessage = when (e.code()) {
+                    500, 502, 503 -> "Open Library servers are experiencing issues"
+                    429 -> "Too many requests. Please wait a moment"
+                    else -> "Search failed (Error ${e.code()})"
+                }
+                _searchState.value = SearchState.Error(errorMessage, isServerError)
+                _searchResults.value = emptyList()
+            } catch (e: IOException) {
+                _searchState.value = SearchState.Error("Network error. Check your connection.", false)
+                _searchResults.value = emptyList()
             } catch (e: Exception) {
-                _searchState.value = SearchState.Error
+                _searchState.value = SearchState.Error("Something went wrong", false)
                 _searchResults.value = emptyList()
             }
         }

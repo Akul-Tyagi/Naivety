@@ -75,9 +75,11 @@ class BrowseRepositoryImpl @Inject constructor(
                     // Cache the results with appropriate key
                     bookCache.cachePagedBooks(cacheKey, books)
                     return@withContext books
+                } else {
+                    // Throw HttpException for server errors so ViewModel can handle them
+                    Log.e("BrowseRepository", "API error: ${response.code()} ${response.message()}")
+                    throw HttpException(response)
                 }
-
-                return@withContext emptyList()
             } catch (e: Exception) {
                 Log.e("BrowseRepository", "Error fetching page $page: ${e.message}")
                 return@withContext emptyList()
@@ -181,6 +183,10 @@ class BrowseRepositoryImpl @Inject constructor(
                         _isLoadingBestsellers.value = false
                         return@withContext books
                     }
+                } else {
+                    Log.e("BrowseRepository", "Bestsellers API error: ${response.code()} ${response.message()}")
+                    _isLoadingBestsellers.value = false
+                    throw HttpException(response)
                 }
 
                 _isLoadingBestsellers.value = false

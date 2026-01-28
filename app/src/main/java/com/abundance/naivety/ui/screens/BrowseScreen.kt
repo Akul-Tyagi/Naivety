@@ -56,6 +56,8 @@ fun BrowseScreen(
     var searchQuery by remember { mutableStateOf("") }
     val books by viewModel.booksState.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val isInitialLoading by viewModel.isInitialLoading.collectAsState()
+    val initialLoadError by viewModel.initialLoadError.collectAsState()
     val gridState = rememberLazyStaggeredGridState()
 
     // Detect when we're near the end of the list and load more books
@@ -88,7 +90,7 @@ fun BrowseScreen(
                 // Use navigation-based search if available, otherwise do nothing
                 onSearchSubmit?.invoke(query)
             },
-            fsFont = FontFamily(Font(R.font.fsultralit))
+            fsFont = FontFamily(Font(R.font.sonder))
         )
 
         // Book Grid
@@ -97,7 +99,25 @@ fun BrowseScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            LazyVerticalStaggeredGrid(
+            when {
+                isInitialLoading -> {
+                    // Show loading shimmer or indicator
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                initialLoadError != null -> {
+                    // Show error state with retry button
+                    ErrorStateContent(
+                        message = initialLoadError!!,
+                        onRetry = { viewModel.retryInitialLoad() }
+                    )
+                }
+                else -> {
+                    LazyVerticalStaggeredGrid(
                 columns = StaggeredGridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(10.dp),
@@ -137,6 +157,8 @@ fun BrowseScreen(
                             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         }
                     }
+                }
+            }
                 }
             }
         }
@@ -194,6 +216,39 @@ fun ErrorItem(onRetry: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
             Text("Retry")
+        }
+    }
+}
+
+@Composable
+fun ErrorStateContent(
+    message: String,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "😔",
+            style = MaterialTheme.typography.displayLarge,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 24.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Text("Try Again")
         }
     }
 }

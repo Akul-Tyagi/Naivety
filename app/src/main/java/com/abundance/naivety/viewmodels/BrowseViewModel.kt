@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import retrofit2.HttpException
+import java.io.IOException
 
 @HiltViewModel
 class BrowseViewModel @Inject constructor(
@@ -44,6 +46,10 @@ class BrowseViewModel @Inject constructor(
     private val _isInitialLoading = MutableStateFlow(true)
     val isInitialLoading = _isInitialLoading.asStateFlow()
 
+    // Add error state for initial load
+    private val _initialLoadError = MutableStateFlow<String?>(null)
+    val initialLoadError = _initialLoadError.asStateFlow()
+
     init {
         loadInitialBooks()
     }
@@ -51,20 +57,40 @@ class BrowseViewModel @Inject constructor(
     private fun loadInitialBooks() {
         viewModelScope.launch {
             _isInitialLoading.value = true
+            _initialLoadError.value = null
             try {
                 // Use getBestsellerBooks() instead of getTrendingBooks()
                 val initialBooks = repository.getBestsellerBooks()
-                _booksState.value = initialBooks
 
-                initialBooks.forEach { book ->
-                    bookCache[book.key] = book
+                if (initialBooks.isEmpty()) {
+                    _initialLoadError.value = "Open Library is temporarily unavailable. Please try again later."
+                } else {
+                    _booksState.value = initialBooks
+                    initialBooks.forEach { book ->
+                        bookCache[book.key] = book
+                    }
                 }
+            } catch (e: HttpException) {
+                Log.e("BrowseViewModel", "HTTP Error loading initial books: ${e.code()}", e)
+                _initialLoadError.value = when (e.code()) {
+                    500, 502, 503 -> "Open Library servers are experiencing issues. Please try again later."
+                    429 -> "Too many requests. Please wait a moment."
+                    else -> "Failed to load books (Error ${e.code()})"
+                }
+            } catch (e: IOException) {
+                Log.e("BrowseViewModel", "Network error loading initial books", e)
+                _initialLoadError.value = "Network error. Please check your internet connection."
             } catch (e: Exception) {
                 Log.e("BrowseViewModel", "Error loading initial books", e)
+                _initialLoadError.value = "Failed to load books. Please try again."
             } finally {
                 _isInitialLoading.value = false
             }
         }
+    }
+
+    fun retryInitialLoad() {
+        loadInitialBooks()
     }
 
     fun getBookFromCache(key: String): OpenLibraryBook? = bookCache[key]
@@ -134,8 +160,20 @@ class BrowseViewModel @Inject constructor(
                 } else {
                     SearchState.Success(query)
                 }
+            } catch (e: HttpException) {
+                val isServerError = e.code() in 500..599
+                val errorMessage = when (e.code()) {
+                    500, 502, 503 -> "Open Library servers are experiencing issues"
+                    429 -> "Too many requests. Please wait a moment"
+                    else -> "Search failed (Error ${e.code()})"
+                }
+                _searchState.value = SearchState.Error(errorMessage, isServerError)
+                _searchResults.value = emptyList()
+            } catch (e: IOException) {
+                _searchState.value = SearchState.Error("Network error. Check your connection.", false)
+                _searchResults.value = emptyList()
             } catch (e: Exception) {
-                _searchState.value = SearchState.Error
+                _searchState.value = SearchState.Error("Something went wrong", false)
                 _searchResults.value = emptyList()
             }
         }

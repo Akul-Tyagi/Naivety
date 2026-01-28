@@ -143,7 +143,7 @@ private fun EpubBookmarkItem(
                 Column {
                     Text(
                         text = "Chapter ${bookmark.page + 1}",
-                        fontFamily = FontFamily(Font(R.font.fsb)),
+                        fontFamily = FontFamily(Font(R.font.sonder)),
                         color = if (isCurrentChapter)
                             MaterialTheme.colorScheme.primary
                         else

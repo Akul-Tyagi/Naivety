@@ -101,7 +101,7 @@ private fun BookmarkItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Page ${bookmark.page + 1}",
-                    fontFamily = FontFamily(Font(R.font.fsb)),
+                    fontFamily = FontFamily(Font(R.font.sonder)),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(

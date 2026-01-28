@@ -144,7 +144,7 @@ private fun BookmarkItem(
                 Column {
                     Text(
                         text = "Page ${bookmark.page + 1}",
-                        fontFamily = FontFamily(Font(R.font.fsb)),
+                        fontFamily = FontFamily(Font(R.font.sonder)),
                         color = if (isCurrentPage)
                             MaterialTheme.colorScheme.primary
                         else

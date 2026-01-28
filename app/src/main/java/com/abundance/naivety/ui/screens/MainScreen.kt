@@ -54,7 +54,6 @@ fun MainScreen(
 ) {
     val sonderFont = FontFamily(Font(R.font.sonder))
     val alinsaFont = FontFamily(Font(R.font.nektar))
-    val fsFont = FontFamily(Font(R.font.fsb))
     var selectedSection by remember { mutableStateOf(defaultSection) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
@@ -294,7 +293,6 @@ private fun HomeSection(
     val context = LocalContext.current
     val books by viewModel.books.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val fsFont = FontFamily(Font(R.font.fsb))
     val fsFontt = FontFamily(Font(R.font.montserratblack))
     var bookToDelete by remember { mutableStateOf<Book?>(null) }
 
