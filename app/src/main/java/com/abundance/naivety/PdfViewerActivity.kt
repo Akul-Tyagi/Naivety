@@ -37,6 +37,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import com.abundance.naivety.data.AppDatabase
 import com.abundance.naivety.ui.components.pdf.*
 import com.abundance.naivety.ui.components.pdf.modals.*
 import com.abundance.naivety.ui.pdf.*
@@ -51,11 +52,15 @@ import com.github.barteksc.pdfviewer.PDFView
 import com.github.barteksc.pdfviewer.util.FitPolicy
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import java.io.File
 
 @AndroidEntryPoint
 class PdfViewerActivity : ComponentActivity() {
     private val viewModel: PdfViewerViewModel by viewModels()
+
+    @Inject lateinit var database: AppDatabase
+
     private var bookId: Long = 0L
     private var pdfName: String = "PDF"
     private lateinit var pdfView: PDFView
@@ -102,6 +107,11 @@ class PdfViewerActivity : ComponentActivity() {
         // Parse bookId from String to Long
         val bookIdStr = intent.getStringExtra("BOOK_ID") ?: "0"
         bookId = bookIdStr.toLongOrNull() ?: 0L
+
+        // Load saved settings for this specific book
+        if (bookId > 0L) {
+            viewModel.loadSettingsForBook(bookId.toString())
+        }
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val lastPage = prefs.getInt("${bookId}_last_page", 0)
@@ -168,11 +178,20 @@ class PdfViewerActivity : ComponentActivity() {
             val systemUiController = rememberSystemUiController()
             val backgroundColor = Color(viewerState.value.settings.backgroundColor)
             var showEditName by remember { mutableStateOf(false) }
-            var localPdfName by remember {
-                mutableStateOf(
-                    getSavedBookName(bookId) ?:
-                    intent.data?.let { uri -> extractPdfName(uri, context) } ?: "PDF"
-                )
+            var localPdfName by remember { mutableStateOf("Loading...") }
+
+            // Fetch book title from database
+            LaunchedEffect(bookId) {
+                val savedName = getSavedBookName(bookId)
+                if (savedName != null) {
+                    localPdfName = savedName
+                } else if (bookId > 0L) {
+                    // Try to get title from database
+                    val book = database.bookDao().getBookById(bookId)
+                    localPdfName = book?.title ?: intent.data?.let { uri -> extractPdfName(uri, context) } ?: "PDF"
+                } else {
+                    localPdfName = intent.data?.let { uri -> extractPdfName(uri, context) } ?: "PDF"
+                }
             }
 
             LaunchedEffect(localPdfName) {
@@ -208,6 +227,8 @@ class PdfViewerActivity : ComponentActivity() {
                 // PDF View with improved settings
                 val currentReadingMode = remember { mutableStateOf(viewerState.value.readingMode) }
                 val currentNightMode = remember { mutableStateOf(viewerState.value.brightness.nightMode) }
+                val currentBackgroundColor = remember { mutableStateOf(viewerState.value.settings.backgroundColor) }
+                val currentScaleType = remember { mutableStateOf(viewerState.value.settings.scaleType) }
 
                 AndroidView(
                     factory = { context ->
@@ -226,13 +247,21 @@ class PdfViewerActivity : ComponentActivity() {
                         }.also { pdfView = it }
                     },
                     update = { view ->
-                        // Check if reading mode or night mode has changed
-                        if (currentReadingMode.value != viewerState.value.readingMode ||
-                            currentNightMode.value != viewerState.value.brightness.nightMode) {
+                        // Check if any relevant settings have changed
+                        val settingsChanged = currentReadingMode.value != viewerState.value.readingMode ||
+                            currentNightMode.value != viewerState.value.brightness.nightMode ||
+                            currentBackgroundColor.value != viewerState.value.settings.backgroundColor ||
+                            currentScaleType.value != viewerState.value.settings.scaleType
 
+                        if (settingsChanged) {
                             // Update stored values
                             currentReadingMode.value = viewerState.value.readingMode
                             currentNightMode.value = viewerState.value.brightness.nightMode
+                            currentBackgroundColor.value = viewerState.value.settings.backgroundColor
+                            currentScaleType.value = viewerState.value.settings.scaleType
+
+                            // Update background color
+                            view.setBackgroundColor(viewerState.value.settings.backgroundColor.toInt())
 
                             val currentPage = view.currentPage
 
@@ -250,7 +279,7 @@ class PdfViewerActivity : ComponentActivity() {
                                     else -> 0
                                 })
                                 .nightMode(currentNightMode.value)
-                                .pageFitPolicy(when (viewModel.viewerState.value.settings.scaleType) {
+                                .pageFitPolicy(when (currentScaleType.value) {
                                     ScaleType.FIT_PAGE -> FitPolicy.BOTH
                                     ScaleType.FIT_WIDTH -> FitPolicy.WIDTH
                                     ScaleType.FIT_HEIGHT -> FitPolicy.HEIGHT
@@ -656,6 +685,7 @@ class PdfViewerActivity : ComponentActivity() {
                 if (showBookmarksList.value) {
                     BookmarksList(
                         bookmarks = currentBookmarks,
+                        currentPage = viewerState.value.currentPage,
                         onBookmarkClick = { page ->
                             pdfView.jumpTo(page)
                             showBookmarksList.value = false

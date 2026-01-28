@@ -278,11 +278,17 @@ class PdfViewerViewModel @Inject constructor(
                 putFloat("custom_brightness", viewerState.value.brightness.customBrightness)
                 putBoolean("keep_screen_on", viewerState.value.settings.keepScreenOn)
                 putBoolean("show_page_number", viewerState.value.settings.showPageNumber)
+                putLong("background_color", viewerState.value.settings.backgroundColor)
+                putString("scale_type", viewerState.value.settings.scaleType.name)
                 putString("reading_mode", viewerState.value.readingMode.name)
                 putString("rotation_mode", viewerState.value.rotation.name)
                 apply()
             }
         }
+    }
+
+    fun loadSettingsForBook(bookId: String?) {
+        loadSavedSettings(bookId)
     }
 
     private fun loadSavedSettings(bookId: String?) {
@@ -300,13 +306,17 @@ class PdfViewerViewModel @Inject constructor(
                     ),
                     settings = currentState.settings.copy(
                         keepScreenOn = prefs.getBoolean("keep_screen_on", false),
-                        showPageNumber = prefs.getBoolean("show_page_number", true)
+                        showPageNumber = prefs.getBoolean("show_page_number", true),
+                        backgroundColor = prefs.getLong("background_color", 0xFF000000),
+                        scaleType = prefs.getString("scale_type", null)?.let {
+                            try { ScaleType.valueOf(it) } catch (_: Exception) { ScaleType.FIT_WIDTH }
+                        } ?: ScaleType.FIT_WIDTH
                     ),
                     readingMode = prefs.getString("reading_mode", null)?.let {
-                        ReadingMode.valueOf(it)
+                        try { ReadingMode.valueOf(it) } catch (_: Exception) { ReadingMode.VERTICAL_PAGED }
                     } ?: ReadingMode.VERTICAL_PAGED,
                     rotation = prefs.getString("rotation_mode", null)?.let {
-                        RotationMode.valueOf(it)
+                        try { RotationMode.valueOf(it) } catch (_: Exception) { RotationMode.PORTRAIT }
                     } ?: RotationMode.PORTRAIT
                 )
             }

@@ -66,6 +66,8 @@ class EpubPreferencesManager(context: Context) {
             putFloat("${bookId}_page_margin", state.displaySettings.pageMargin)
             putFloat("${bookId}_font_size", state.typographySettings.fontSize)
             putString("${bookId}_font_family", state.typographySettings.fontFamily.name)
+            // Save font color - use "AUTO" string for null (auto/theme color)
+            putString("${bookId}_font_color", state.typographySettings.fontColor?.name ?: "AUTO")
             putFloat("${bookId}_line_spacing", state.typographySettings.lineSpacing)
             putFloat("${bookId}_font_weight", state.typographySettings.fontWeight)
             putString("${bookId}_text_alignment", state.typographySettings.textAlignment.name)
@@ -103,6 +105,12 @@ class EpubPreferencesManager(context: Context) {
             EpubTextAlignment.JUSTIFY
         }
 
+        // Load font color - "AUTO" or missing means null (auto/theme color)
+        val savedFontColor = prefs.getString("${bookId}_font_color", "AUTO")?.let { colorName ->
+            if (colorName == "AUTO") null
+            else try { EpubFontColor.valueOf(colorName) } catch (_: Exception) { null }
+        }
+
         return EpubViewerState(
             readingMode = savedReadingMode,
             displaySettings = EpubDisplaySettings(
@@ -114,6 +122,7 @@ class EpubPreferencesManager(context: Context) {
             typographySettings = EpubTypographySettings(
                 fontSize = prefs.getFloat("${bookId}_font_size", 25f),
                 fontFamily = savedFontFamily,
+                fontColor = savedFontColor,
                 lineSpacing = prefs.getFloat("${bookId}_line_spacing", 1.7f),
                 fontWeight = prefs.getFloat("${bookId}_font_weight", 400f),
                 textAlignment = savedTextAlignment,

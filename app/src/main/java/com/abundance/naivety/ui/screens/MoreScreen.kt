@@ -33,6 +33,7 @@ import com.abundance.naivety.R
 import com.abundance.naivety.navigation.Destinations
 import com.abundance.naivety.viewmodel.MoreViewModel
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import java.time.LocalDate
 import java.time.Month
 import java.time.ZoneId
@@ -274,7 +275,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v3.7.8",
+                    text = "Naivety v3.8.0",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -1026,16 +1027,16 @@ private fun SupportUsSection(
                         defaultElevation = 4.dp,
                         pressedElevation = 2.dp
                     ),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Stars row first
+                        // Stars row first - always 5 visible
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             repeat(5) {
                                 Icon(
@@ -1043,29 +1044,31 @@ private fun SupportUsSection(
                                     contentDescription = null,
                                     tint = goldColor,
                                     modifier = Modifier
-                                        .size(18.dp)
+                                        .size(16.dp)
                                         .rotate(starRotation)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Leave a 5-Star Review",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = customFont,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
+                                fontSize = 14.sp
                             ),
                             color = Color.White,
                             maxLines = 1,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "It Only Takes A Second!",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                             color = Color.White.copy(alpha = 0.85f),
                             maxLines = 1,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -1083,7 +1086,7 @@ private fun SupportUsSection(
                     ),
                     border = BorderStroke(2.dp, accentColor),
                     shape = RoundedCornerShape(16.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1093,26 +1096,28 @@ private fun SupportUsSection(
                             imageVector = Icons.Default.Share,
                             contentDescription = null,
                             tint = accentColor,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Share With Your Person",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = customFont,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp
+                                fontSize = 14.sp
                             ),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "Gift Of Free Reading",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             maxLines = 1,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
