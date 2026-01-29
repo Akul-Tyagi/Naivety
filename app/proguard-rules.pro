@@ -106,7 +106,6 @@
 # Third-party libraries
 -keep class com.github.mhiew.** { *; }
 -keep class com.tom_roush.pdfbox.** { *; }
--keep class com.google.android.gms.ads.** { *; }
 -keep class io.coil.** { *; }
 -dontwarn com.gemalto.jp2.**
 
@@ -116,9 +115,6 @@
 -keep public class com.abundance.naivety.ui.** { *; }
 -keep class * extends androidx.lifecycle.ViewModel
 
-# WorkManager
--keep class androidx.work.** { *; }
--keepclassmembers class * extends androidx.work.ListenableWorker { public <init>(...); }
 
 # Navigation
 -keep class com.abundance.naivety.navigation.Destinations { *; }

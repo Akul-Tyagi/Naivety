@@ -100,9 +100,6 @@ dependencies {
     // PDF viewer
     implementation("com.github.Akul-Tyagi:AndroidPdfViewer:v3.4.3-16kb")
 
-    // AdMob
-    implementation("com.google.android.gms:play-services-ads:24.9.0")
-    
     // Paging 3 with Compose support
     implementation("androidx.paging:paging-compose:3.3.6")
 

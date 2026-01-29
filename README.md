@@ -235,9 +235,6 @@ UI (Compose) → ViewModel → Repository → Data Source (Room/Network)
    - Download `google-services.json` and place it in `app/`
    - Enable Authentication (Google Sign-In) and Firestore
 
-3. **Configure AdMob** (Optional)
-   - Create an AdMob account at [AdMob Console](https://admob.google.com)
-   - Update ad unit IDs in `AdManager.kt`
 
 4. **Build the project**
    ```bash
