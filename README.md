@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="Naivety Logo" width="120" height="120">
-</p>
 
 <h1 align="center">Naivety</h1>
 
