@@ -50,6 +50,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -193,20 +194,29 @@ fun BookDetailScreen(
                     Row(
                         modifier = Modifier
                             .animateContentSize()
+                            .fillMaxWidth()
                             .padding(bottom = 4.dp),
-                        horizontalArrangement = Arrangement.Center,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Published: ${book.publishedYear}",
                             style = MaterialTheme.typography.bodyLarge.copy(fontFamily = customFont),
-                            color = Color.Gray
+                            color = Color.Gray,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
-                        Spacer(modifier = Modifier.width(26.dp))
                         Text(
                             text = "${bookDetails?.pageCount ?: "Pages unavailable"}",
                             style = MaterialTheme.typography.bodyLarge.copy(fontFamily = customFont),
-                            color = Color.Gray
+                            color = Color.Gray,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }

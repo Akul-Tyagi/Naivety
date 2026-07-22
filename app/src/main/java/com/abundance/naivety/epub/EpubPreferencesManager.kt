@@ -120,10 +120,10 @@ class EpubPreferencesManager(context: Context) {
                 pageMargin = prefs.getFloat("${bookId}_page_margin", 32f)
             ),
             typographySettings = EpubTypographySettings(
-                fontSize = prefs.getFloat("${bookId}_font_size", 25f),
+                fontSize = prefs.getFloat("${bookId}_font_size", 30f),
                 fontFamily = savedFontFamily,
                 fontColor = savedFontColor,
-                lineSpacing = prefs.getFloat("${bookId}_line_spacing", 1.7f),
+                lineSpacing = prefs.getFloat("${bookId}_line_spacing", 1.6f),
                 fontWeight = prefs.getFloat("${bookId}_font_weight", 400f),
                 textAlignment = savedTextAlignment,
                 keepScreenOn = prefs.getBoolean("${bookId}_keep_screen_on", false),

@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -508,7 +509,10 @@ class EpubReaderActivity : ComponentActivity() {
             exit = slideOutVertically { it } + fadeOut(),
             modifier = modifier
         ) {
-            Surface(color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), shape = RoundedCornerShape(20.dp)) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(20.dp)
+            ) {
                 val displayText = when (state.readingMode) {
                     EpubReadingMode.PAGE_HORIZONTAL, EpubReadingMode.CONTINUOUS_HORIZONTAL -> {
                         // Paginated modes - show page count within current chapter only
@@ -532,7 +536,15 @@ class EpubReaderActivity : ComponentActivity() {
                         "Ch $currentChapter/$totalChapters • $chaptersLeft left"
                     }
                 }
-                Text(displayText, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                Text(
+                    text = displayText,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
             }
         }
     }

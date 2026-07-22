@@ -26,6 +26,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -234,7 +237,9 @@ fun MoreScreen(
 
                 Text(
                     text = if (isGuestMode) "Sign Up with Account" else "Logout",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -275,7 +280,7 @@ fun MoreScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Naivety v3.8.7",
+                    text = "Naivety v3.8.8",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = fsFont),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -1125,30 +1130,22 @@ private fun SupportUsSection(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Elegant footer with animated heart
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Built with ",
-                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = heartColor,
-                        modifier = Modifier
-                            .size(14.dp)
-                            .scale(heartScale * 0.9f)
-                    )
-                    Text(
-                        text = " for book lovers everywhere",
-                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                }
+                Text(
+                    text = buildAnnotatedString {
+                        append("Built with ")
+                        withStyle(SpanStyle(color = heartColor)) {
+                            append("♥")
+                        }
+                        append(" for book lovers everywhere")
+                    },
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = customFont),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

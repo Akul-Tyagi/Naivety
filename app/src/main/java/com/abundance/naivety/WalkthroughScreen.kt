@@ -181,7 +181,7 @@ fun WalkthroughScreen(onFinish: () -> Unit) {
                     Text(
                         text = mainHeadings[currentSlide],
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = 64.sp,
+                            fontSize = 60.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontFamily = mainFontFamily,
                             lineHeight = 52.sp,

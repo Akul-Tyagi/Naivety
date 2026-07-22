@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -42,11 +43,21 @@ fun SearchBar(
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
-                fontFamily = alinsaFont
+                fontFamily = alinsaFont,
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
             ),
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 8.dp)
+                .fillMaxHeight()
+                .padding(horizontal = 8.dp),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    innerTextField()
+                }
+            }
         )
 
         IconButton(
